@@ -1,0 +1,39 @@
+For version 0.16:
+* youtube playlists (parse_Youtube_playlist)
+* Avicii & Nicky Romero - I Could Be The One
+* thin-updater:
+	- http://pypi.python.org/pypi/esky
+	- http://stackoverflow.com/questions/1750757/restarting-a-self-updating-python-script
+* crc32?
+* better exceptions handeling
+* automated logs send: http://stackoverflow.com/questions/14439477/log-files-collecting-and-handling-system
+
+* מסך הפעלה ראשוני?
+* מצב Basic/Advanced?
+* explorer select mode: use SHParseDisplayName for windows7/8. (waiting for pywin build 219)
+* work with EXCEPTIONS and WARNINGS all over.
+
+* bugs
+* check all english & hebrew charts, try to improve score algorithm
+* run pytest & pylint before release.
+* test with windows xp, 7, 8.
+	
+For the long run:
+* fix phonon
+* Custom Launch: support for videos
+* add more images sources
+* making songs amount spinbox accurate
+* make urls pop before all media sources has done fetching results
+* load many links in once, and download them all
+* apply all IMPROVE tags
+* add a download queue, so people can continue searching while downloading.
+	
+for the very long run:
+* add a window where users can custom the relevance scoring values.
+* port to linux?
+* port to android?
+* port to python3?
+* make the GUI completely separated from the code.
+* Consider a QML GUI (basicly because it's cool)
+	- http://blog.qt.digia.com/2011/03/10/qml-components-for-desktop/
+	- http://blog.qt.digia.com/2011/08/26/toplevel-windows-and-menus-with-qt-quick/

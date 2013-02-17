@@ -1,0 +1,1 @@
+# Copyright (C) 2012-2013 Itay Brandes'''This is the WebParser package of iQuality.It contains modules for parsing and fetching web content.'''import coreimport LinksGrabberimport LyricsGrabberimport MetadataGrabberimport WebServices__all__ = ['LinksGrabber', 'LyricsGrabber', 'MetadataGrabber', 'WebServices']

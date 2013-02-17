@@ -1,0 +1,84 @@
+Version history of iQuality (since iQuality 0.10)
+======================
+
+Below you find a list with the added features, changes and fixes for
+each version.
+
+======================
+(Version 0.16 beta; ??/03/13)
+- NEW: Full mediasource added: SoundCloud.
+- FIX: Dilandau parser got broken, and got rewritten.
+- FIX: Minor bug fixes.
+
+(Version 0.15 beta; 01/02/13)
+- NEW: Search Auto-completion.
+- NEW: Hits charts browser.
+- NEW: Parses Url from clipboard at startup.
+- NEW: Added compilation notes.
+- IMPROVE: ETA is splitted into minutes and seconds.
+- IMPROVE: Improved relevance algorithm accuracy.
+- IMPROVE: Some cosmetic changes.
+- IMPROVE: ffmpeg lib updated to 1.10.
+- FIX: Fixed billboard parser.
+- FIX: Minor bug fixes.
+
+(Version 0.141 beta; 29/12/12)
+- FIX: The ID3 window crashed sometimes.
+
+(Version 0.14 beta; 29/12/12)
+- NEW: Search in artists' full discography. For more info, click the lifebuoy (support) button.
+- NEW: Finding tracks by searching part of its lyrics. For more info, click the lifebuoy (support) button.
+- NEW: "Did you know" phrases.
+- IMPROVE: Added SoundCloud as a media source.
+- IMPROVE: Added OnlyLyrics as a lyrics source.
+- IMPROVE: The main window looks much lighter.
+- IMPROVE: The preferences (settings) window was redone.
+- FIX: The download process crashed when trying to inject an ID3 frame to a file without one.
+- FIX: The download module crashed when downloading files smaller than 1MB.
+- FIX: Parses faulty unicode strings as they should be.
+- FIX: Minor bug fixes.
+
+(Version 0.13 beta; 01/12/12)
+- NEW: "I'm Feeling lucky" for automated downloads with no questions asked. the previous "I'm
+       Feeling lucky" option was renamed to "Random Song".
+- NEW: Shows two different columns for Video and Audio filesizes.
+- NEW: Volume slider for the media player.
+- NEW: Supports Windows 8.
+- IMPROVE: Completely rewritten the Downloading module. Faster, more stable, and shows ETA for downloads.
+- IMPROVE: There are now two sources for the hebrew songs chart.
+- IMPROVE: Progress bar gets updated for the audio encoding task now.
+- IMPROVE: Improved search engine's efficiency and speed.
+- IMPROVE: Improved relevance algorithm accuracy.
+- IMPROVE: Searching for lyrics module has been greatly improved.
+- IMPROVE: The graphical user interface was going through some changes.
+- IMPROVE: Now pops up a window if a newer version is available.
+- IMPROVE: Now waits for Custom Launch.
+- IMPROVE: Now testing is done with py.test.
+- FIX: Now handles unicode urls properly.
+- FIX: Galgaltz's parser has been fixed.
+- FIX: Now doesn't crush when trying to rename a filename to the same name.
+- FIX: Now removes temporary files.
+- FIX: Now notifies user if a specific video is not available in his country (youtube errorcode 150)
+- FIX: Doesn't show a scary black window while running explorer with files selected on WinXP. (Windows Vista/7/8 patch will get fixed in a future release)
+
+(Version 0.12 beta; 28/09/12)
+- IMPROVE: "I'm feeling lucky" feature works a little faster now.
+- FIX: Youtube has changed their format. Changes to the praser applied.
+
+(Version 0.11 beta; 22/09/12)
+- NEW: Calculates the media stream length.
+- NEW: I'm feeling lucky option: Now randomly suggets hits from billboard and galgalatz.
+- NEW: New post-download option: Custom Launch.
+- NEW: Run & Download statistics.
+- NEW: Now can right-click any table's row and copy a song's data to clipboard.
+- IMPROVE: When opening download's directory, the downloaded file will be choosed.
+- IMPROVE: Improved relevance algorithm accuracy.
+- IMPROVE: Now prefers 720p over 1080p when downloading only audio from youtube (downloads half the size).
+- IMPROVE: Now warns user for low disk space.
+- IMPROVE: Lyrics search algorithm improved.
+- IMPROVE: Suggets user to enable all media source engines, in case some are disabled and we get no results.
+- FIX: Completely rewritten Youtube's parser.
+- FIX: Fixed a bug where the download directory path wasn't saved correctly in some cases.
+
+(Version 0.10 beta; 01/09/12)
+- first beta release
