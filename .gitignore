@@ -9,9 +9,9 @@ DLLs/
 *.swp
 *.tmp
 *.log
+*.ini
 *.pyc
 *.pyo
-code/config.ini
 pylint.txt
 
 ######################
