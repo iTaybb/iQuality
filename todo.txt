@@ -1,5 +1,10 @@
 For version 0.16:
+* components checker:
+	- move file to web
+	- add SSL
+	- remove copying ffmpeg
 * youtube playlists (parse_Youtube_playlist)
+* Instant startup screen: http://wiki.maemo.org/PyQt_Tips_and_Tricks
 * Avicii & Nicky Romero - I Could Be The One
 * thin-updater:
 	- http://pypi.python.org/pypi/esky

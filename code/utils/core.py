@@ -15,6 +15,7 @@ import xml.parsers.expat
 import shutil
 import urllib
 import urlparse
+import hashlib
 
 from win32com.shell import shell
 from mutagen.compatid3 import CompatID3 # hack for IDv2.3 tags writing with mutagen
@@ -27,7 +28,7 @@ __all__ = ['makeDummyMP3', 'setID3Tags', 'append_bold_changes', 'get_free_space'
 			'parse_title_from_filename', 'add_item_to_playlist', 'add_item_to_wpl_playlist',
 			'add_item_to_m3u_playlist', 'add_item_to_itunes_playlist', 'move_item_to_top',
 			'open_with_notepad', 'url_fix', 'trim_between', 'guess_image_mime_type', 
-			'parse_artists_from_artist']
+			'parse_artists_from_artist', 'calc_sha256']
 
 def makeDummyMP3(dir_):
 	'''
@@ -438,3 +439,9 @@ def launch_file_explorer(path, files=None):
 			os.system(r'explorer /select,"%s"' % f_mbcs)
 		else:
 			os.startfile(path)
+			
+def calc_sha256(path):
+	"Gets a file and calculates it's sha224 digest."
+	with open(path, 'rb') as f:
+		hash = hashlib.sha256(f.read()).hexdigest()
+	return hash

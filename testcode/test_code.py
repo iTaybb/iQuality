@@ -30,7 +30,6 @@ def test_PyEnviron():
 		import PyQt4
 		import py2exe
 		from bs4 import BeautifulSoup
-		import lxml
 		import mutagen
 		import mutagen.compatid3
 		'''
@@ -42,6 +41,7 @@ def test_PyEnviron():
 		import configparser
 		#this is the python3 version of ConfigParser. a backport for python2 is available.
 		import pytest
+		import pylzma
 		
 
 	except ImportError, e:

@@ -42,6 +42,10 @@ class NoSpaceWarning(Warning):
 		self.space = int(space)
 	def __str__(self):
 		return "Drive: %s, Space Remaining: %d" % (self.drive, self.space)
+		
+class ComponentsFaultyWarning(Warning):
+	def __init__(self, components):
+		self.components = components
 
 class NewerVersionWarning(Warning):
 	def __init__(self, newest, current=__version__):

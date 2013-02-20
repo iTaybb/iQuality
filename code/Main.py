@@ -10,7 +10,7 @@ from SmartDL import SmartDL
 import WebParser
 import Config; config = Config.config
 from logger import log
-from CustomExceptions import NoSpaceWarning, NewerVersionWarning, NoInternetConnectionException, NoDnsServerException
+from CustomExceptions import NoSpaceWarning, NewerVersionWarning, NoInternetConnectionException, NoDnsServerException, ComponentsFaultyWarning
 import utils
 
 __version__ = Config.__version__
@@ -75,14 +75,32 @@ def sanity_check():
 		# log.debug("Available Mime Types are %s" % str(mimeTypes))
 	except ImportError:
 		log.warning("Could not load the phonon module")
-
-	# ffmpeg's availablity check
-	try:
-		utils.launch_without_console('ffmpeg -version').wait()
-	except WindowsError, e:
-		if e[0] == 2:
-			config.is_ffmpeg_installed = False
-			log.warning("ffmpeg not found. setting is_ffmpeg_installed to False")
+	
+	# External Components Check
+	if not os.path.exists('bin/'):
+		os.makedirs('bin/')
+		
+	hash_failed = []
+	not_exists = []
+	
+	d = WebParser.WebServices.get_components_data()
+	for name, t in d.items():
+		urls, archive_hash, file_to_extract, file_hash = t
+		
+		if not os.path.exists(r'bin\%s' % file_to_extract):
+			log.warning('External component was not found: %s' % name)
+			not_exists.append(name)
+			continue
+		
+		computed_hash = utils.calc_sha256(r'bin\%s' % file_to_extract)
+		if file_hash != computed_hash:
+			log.warning('External components hash check failed for %s' % name)
+			hash_failed.append(name)
+			continue
+	if hash_failed or not_exists:
+		_warnings.append(ComponentsFaultyWarning(hash_failed+not_exists))
+	else:
+		log.debug('External components hash check succeeded')
 			
 	# iTunes' availablity check
 	itunesPath = os.path.expanduser(r'~\My Documents\My Music\iTunes\iTunes Media\Automatically Add to iTunes')

@@ -225,12 +225,8 @@ class DownloadThread(QtCore.QThread):
 			self.status.emit(stats_str)
 			
 		else: # if downloaded file is a video
-			if not config.is_ffmpeg_installed:
-				log.error("Can't encode video: is_ffmpeg_installed is False.")
-				return
-				
+			
 			# dest_path is a video
-				
 			video_path = r"%s\%s" % (self.dl_dir, self.songObj.GetProperFilename())
 			audio_path = r"%s\%s" % (self.dl_dir, self.songObj.GetProperFilename('mp3'))
 			temp_audio_path = r"%s\%s" % (config.temp_dir, "%s.mp3" % utils.get_rand_string())
@@ -241,7 +237,7 @@ class DownloadThread(QtCore.QThread):
 				log.debug("Encoding Audio...")
 				self.status.emit(tr("Encoding Audio..."))
 				
-				cmd = 'ffmpeg -y -i "%s" -vn -ac 2 -b:a %d -f mp3 "%s"' % (dest_path,
+				cmd = r'bin\ffmpeg -y -i "%s" -vn -ac 2 -b:a %d -f mp3 "%s"' % (dest_path,
 						config.youtube_audio_bitrates[self.songObj.video_itag.quality], temp_audio_path)
 				log.debug("Running '%s'" % cmd)
 				est_final_filesize = self.songObj.final_filesize

@@ -1,0 +1,19 @@
+{
+   "7-zip":[
+      [
+         "http://www.all-archivers.com/download/7za920.zip",
+         "http://www.bevc.net/dl/7za920.zip"
+      ],
+      "2a3afe19c180f8373fa02ff00254d5394fec0349f5804e0ad2f6067854ff28ac",
+      "7za.exe",
+      "c136b1467d669a725478a6110ebaaab3cb88a3d389dfa688e06173c066b76fcf"
+   ],
+   "ffmpeg":[
+      [
+         "http://ffmpeg.zeranoe.com/builds/win32/static/ffmpeg-1.1.1-win32-static.7z"
+      ],
+      "7f7b1f23d1ce4a91efd7c98cf621fe290fefa6d94ed6263d7bdd2436c80d432d",
+      "ffmpeg.exe",
+      "04632978446c356cd034f4223ea58c39aa1f947c6bfe5e6b2fe4bd4a02c18dba"
+   ]
+}

@@ -15,7 +15,7 @@ Usage:
 >>> obj.wait()
 >>> os.startfile(obj.get_dest())
 
-:param url: Download url.
+:param url: Download url. You can pass a list of urls to serv as mirrors.
 :param dest: Destination path. Default is in temp folders.
 :param max_threads: Maximum amount of threads. Default is 5.
 :param show_output: If True, prints a progress bar to the screen. Default is False.
@@ -40,7 +40,7 @@ It seems that shared1 is highly incorrect (3.72% approx. error).
 z has error rate of 0.07%.
 shared2 has error rate of 0.06%.
 
-It is not clear why shared1 fails, but we'll stick with shared2 concept, because of very low error rate.
+It is not clear why shared1 fails, but we'll stick with shared2 idea, because of very low error rate.
 
 '''
 
@@ -61,9 +61,14 @@ import utils
 from HTTPQuery import is_ServerSupportHTTPRange
 
 class SmartDL:
-	"The main SmartDL class."
-	def __init__(self, url, dest=None, max_threads=5, show_output=True, logger=None):
-		self.url = url if not " " in url else utils.url_fix(url)
+	"The main SmartDL class"
+	def __init__(self, urls, dest=None, max_threads=5, show_output=True, logger=None):
+		self.mirrors = [urls] if isinstance(urls, basestring) else urls
+		for i, url in enumerate(self.mirrors):
+			if " " in url:
+				self.mirrors[i] = utils.url_fix(url)
+		self.url = self.mirrors.pop(0)
+
 		self.dest = dest or r"%s\%s" % (config.temp_dir, urlparse(self.url).path.split('/')[-1])
 		self.show_output = show_output
 		self.logger = logger or logging.getLogger('dummy')
@@ -101,7 +106,19 @@ class SmartDL:
 			raise RuntimeError("cannot start (current status is %s)" % self.status)
 		self.logger.debug("Downloading '%s' to '%s'..." % (self.url, self.dest))
 		req = urllib2.Request(self.url, headers=self.headers)
-		urlObj = urllib2.urlopen(req, timeout=self.timeout)
+		try:
+			urlObj = urllib2.urlopen(req, timeout=self.timeout)
+		except urllib2.HTTPError, e:
+			if self.mirrors:
+				self.logger.debug("%s. Trying next mirror..." % str(e))
+				self.url = self.mirrors.pop(0)
+				self.start(blocking)
+				return
+			else:
+				self.logger.debug("%s." % str(e))
+				raise
+				
+			from PyQt4 import QtCore; import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
 		meta = urlObj.info()
 		try:
 			self.filesize = int(meta.getheaders("Content-Length")[0])
@@ -214,7 +231,7 @@ class ControlThread(threading.Thread):
 		t2 = time.time()
 		self.dl_time = float(t2-t1)
 		
-		self.logger.debug("Combining files...") # actually happens on post_threadpool_thread
+		# self.logger.debug("Combining files...") # actually happens on post_threadpool_thread
 		self.obj.status = "combining"
 		while self.obj.post_threadpool_thread.is_alive():
 			time.sleep(0.1)
@@ -228,6 +245,12 @@ class ControlThread(threading.Thread):
 		return self.dl_speed
 	def get_downloaded_size(self):
 		return self.shared_var.value
+	def get_final_filesize(self):
+		return self.obj.filesize
+	def get_progress(self):
+		if self.obj.filesize:
+			return 1.0*self.shared_var.value/self.obj.filesize
+		return 0
 	def get_dl_time(self):
 		return self.dl_time
 		

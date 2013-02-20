@@ -14,7 +14,8 @@ Dependencies:
 * configparser python2 port >= 3.2.0
 * pytest >= 2.3.4
 * Inno Setup >= 5.5.1
-* ffmpeg
+* 7za.exe (copy to c:\windows\system32 or c:\windows\syswow64)
+* ffmpeg (will be downloaded if not exists)
 
 1. Make sure all the Dependencies are met, by running:
 	cd C:\Scripts\iQuality\testcode

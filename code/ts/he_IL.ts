@@ -3,12 +3,12 @@
 <context>
     <name>@default</name>
     <message>
-        <location filename="../Gui.py" line="162"/>
+        <location filename="../Gui.py" line="175"/>
         <source>ID3 Editor</source>
         <translation>עורך תגיות ID3</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="165"/>
+        <location filename="../Gui.py" line="178"/>
         <source>Exit</source>
         <translation>יציאה</translation>
     </message>
@@ -23,102 +23,102 @@
         <translation>הגדרות</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="309"/>
+        <location filename="../Gui.py" line="322"/>
         <source>About</source>
         <translation>אודות</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="205"/>
+        <location filename="../Gui.py" line="218"/>
         <source>Help</source>
         <translation>עזרה</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="559"/>
+        <location filename="../Gui.py" line="572"/>
         <source>Did you mean %s?</source>
         <translation>האם התכוונת ל%s?</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="622"/>
+        <location filename="../Gui.py" line="635"/>
         <source>Sorry, a preview is not available for this video. You can watch it on &lt;a href=&quot;%s&quot;&gt;youtube&lt;/a&gt;.</source>
         <translation>מתנצלים, אך לא ניתן להשמיע את הוידאו הזה. ניתן לצפות בו ב&lt;a href=&quot;%s&quot;&gt;יוטיוב&lt;/a&gt;.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="705"/>
+        <location filename="../Gui.py" line="718"/>
         <source>Download directory &quot;%s&quot; does not exist. Create it?</source>
         <translation>התיקייה &quot;%s&quot; איננה קיימת. ליצור אותה?</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="713"/>
+        <location filename="../Gui.py" line="726"/>
         <source>Error %d: %s.</source>
         <translation>שגיאה %d: %s.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="732"/>
+        <location filename="../Gui.py" line="745"/>
         <source>I got nothing to download! The link doesn&apos;t have the mediatype that the application is set for (downloadVideo: %s, downloadAudio: %s). This can be changed in the settings window.</source>
         <translation>אין לי מה להוריד! בקובץ אין את סוגי המדיה שהתוכנה מחפשת (הורדת וידאו: %s, הורדת אודיו: %s). ניתן לשנות את הגדרות אלה במסך ההגדרות.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="739"/>
+        <location filename="../Gui.py" line="752"/>
         <source>File &quot;%s&quot; already exists. Overwrite it?</source>
         <translation>הקובץ &quot;%s&quot; כבר קיים. למחוק אותו?</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="743"/>
+        <location filename="../Gui.py" line="756"/>
         <source>Choose a new filename for %s</source>
         <translation>בחר שם חדש עבור %s</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="813"/>
+        <location filename="../Gui.py" line="826"/>
         <source>The process cannot access the file %s because it is being used by another process.</source>
         <translation>התוכנה לא יכולה לגשת אל %s משום שהוא כבר בשימוש ע&quot;י תוכנה אחרת.</translation>
     </message>
     <message>
-        <location filename="../Gui_Threads.py" line="322"/>
+        <location filename="../Gui_Threads.py" line="321"/>
         <source>; Encoded: %d sec</source>
         <translation>; קידוד: %d שניות</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="161"/>
+        <location filename="../Gui.py" line="174"/>
         <source>File</source>
         <translation>קובץ</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="163"/>
+        <location filename="../Gui.py" line="176"/>
         <source>Edit ID3</source>
         <translation>ערוך תגיות ID3</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="166"/>
+        <location filename="../Gui.py" line="179"/>
         <source>Exit application</source>
         <translation>יציאה</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="186"/>
+        <location filename="../Gui.py" line="199"/>
         <source>Settings</source>
         <translation>הגדרות</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="188"/>
+        <location filename="../Gui.py" line="201"/>
         <source>Configure iQuality&apos;s behavior</source>
         <translation>הגדר את iQuality</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="210"/>
+        <location filename="../Gui.py" line="223"/>
         <source>Show Credits</source>
         <translation>הראה זכויות יוצרים</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="268"/>
+        <location filename="../Gui.py" line="281"/>
         <source>Choose the mp3 file</source>
         <translation>בחר את קובץ ה-mp3</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="276"/>
+        <location filename="../Gui.py" line="289"/>
         <source>ID3 Data has been saved successfully.</source>
         <translation>תגיות ה-ID3 נשמרו בהצלחה.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="321"/>
+        <location filename="../Gui.py" line="334"/>
         <source>Song name or url:</source>
         <translation>שם שיר או כתובת:</translation>
     </message>
@@ -133,37 +133,37 @@
         <translation>ציון מינימלי:</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="326"/>
+        <location filename="../Gui.py" line="339"/>
         <source>Search</source>
         <translation>חיפוש</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="349"/>
+        <location filename="../Gui.py" line="362"/>
         <source>Title</source>
         <translation>שם שיר</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="349"/>
+        <location filename="../Gui.py" line="362"/>
         <source>Artist</source>
         <translation>אמן</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="349"/>
+        <location filename="../Gui.py" line="362"/>
         <source>Bitrate</source>
         <translation>ביטרייט</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="350"/>
+        <location filename="../Gui.py" line="363"/>
         <source>Relevance</source>
         <translation>רלוונטיות</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="350"/>
+        <location filename="../Gui.py" line="363"/>
         <source>Source</source>
         <translation>מקור</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="351"/>
+        <location filename="../Gui.py" line="364"/>
         <source>URL</source>
         <translation>כתובת</translation>
     </message>
@@ -178,27 +178,27 @@
         <translation>שנה תיקייה</translation>
     </message>
     <message>
-        <location filename="../config.py" line="216"/>
+        <location filename="../config.py" line="218"/>
         <source>Listen</source>
         <translation>השמעה</translation>
     </message>
     <message>
-        <location filename="../config.py" line="216"/>
+        <location filename="../config.py" line="218"/>
         <source>Download</source>
         <translation>הורדה</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="385"/>
+        <location filename="../Gui.py" line="398"/>
         <source>Audio</source>
         <translation>אודיו</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="559"/>
+        <location filename="../Gui.py" line="572"/>
         <source>Spelling Suggestion</source>
         <translation>הצעת תיקון שגיאת כתיב</translation>
     </message>
     <message>
-        <location filename="../GuiSubWindows/SettingsWindow.py" line="252"/>
+        <location filename="../GuiSubWindows/ComponentFetcherWindow.py" line="70"/>
         <source>Warning</source>
         <translation>אזהרה</translation>
     </message>
@@ -223,17 +223,17 @@
         <translation>מידע</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="707"/>
+        <location filename="../Gui.py" line="720"/>
         <source>Please specify a valid directory.</source>
         <translation>בבקשה ציין נתיב תקין.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="851"/>
+        <location filename="../Gui.py" line="864"/>
         <source>The search task is done.</source>
         <translation>החיפוש הסתיים.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="591"/>
+        <location filename="../Gui.py" line="604"/>
         <source>Task was canceled.</source>
         <translation>הפעולה בוטלה.</translation>
     </message>
@@ -440,32 +440,32 @@ What do you wish to do?</source>
         <translation>מאחד חלקים...</translation>
     </message>
     <message>
-        <location filename="../Gui_Threads.py" line="243"/>
+        <location filename="../Gui_Threads.py" line="242"/>
         <source>Encoding Audio...</source>
         <translation>מקודד אודיו...</translation>
     </message>
     <message>
-        <location filename="../Gui_Threads.py" line="275"/>
+        <location filename="../Gui_Threads.py" line="274"/>
         <source>Copying Files...</source>
         <translation>מעתיק קבצים...</translation>
     </message>
     <message>
-        <location filename="../Gui_Threads.py" line="447"/>
+        <location filename="../Gui_Threads.py" line="446"/>
         <source>No lyrics were found.</source>
         <translation>לא נמצאו מילים לשירים.</translation>
     </message>
     <message>
-        <location filename="../Gui_Threads.py" line="473"/>
+        <location filename="../Gui_Threads.py" line="472"/>
         <source>No tags were found.</source>
         <translation>לא נמצא מידע.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="1312"/>
+        <location filename="../Gui.py" line="1325"/>
         <source>Language Suggestion</source>
         <translation>הצעת שפה</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="1312"/>
+        <location filename="../Gui.py" line="1325"/>
         <source>The application is available in %s. Do you want to use the language pack?
 
 Click yes for %s.
@@ -476,37 +476,37 @@ Click no for English.</source>
 לחץ &quot;לא&quot; לשפה האנגלית.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="193"/>
+        <location filename="../Gui.py" line="206"/>
         <source>Languages</source>
         <translation>שפות</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="196"/>
+        <location filename="../Gui.py" line="209"/>
         <source>English</source>
         <translation>אנגלית</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="199"/>
+        <location filename="../Gui.py" line="212"/>
         <source>Hebrew</source>
         <translation>עברית</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="299"/>
+        <location filename="../Gui.py" line="312"/>
         <source>Language Package Setting</source>
         <translation>הגדרת חבילת שפה</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="299"/>
+        <location filename="../Gui.py" line="312"/>
         <source>The selected language is already installed.</source>
         <translation>השפה שנבחרה כבר מותקנת.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="793"/>
+        <location filename="../Gui.py" line="806"/>
         <source>The application does not support the %s filetype.</source>
         <translation>התוכנה לא תומכת בקבצי %s.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="797"/>
+        <location filename="../Gui.py" line="810"/>
         <source>There is a network problem: The address may be incorrect, or your internet connection got terminated. Please try again later.</source>
         <translation>ישנה בעיית רשת. יתכן שהקישור איננו עובד, או שחיבור האינטרנט התנתק. נסה שוב מאוחר יותר.</translation>
     </message>
@@ -579,7 +579,7 @@ iQuality can fetch ID3 tags from the web automatically.</source>
         <translation>תוכנת ה-Itunes איננה מותקנת על מחשבך.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="663"/>
+        <location filename="../Gui.py" line="676"/>
         <source>You&apos;ve configured the application to download neither audio nor video files. You must choose at least one of them.</source>
         <translation>הגדרת את התוכנה לא להוריד קבצי אודיו ולא להוריד קבצי וידאו. עליך לבחור לפחות אחד מהם.</translation>
     </message>
@@ -589,32 +589,32 @@ iQuality can fetch ID3 tags from the web automatically.</source>
         <translation>לא בחרת מקורות מדיה כלל. עליך לבחור לפחות אחד.</translation>
     </message>
     <message>
-        <location filename="../config.py" line="222"/>
+        <location filename="../config.py" line="224"/>
         <source>Run Multimedia File</source>
         <translation>הרץ קובץ מולטימדיה</translation>
     </message>
     <message>
-        <location filename="../config.py" line="222"/>
+        <location filename="../config.py" line="224"/>
         <source>Ask</source>
         <translation>שאל</translation>
     </message>
     <message>
-        <location filename="../config.py" line="222"/>
+        <location filename="../config.py" line="224"/>
         <source>Nothing</source>
         <translation>אל תעשה כלום</translation>
     </message>
     <message>
-        <location filename="../config.py" line="232"/>
+        <location filename="../config.py" line="234"/>
         <source>Choose albumart for me &amp; close window afterwards</source>
         <translation>בחר תמונת אלבום בשבילי וסגור את החלון לאחר מכן</translation>
     </message>
     <message>
-        <location filename="../config.py" line="232"/>
+        <location filename="../config.py" line="234"/>
         <source>Choose albumart for me, but the window open</source>
         <translation>בחר תמונת אלבום בשבילי, אבל השאר את החלון פתוח לאחר מכן</translation>
     </message>
     <message>
-        <location filename="../config.py" line="232"/>
+        <location filename="../config.py" line="234"/>
         <source>Let me choose an albumart</source>
         <translation>תן לי לבחור תמונת אלבום</translation>
     </message>
@@ -649,27 +649,27 @@ iQuality can fetch ID3 tags from the web automatically.</source>
         <translation>בחר אותה אוטומטית</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="389"/>
+        <location filename="../Gui.py" line="402"/>
         <source>Video (If exists)</source>
         <translation>וידאו (אם קיים)</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="730"/>
+        <location filename="../Gui.py" line="743"/>
         <source>This song has no video available. Please check the audio checkbox, or choose a different song.</source>
         <translation>לשיר הזה אין וידאו זמין. בחר להוריד אודיו, או בחר שיר אחר מהרשימה.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="350"/>
+        <location filename="../Gui.py" line="363"/>
         <source>Length</source>
         <translation>אורך</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="1108"/>
+        <location filename="../Gui.py" line="1121"/>
         <source>; Launched %s</source>
         <translation>; הופעל %s</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="1115"/>
+        <location filename="../Gui.py" line="1128"/>
         <source>An error occured: %s. Running default post-download window.</source>
         <translation>התרחשה שגיאה: %s. מריץ את מסך הפעולות שלאחר ההורדה. </translation>
     </message>
@@ -704,22 +704,22 @@ iQuality can fetch ID3 tags from the web automatically.</source>
         <translation>הפעולה שלאחר ההורדה שנבחרה היא &quot;הרץ פקודה&quot;, אולם הנתיב לא נמצא.</translation>
     </message>
     <message>
-        <location filename="../config.py" line="222"/>
+        <location filename="../config.py" line="224"/>
         <source>Run an application</source>
         <translation>הרץ פקודה</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="213"/>
+        <location filename="../Gui.py" line="226"/>
         <source>Visit our website</source>
         <translation>דף הבית של התוכנה</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="1090"/>
+        <location filename="../Gui.py" line="1103"/>
         <source>customLaunch is not currently supported with videos</source>
         <translation>אפשרות &quot;הרץ פקודה&quot; לא נתמך כרגע עם קבצי וידאו</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="1092"/>
+        <location filename="../Gui.py" line="1105"/>
         <source>customLaunch is not currently supported with unicode names</source>
         <translation>אפשרות &quot;הרץ פקודה&quot; לא נתמך כרגע עם קבצי Unicode</translation>
     </message>
@@ -734,77 +734,77 @@ iQuality can fetch ID3 tags from the web automatically.</source>
         <translation>יש פחות מ-200 מ&quot;ב פנויים בכונן %s‏ (%.2f מ&quot;ב פנויים). התוכנה עלולה להתקל בבעיות.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="801"/>
+        <location filename="../Gui.py" line="814"/>
         <source>No songs were found. Also, some media sources are disabled (%s). Enable them and search again?</source>
         <translation>לא נמצאו שירים. כמו כן, מספר מקורות מבוטלים כרגע (%s). האם ברצונך להפעיל אותם ולהריץ את החיפוש מחדש?</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="810"/>
+        <location filename="../Gui.py" line="823"/>
         <source>No songs were found.</source>
         <translation>לא נמצאו שירים.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="1136"/>
+        <location filename="../Gui.py" line="1149"/>
         <source>Copy Url</source>
         <translation>העתק כתובת</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="1137"/>
+        <location filename="../Gui.py" line="1150"/>
         <source>Copy Song Name</source>
         <translation>העתק שם שיר</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="1140"/>
+        <location filename="../Gui.py" line="1153"/>
         <source>Copy All Data</source>
         <translation>העתק הכל</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="245"/>
+        <location filename="../Gui.py" line="258"/>
         <source>Visit our facebook page</source>
         <translation>בקרו בעמוד הפייסבוק שלנו</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="415"/>
+        <location filename="../Gui.py" line="428"/>
         <source>iQuality&#xc2;&#xa9; v%s beta by Itay Brandes (%s). The software has been launched %s times, and downloaded %s songs. %s user(s) are currently using the software.</source>
         <translation>iQualityÂ© v%s beta, נכתב ע&quot;י איתי ברנדס (שוחרר ב- %s). התוכנה הורצה %s פעמים, ובעזרתה הורדו %s שירים. %s משתמשים מחוברים כעת.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="1139"/>
+        <location filename="../Gui.py" line="1152"/>
         <source>Copy WatchUrl</source>
         <translation>העתק כתובת צפיה ביוטיוב</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="753"/>
+        <location filename="../Gui.py" line="766"/>
         <source>Starting Download...</source>
         <translation>מתחיל הורדה...</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="951"/>
+        <location filename="../Gui.py" line="964"/>
         <source>Downloading @ %.2f MB/s, %ds left... [%.2f/%.2f MB]</source>
         <translation>קצב: %.2f מ&quot;ב לשניה (עוד %d שניות)... [‏%.2f/%.2f מ&quot;ב]</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="959"/>
+        <location filename="../Gui.py" line="972"/>
         <source>Downloading @ %.2f KB/s, %ds left... [%.2f/%.2f MB]</source>
         <translation>קצב: %.2f ק&quot;ב לשניה (עוד %d שניות)... [‏%.2f/%.2f מ&quot;ב]</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="953"/>
+        <location filename="../Gui.py" line="966"/>
         <source>Downloading @ %.2f MB/s... [%.2f/%.2f MB]</source>
         <translation>קצב: %.2f מ&quot;ב לשניה... [‏%.2f/%.2f מ&quot;ב]</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="961"/>
+        <location filename="../Gui.py" line="974"/>
         <source>Downloading @ %.2f KB/s... [%.2f/%.2f MB]</source>
         <translation>קצב: %.2f ק&quot;ב לשניה... [‏%.2f/%.2f מ&quot;ב]</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="349"/>
+        <location filename="../Gui.py" line="362"/>
         <source>Video Size (MB)</source>
         <translation>גודל וידאו (מ&quot;ב)</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="350"/>
+        <location filename="../Gui.py" line="363"/>
         <source>Audio Size (MB)</source>
         <translation>גודל אודיו (מ&quot;ב)</translation>
     </message>
@@ -819,32 +819,32 @@ iQuality can fetch ID3 tags from the web automatically.</source>
         <translation>קבצי הפלייליסט הנתמכים הם m3u ו-wpl.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="1000"/>
+        <location filename="../Gui.py" line="1013"/>
         <source>We couldn&apos;t save the ID3 data. We advise you to get in contact with the developer of this software and send him the debug data.</source>
         <translation>לא הצלחנו לשמור את תגיות ה-ID3. אנו ממליצים ליצור קשר עם מפתח התוכנה ולשלוח לו את המידע על השגיאה.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="567"/>
+        <location filename="../Gui.py" line="580"/>
         <source>Searching for %s...</source>
         <translation>מחפש את %s...</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="565"/>
+        <location filename="../Gui.py" line="578"/>
         <source>Searching for %s in LuckyMode...</source>
         <translation>מחפש את %s במצב &quot;יותר מזל משכל&quot;...</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="597"/>
+        <location filename="../Gui.py" line="610"/>
         <source>The listening feature is experimental and may not work properly.</source>
         <translation>אפשרות השמעת השירים היא נסיונית ועלולה לא לפעול כראוי.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="816"/>
+        <location filename="../Gui.py" line="829"/>
         <source>The application was unable to fetch the Youtube video. (Error %d: %s)</source>
         <translation>התוכנה לא הצליחה לטעון את הוידאו מיוטיוב (שגיאה %d:‏ %s)</translation>
     </message>
     <message>
-        <location filename="../Gui_Threads.py" line="641"/>
+        <location filename="../Gui_Threads.py" line="640"/>
         <source>No data was found.</source>
         <translation>לא נמצא מידע.</translation>
     </message>
@@ -878,12 +878,12 @@ You may choose a track from the list below, and iQuality will download it for yo
         <translation>לא נמצאו שירים.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="891"/>
+        <location filename="../Gui.py" line="904"/>
         <source>Song Suggestion</source>
         <translation>הצעת שיר</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="891"/>
+        <location filename="../Gui.py" line="904"/>
         <source>You&apos;ve searched a partial lyrics of the following song:&lt;br /&gt;&lt;b&gt;%s&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Do you want to search for it instead?</source>
         <translation>חיפשת שורה מהשיר הבא:&lt;br /&gt;&lt;b&gt;%s&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;אתה רוצה לחפש את השיר הזה במקום?</translation>
     </message>
@@ -898,17 +898,17 @@ You may choose a track from the list below, and iQuality will download it for yo
         <translation>סגור חלון</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="229"/>
+        <location filename="../Gui.py" line="242"/>
         <source>Search Field Help</source>
         <translation>עזרה בחיפוש</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="1354"/>
+        <location filename="../Gui.py" line="1367"/>
         <source>The Internet connection seems to be faulty. Please make sure you have access to the web and try again.</source>
         <translation>חיבור האינטרנט איננו תקין. נסה להתחבר מחדש לאינטרנט ולהכנס לתוכנה בשנית.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="1357"/>
+        <location filename="../Gui.py" line="1370"/>
         <source>The Internet connection seems to be faulty. Your DNS server couldn&apos;t be reached. Please make sure you have access to the web and try again.</source>
         <translation>חיבור האינטרנט איננו תקין (שרת ה-DNS איננו מגיב). נסה להתחבר מחדש לאינטרנט ולהכנס לתוכנה בשנית.</translation>
     </message>
@@ -1002,7 +1002,7 @@ You may choose a track from the list below, and iQuality will download it for yo
         <translation>השתמש ב-%s</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="323"/>
+        <location filename="../Gui.py" line="336"/>
         <source>Type a song name or url.</source>
         <translation>הקלד שם שיר או כתובת.</translation>
     </message>
@@ -1047,12 +1047,12 @@ You may choose a track from the list below, and iQuality will download it for yo
         <translation>&lt;b&gt;נהנתם מ-iQuality‏? &lt;a href=&quot;%s&quot;&gt;עשו לנו לייק בפייסבוק&lt;/a&gt;, כדי שגם החברים שלכם יכירו את התוכנה&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="949"/>
+        <location filename="../Gui.py" line="962"/>
         <source>Downloading @ %.2f MB/s, %dm%ds left... [%.2f/%.2f MB]</source>
         <translation>קצב: %.2f מ&quot;ב לשניה (עוד %d דקות ו%d שניות)... [‏%.2f/%.2f מ&quot;ב]</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="957"/>
+        <location filename="../Gui.py" line="970"/>
         <source>Downloading @ %.2f KB/s, %dm%ds left... [%.2f/%.2f MB]</source>
         <translation>קצב: %.2f ק&quot;ב לשניה (עוד %d דקות ו%d שניות)... [‏%.2f/%.2f מ&quot;ב]</translation>
     </message>
@@ -1082,22 +1082,22 @@ You may choose a track from the list below, and iQuality will download it for yo
         <translation>יצאה גרסא חדשה של iQuality ‏(%s). העדכון כולל שיפורי ביצועים, תיקוני באגים, פיצ&apos;רים חדשים ופרסרים מעודכנים.&lt;br /&gt;בשביל רשימת החידושים המלאה, ניתן לגשת ל&lt;a href=&quot;%s&quot;&gt;עמוד הפייסבוק שלנו&lt;/a&gt;.&lt;br /&gt;&lt;br /&gt;ניתן להוריד את הגרסא החדשה מהחלק התחתון של העמוד הראשי, או דרך &lt;a href=&quot;%s&quot;&gt;אתר האינטרנט של iQuality&lt;/a&gt;.</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="173"/>
+        <location filename="../Gui.py" line="186"/>
         <source>Tools</source>
         <translation>כלים</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="241"/>
+        <location filename="../Gui.py" line="254"/>
         <source>Pick up a random song</source>
         <translation>בחר שיר אקראי</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="233"/>
+        <location filename="../Gui.py" line="246"/>
         <source>Choose songs from top charts</source>
         <translation>בחר שירים ממצעדים</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="417"/>
+        <location filename="../Gui.py" line="430"/>
         <source>iQuality&#xc2;&#xa9; v%s beta by Itay Brandes (%s). The software has been launched %s times, and downloaded %s songs.</source>
         <translation>iQualityÂ© v%s beta, נכתב ע&quot;י איתי ברנדס (שוחרר ב- %s). התוכנה הורצה %s פעמים, ובעזרתה הורדו %s שירים.</translation>
     </message>
@@ -1151,44 +1151,69 @@ You may choose a track from the list below, and iQuality will download it for yo
         <translation>כל השפות</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="237"/>
+        <location filename="../Gui.py" line="250"/>
         <source>Open downloaded files folder</source>
         <translation>פתח את תיקיית ההורדות</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="332"/>
+        <location filename="../Gui.py" line="345"/>
         <source>Stop search process</source>
         <translation>עצור את החיפוש</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="368"/>
+        <location filename="../Gui.py" line="381"/>
         <source>Pause/Continue media player</source>
         <translation>עצור/המשך את השמעת השיר</translation>
     </message>
     <message>
-        <location filename="../Gui.py" line="382"/>
+        <location filename="../Gui.py" line="395"/>
         <source>Stop the download process</source>
         <translation>עצור את ההורדה</translation>
     </message>
     <message>
-        <location filename="../Gui_Threads.py" line="312"/>
+        <location filename="../Gui_Threads.py" line="311"/>
         <source>Download: %dm%ds (%.2f MB/s)</source>
         <translation>הוריד תוך %d דקות ו%d שניות (%.2f מ&quot;ב לשניה)</translation>
     </message>
     <message>
-        <location filename="../Gui_Threads.py" line="314"/>
+        <location filename="../Gui_Threads.py" line="313"/>
         <source>Download: %ds (%.2f MB/s)</source>
         <translation>הוריד תוך %d שניות (%.2f מ&quot;ב לשניה)</translation>
     </message>
     <message>
-        <location filename="../Gui_Threads.py" line="317"/>
+        <location filename="../Gui_Threads.py" line="316"/>
         <source>Download: %dm%ds (%.2f KB/s)</source>
         <translation>הוריד תוך %d דקות ו%d שניות (%.2f ק&quot;ב לשניה)</translation>
     </message>
     <message>
-        <location filename="../Gui_Threads.py" line="319"/>
+        <location filename="../Gui_Threads.py" line="318"/>
         <source>Download: %ds (%.2f KB/s)</source>
         <translation>הוריד תוך %d שניות (%.2f ק&quot;ב לשניה)</translation>
+    </message>
+    <message>
+        <location filename="../GuiSubWindows/ComponentFetcherWindow.py" line="21"/>
+        <source>Components Updater</source>
+        <translation>עדכון רכיבים</translation>
+    </message>
+    <message>
+        <location filename="../GuiSubWindows/ComponentFetcherWindow.py" line="38"/>
+        <source>Connecting to update servers...</source>
+        <translation>מתחבר לשרתים...</translation>
+    </message>
+    <message>
+        <location filename="../GuiSubWindows/ComponentFetcherWindow.py" line="58"/>
+        <source>Downloading %s...</source>
+        <translation>מוריד את %s...</translation>
+    </message>
+    <message>
+        <location filename="../GuiSubWindows/ComponentFetcherWindow.py" line="65"/>
+        <source>Unpacking %s...</source>
+        <translation>מחלץ את %s...</translation>
+    </message>
+    <message>
+        <location filename="../GuiSubWindows/ComponentFetcherWindow.py" line="70"/>
+        <source>Hash check failed for %s. Please contact with the program&apos;s developer.</source>
+        <translation>בדיקת שלמות הקובץ %s נכשלה. נא ליצור קשר עם מפתח התוכנה.</translation>
     </message>
 </context>
 </TS>

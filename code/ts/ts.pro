@@ -7,6 +7,6 @@
 				   ..\GuiSubWindows\TracksExplorerWindow.py \
 				   ..\GuiSubWindows\ChartsExplorerWindow.py \
 				   ..\GuiSubWindows\SettingsWindow.py \
-				   ..\GuiSubWindows\HelpSearchWindow.py
- TRANSLATIONS    = he_IL.ts \
-					ru_RU.ts
+				   ..\GuiSubWindows\HelpSearchWindow.py \
+				   ..\GuiSubWindows\ComponentFetcherWindow.py
+ TRANSLATIONS    = he_IL.ts

@@ -30,8 +30,8 @@ import Config; config = Config.config
 import logger
 from logger import log
 from Gui_Threads import GenericThread, SearchThread, DownloadThread, ArtistSearchThread, ArtistLookupThread, LyricsFulltextSearchThread
-from GuiSubWindows import ID3Window, PostDownloadWindow, TracksExplorerWindow, ChartsExplorerWindow, SettingsWindow, HelpSearchWindow
-from CustomExceptions import NoSpaceWarning, NoResultsException, NewerVersionWarning, NoInternetConnectionException, NoDnsServerException, NotSupportedFiletypeException, FileInUseException, YoutubeException
+from GuiSubWindows import ID3Window, PostDownloadWindow, TracksExplorerWindow, ChartsExplorerWindow, SettingsWindow, HelpSearchWindow, ComponentFetcherWindow
+from CustomExceptions import NoSpaceWarning, NoResultsException, NewerVersionWarning, NoInternetConnectionException, NoDnsServerException, NotSupportedFiletypeException, FileInUseException, YoutubeException, ComponentsFaultyWarning
 import Hints
 import utils
 tr = utils.qt.tr
@@ -63,6 +63,9 @@ class MainWindow(QtGui.QMainWindow):
 				QtGui.QMessageBox.warning(self, tr("Warning"), tr("There are less than 200MB available in drive %s (%.2fMB left). Application may not function properly.") % (w.drive, w.space/1024.0**2), QtGui.QMessageBox.Ok)
 			if isinstance(w, NewerVersionWarning):
 				QtGui.QMessageBox.information(self, tr("Information"), tr("A new version of iQuality is available (%s). Updates includes performance enhancements, bug fixes, new features and fixed parsers.<br />For the complete changes list, you can visit our <a href=\"%s\">facebook page</a>.<br /><br />You can grab it from the bottom box of the main window, or from the <a href=\"%s\">iQuality website</a>.") % (w.newest, config.facebook_page, config.website), QtGui.QMessageBox.Ok)
+			if isinstance(w, ComponentsFaultyWarning):
+				win = ComponentFetcherWindow.MainWin(w.components)
+				win.exec_()
 		
 		### Caching
 		if config.prefetch_charts:
@@ -75,7 +78,17 @@ class MainWindow(QtGui.QMainWindow):
 				self.settingsWindow_slot()
 				sys.exit()
 			elif sys.argv[1] in ['/test']: #TEMP
-				w = ChartsExplorerWindow.MainWin()
+				# progress = QtGui.QProgressDialog("Copying files...", "Abort Copy", 0, 8)
+				# progress.setWindowModality(QtCore.Qt.WindowModal)
+				
+				# for i in range(0,8):
+					# progress.setValue(i)
+					# QtGui.QApplication.processEvents()
+					# time.sleep(1)
+			
+			
+			
+				w = ComponentFetcherWindow.MainWin()
 				w.exec_()
 				# sys.exit()
 			else:

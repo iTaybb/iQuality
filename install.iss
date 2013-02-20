@@ -1,5 +1,5 @@
 #define MyAppName "iQuality"
-#define MyAppVersion "0.15"
+#define MyAppVersion "0.16"
 #define MyAppPublisher "Itay Brandes"
 #define MyAppURL "http://iQuality.iTayb.net"
 #define MyAppExeName "iQuality.exe"
@@ -39,7 +39,6 @@ Name: "{app}"; Permissions: users-modify;
 
 [Files]
 Source: "C:\Scripts\iQuality\build\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
-Source: "C:\Scripts\iQuality\DLLs\ffmpeg\*"; DestDir: "{sys}"; Flags: sharedfile
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

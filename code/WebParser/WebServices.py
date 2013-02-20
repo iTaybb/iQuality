@@ -9,6 +9,8 @@ import sys
 import urllib2, json
 import httplib, xml.dom.minidom
 import re
+import json
+from collections import OrderedDict
 
 from bs4 import BeautifulSoup
 
@@ -210,3 +212,15 @@ def get_newestversion():
 	x = obj.read(1024)
 	obj.close()
 	return float(x)
+	
+@utils.decorators.retry(Exception, logger=log)
+@utils.decorators.memoize(config.memoize_timeout)
+def get_components_data():
+	"Function queries the iQuality website for components json data"
+	# obj = urllib2.urlopen(config.newest_version_API_webpage, timeout=config.webservices_timeout)
+	# x = obj.read(1024)
+	# obj.close()
+	
+	with open(r'C:\Scripts\iQuality\code\components.json', 'r') as f:
+		data = json.loads(f.read(), object_pairs_hook=OrderedDict)
+	return data

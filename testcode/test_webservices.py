@@ -2,12 +2,14 @@
 import os, sys
 import subprocess
 import urllib2
+import zipfile
 from urlparse import parse_qs, urlparse, urlunparse
 
 
 sys.path.append(r'C:\Scripts\iQuality\code')
 import Main
 from Main import utils
+import Config; config = Config.config
 
 #
 # Test code
@@ -107,7 +109,7 @@ def test_MetadataGrabber_musicbrainz():
 	assert artist == "The Black Eyed Peas"
 	assert date == '2005-06-07'
 	assert country == 'US'
-	assert tag == 'pop'
+	assert tag in ['pop', 'hip-hop']
 	assert title == 'Monkey Business'
 
 def test_MetadataGrabber_musicbrainz_artist_search():
@@ -218,3 +220,28 @@ def test_get_currentusers():
 def test_get_newest_version():
 	ans = Main.WebParser.WebServices.get_newestversion()
 	assert isinstance(ans, float)
+	
+def test_get_components_data():
+	d = Main.WebParser.WebServices.get_components_data()
+	for name, t in d.items():
+		urls, archive_hash, file_to_extract, file_hash = t
+		
+		for url in urls:
+			obj = Main.SmartDL(url)
+			obj.start()
+			obj.wait()
+			assert archive_hash == utils.calc_sha256(obj.get_dest())
+		
+		ext = os.path.splitext(obj.get_dest())[1].lower()
+		assert ext in ['.zip', '.7z']
+		
+		tmpfile = utils.get_rand_filename(config.temp_dir)
+		
+		if ext == '.zip':
+			zip = zipfile.ZipFile(obj.get_dest())
+			zip.extract(file_to_extract, config.temp_dir)
+		if ext == '.7z':
+			cmd = r'7za.exe e %s -ir!%s -y -o"%s"' % (obj.get_dest(), file_to_extract, config.temp_dir)
+			subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+
+		assert file_hash == utils.calc_sha256(r"%s\%s" % (config.temp_dir, file_to_extract))

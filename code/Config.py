@@ -37,9 +37,9 @@ import threading
 
 from win32com.shell import shell, shellcon
 
-__version__ = "0.15"
+__version__ = "0.16"
 __rev__ = 112 # auto-generated
-__date__ = '01/02/13'
+__date__ = '??/03/13'
 __author__ = 'Itay Brandes (Brandes.Itay@gmail.com)'
 
 class ConfigInterface(object):
@@ -204,7 +204,6 @@ except NameError: # if not already initialized
 
 		### Etc ###
 		'enableSpellCheck': True,
-		'is_ffmpeg_installed': True, # will be checked on sanity check
 		'downloadAudio': True,
 		'downloadVideo': False,
 		'editID3': True,
