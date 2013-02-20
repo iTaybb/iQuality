@@ -11,7 +11,7 @@ DLLs/
 *.log
 *.pyc
 *.pyo
-*.ini
+config.ini
 pylint.txt
 
 ######################
