@@ -3,9 +3,11 @@ For version 0.16:
 	- move file to web
 	- add SSL
 	- remove copying ffmpeg
+* make listening not blocking
 * youtube playlists (parse_Youtube_playlist)
 * Instant startup screen: http://wiki.maemo.org/PyQt_Tips_and_Tricks
 * Avicii & Nicky Romero - I Could Be The One
+* יצאנו לרקוד
 * thin-updater:
 	- http://pypi.python.org/pypi/esky
 	- http://stackoverflow.com/questions/1750757/restarting-a-self-updating-python-script
