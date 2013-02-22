@@ -74,7 +74,7 @@ class MainWin(QtGui.QDialog):
 				zip = zipfile.ZipFile(obj.get_dest())
 				zip.extract(file_to_extract, bin_path)
 			elif ext == '.7z':
-				cmd = r'%s\7za.exe e %s -ir!%s -y -o"%s"' % (bin_path, obj.get_dest(), file_to_extract, bin_path)
+				cmd = r'%s\7za.exe e "%s" -ir!%s -y -o"%s"' % (bin_path, obj.get_dest(), file_to_extract, bin_path)
 				subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 			else:
 				log.error('could not extract %d archive.' % ext)

@@ -41,7 +41,6 @@ def test_PyEnviron():
 		import configparser
 		#this is the python3 version of ConfigParser. a backport for python2 is available.
 		import pytest
-		import pylzma
 		
 
 	except ImportError, e:
