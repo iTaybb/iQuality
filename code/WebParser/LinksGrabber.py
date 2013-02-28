@@ -223,10 +223,9 @@ def parse_Youtube_playlist(playlist_id):
 	videos.
 	@param playlist_id: The youtube playlist id.
 	
-	@return generator.
+	@return video_id_list.
 	'''
 	
-	# SPv1EAqcvJFuG-CMLxveY7eNEcse3xXm1a
 	url = 'http://www.youtube.com/playlist?p=%s' % playlist_id
 	obj = urllib2.urlopen(url)
 	response = obj.read()
@@ -236,9 +235,11 @@ def parse_Youtube_playlist(playlist_id):
 	
 	for tag in soup.find_all('a', class_='yt-uix-tile-link yt-uix-sessionlink', href=re.compile('^/watch')):
 		videoids.append(parse_qs(urlparse(tag['href']).query)['v'][0])
-
-	for videoid in videoids:
-		yield get_youtube_dl_link(videoid)
+	
+	return videoids
+	
+	# for videoid in videoids:
+		# yield get_youtube_dl_link(videoid)
 
 @utils.decorators.memoize(config.memoize_timeout)
 def search_Youtube(song, amount):

@@ -292,13 +292,21 @@ class Song(object):
 						# "self.artist: %s" % self.artist,
 						# "self.title: %s" % self.title]
 						
+		log.debug("self.url: %s" % self.url)
 		log.debug("self.searchString: %s" % self.searchString)
 		log.debug("self.artist: %s" % self.artist)
 		log.debug("self.title: %s" % self.title)
 		
+		# If it's a radio edit, +0.5
+		good_words = ['radio edit']
+		for word in good_words:
+			if word in self.searchString:
+				log.debug('a good word (%s) is in search string: +0.5' % word)
+				score += 0.5
+		
 		# If we weren't searching for 'dj', 'mix', 'live' and the song do include these strings: -1.5
-		forbidden_words_in_artist = ['dj', 'rmx', 'instrumental', 'piano', 'radio', 'live', 'cover', 'karaoke', 'playback', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע']
-		forbidden_words_in_title = ['mix', 'rmx', 'instrumental', 'piano', 'radio', 'live', 'cover', 'karaoke', 'playback', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע']
+		forbidden_words_in_artist = ['dj', 'rmx', 'instrumental', 'piano', 'live', 'cover', 'karaoke', 'acapella', 'playback', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע', u'פסנתר']
+		forbidden_words_in_title = ['mix', 'rmx', 'instrumental', 'piano', 'live', 'cover', 'karaoke', 'acapella', 'playback', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע', u'פסנתר']
 				
 		if self.artist:
 			for word in forbidden_words_in_artist:
@@ -414,6 +422,9 @@ class Song(object):
 			elif self.bitrate <= 256000:
 				log.debug("bitrate is <= 256000: +1.5")
 				score += 1.5
+			else:
+				log.debug("bitrate is > 256000: +1.5")
+				score += 1.5
 		
 		# if filesize is less than 2MB or more than 700MB: -2.0
 		if self.filesize < 2*1024**2 or self.filesize > 700*1024**2:
@@ -423,26 +434,31 @@ class Song(object):
 		# if server supports HTTPRange: +1.0
 		if self.SupportsHTTPRange:
 			log.debug("server supports HTTPRange: +1.0")
-			score += 1.5
+			score += 1.0
 		else:
 			log.debug("server does not support HTTPRange: +0")
 		
 		# If source is Youtube&SouncCloud, we should look if we're looking for an Hebrew song.
 		# If True, +0.5, as Youtube&SouncCloud is the sole sources for Hebrew songs.
-		# Else, -0.5, as other sources are prefered over Youtube&SouncCloud.
+		# Else, because other sources are prefered over Youtube&SouncCloud:
+		# 	Youtube: -0.5
+		#	SouncCloud: -1.0
 		if self.source in ["youtube", 'soundcloud']:
 			# if search string is in hebrew
 			if any(u"\u0590" <= c <= u"\u05EA" for c in self.searchString):
-				log.debug("%s, search string is in hebrew: +0.5" % self.source)
+				log.debug("%s, and search string is in hebrew: +0.5" % self.source)
 				score += 0.5
+			elif self.source == 'soundcloud':
+				log.debug("%s, but search string is not in hebrew: -1.0" % self.source)
+				score -= 1.0
 			else:
-				log.debug("%s, search string is not in hebrew: -0.5" % self.source)
+				log.debug("%s, but search string is not in hebrew: -0.5" % self.source)
 				score -= 0.5
 		
 		# if media length is valid, but less than one minute, -1.5
 		# if media length is over 20 mins, -0.5
 		if 0 < self.mediaLength < 60:
-			log.debug("media length (%ds) is not between 0 and 60: -1.5" % self.mediaLength)
+			log.debug("media length (%ds) is between 0 and 60: -1.5" % self.mediaLength)
 			score -= 1.5
 		if self.mediaLength > 20*60:
 			log.debug("media length (%ds) is longer than 20min: -1.5" % self.mediaLength)

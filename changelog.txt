@@ -7,6 +7,9 @@ each version.
 ======================
 (Version 0.16 beta; ??/03/13)
 - NEW: Full mediasource added: SoundCloud.
+- IMPROVE: Added support for youtube playlists.
+- IMPROVE: Dependencies being downloaded apart from the application, resulting in 50% smaller installer filesize.
+- IMPROVE: Improved relevance algorithm accuracy.
 - FIX: Dilandau parser got broken, and got rewritten.
 - FIX: Minor bug fixes.
 

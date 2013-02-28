@@ -37,6 +37,7 @@ class MainWin(QtGui.QDialog):
 		
 		2. <b>Download a video/audio from Youtube</b>:
 		Type the Youtube link and press "Search".
+		Youtube playlists are also supported.
 		
 		For example, <i><font color="brown">http://www.youtube.com/watch?v=zMMKhLC2ATw</font></i>
 

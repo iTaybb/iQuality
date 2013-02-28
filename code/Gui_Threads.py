@@ -19,7 +19,9 @@ import traceback
 from urlparse import parse_qs, urlparse
 import re
 
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore
+from PyQt4 import QtGui
+from PyQt4.phonon import Phonon
 from threadpool import ThreadPool
 
 import Main
@@ -96,21 +98,39 @@ class SearchThread(QtCore.QThread):
 			domainName = urlparse(self.url).netloc.lower()
 			
 			if domainName.endswith('youtube.com') or domainName.endswith('youtu.be'):
-				log.debug("Url is a direct url (Youtube)")
-				if domainName.endswith('youtube.com'):
-					video_id = parse_qs(urlparse(self.url).query)['v'][0]
-				else:
-					video_id = urlparse(self.url).path.strip('/')
+				queries = parse_qs(urlparse(self.url).query)
+				if 'p' in queries or 'list' in queries:
+					log.debug("Url is a direct url (Youtube playlist)")
+					if 'p' in queries:
+						playlist_id = queries['p'][0]
+					elif 'list' in queries:
+						playlist_id = queries['list'][0]
+					videos_ids = Main.WebParser.LinksGrabber.parse_Youtube_playlist(playlist_id)	
 					
-				try:
-					metaUrlObj = Main.WebParser.LinksGrabber.get_youtube_dl_link(video_id)
-				except YoutubeException, e:
-					self.error.emit(e)
+					t_pool = ThreadPool(max_threads=config.buildSongObjs_processes, catch_returns=True, logger=log)
+					for id in videos_ids:
+						t_pool(Main.WebParser.LinksGrabber.get_youtube_dl_link)(id)
+					links_gen = t_pool.iter()
+					
+				else:
+					log.debug("Url is a direct url (Youtube)")
+					if domainName.endswith('youtube.com'):
+						video_id = queries['v'][0]
+					else:
+						video_id = urlparse(self.url).path.strip('/')
+						
+					try:
+						metaUrlObj = Main.WebParser.LinksGrabber.get_youtube_dl_link(video_id)
+					except YoutubeException, e:
+						self.error.emit(e)
+						
+					links_gen = (x for x in [metaUrlObj])
 			elif domainName.endswith('soundcloud.com'):
 				log.debug("Url is a direct url (Soundcloud)")
 				if self.url.startswith('https://'):
 					self.url = self.url.replace('https://', 'http://')
 				metaUrlObj = Main.WebParser.LinksGrabber.get_soundcloud_dl_link(self.url)	
+				links_gen = (x for x in [metaUrlObj])
 			else:
 				ext = self.url.split('/')[-1].split('.')[-1]
 				if re.match(r"^http://.*soundcloud\.com/.+/.+/download$", self.url):
@@ -127,8 +147,8 @@ class SearchThread(QtCore.QThread):
 					log.error("got NotSupportedFiletypeException() for the \"%s\" extention." % ext)
 					self.error.emit(NotSupportedFiletypeException(ext))
 					return
-				
-			links_gen = (x for x in [metaUrlObj])
+					
+				links_gen = (x for x in [metaUrlObj])
 		else:
 			links_gen = Main.WebParser.LinksGrabber.search(self.song, self.numOfSongs, returnGen=True)
 			
@@ -669,3 +689,49 @@ class LyricsFulltextSearchThread(QtCore.QThread):
 		"Setting _terminated to True"
 		self._terminated = True
 		super(LyricsFulltextSearchThread, self).terminate()
+		
+class PhononThread(QtCore.QThread):
+	# output = QtCore.pyqtSignal(basestring)
+	
+	def __init__(self, url, volumeChanged_slot, tick_slot, parent=None):
+		QtCore.QThread.__init__(self, parent)
+		self._terminated = False
+		
+		self.url = url
+		self.volumeChanged_slot = volumeChanged_slot
+		self.tick_slot = tick_slot
+		self.start()
+	
+	@utils.decorators.log_exceptions(Exception, log)
+	def run(self): # Called by Qt once the thread environment has been set up.
+		mediaSource = Phonon.MediaSource(self.url) # creates a media source
+		mediaSource.setAutoDelete(True)
+		audioOutput = Phonon.AudioOutput(Phonon.MusicCategory) # create an audio output device
+		# audioOutput.setVolume(config.listen_volumeSlider_volume)
+		# audioOutput.volumeChanged.connect(self.volumeChanged_slot)
+		
+		self.player = Phonon.MediaObject() # creates the audio handler
+		self.player.setCurrentSource(mediaSource) # loads the media source in the audio handler
+		
+		Phonon.createPath(self.player, audioOutput) # links the audio handler and the audio output device
+		
+		self.player.setTickInterval(100)
+		# self.player.tick.connect(self.tick_slot)
+		
+		self.player.play()
+		# self.mediaSlider.setMediaObject(self.player)
+		# self.mediaVolumeSlider.setAudioOutput(audioOutput)
+		
+	def play(self):
+		self.player.play()
+		
+	def stop(self):
+		self.player.stop()
+		
+	def pause(self):
+		self.player.pause()
+	
+	def terminate(self):
+		"Setting _terminated to True"
+		self._terminated = True
+		super(PhononThread, self).terminate()

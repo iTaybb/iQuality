@@ -190,6 +190,13 @@ def test_parse_youtube_downloadlinks():
 		assert 'youtube.com/videoplayback' in url
 		assert 'signature=' in url
 		urllib2.urlopen(url).close()
+		
+def test_parse_Youtube_playlist():
+	ans = Main.WebParser.LinksGrabber.parse_Youtube_playlist('SPv1EAqcvJFuG-CMLxveY7eNEcse3xXm1a')
+	
+	assert 'OFTt7NGeOBY' in ans
+	assert 'iB7qHNrRX08' in ans
+	assert '5EMos9RkVoQ' in ans
 
 def test_parse_billboard():
 	ans = Main.WebParser.WebServices.parse_billboard()

@@ -29,7 +29,7 @@ import Main
 import Config; config = Config.config
 import logger
 from logger import log
-from Gui_Threads import GenericThread, SearchThread, DownloadThread, ArtistSearchThread, ArtistLookupThread, LyricsFulltextSearchThread
+from Gui_Threads import GenericThread, SearchThread, DownloadThread, ArtistSearchThread, ArtistLookupThread, LyricsFulltextSearchThread, PhononThread
 from GuiSubWindows import ID3Window, PostDownloadWindow, TracksExplorerWindow, ChartsExplorerWindow, SettingsWindow, HelpSearchWindow, ComponentFetcherWindow
 from CustomExceptions import NoSpaceWarning, NoResultsException, NewerVersionWarning, NoInternetConnectionException, NoDnsServerException, NotSupportedFiletypeException, FileInUseException, YoutubeException, ComponentsFaultyWarning
 import Hints
@@ -638,6 +638,9 @@ class MainWindow(QtGui.QMainWindow):
 			url = ans.url
 
 		log.debug("Starting audio player (%s)..." % url)
+		# self.phonon_thread = PhononThread(url, self.volumeChanged_slot, self.updatePlayerLength)
+		# self.phonon_thread.play()
+		
 		mediaSource = Phonon.MediaSource(url) # creates a media source
 		mediaSource.setAutoDelete(True)
 		audioOutput = Phonon.AudioOutput(Phonon.MusicCategory) # create an audio output device
