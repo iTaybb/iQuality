@@ -30,6 +30,9 @@ Q: I found a bug. How should I report it?
 A: Mail me the details.
    Try to give as many details as possible, especially describe the necessary
    steps to reproduce the bug.
+   
+Q: How can I access the source code?
+A: You're more than welcome to visit our github repository: https://github.com/iTaybb/iQuality
 
 Itay Brandes
 Brandes.Itay@gmail.com

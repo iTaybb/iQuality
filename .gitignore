@@ -4,6 +4,8 @@
 
 bin/
 DLLs/
+build/
+dist/
 *.tmp
 *.bak
 *.swp

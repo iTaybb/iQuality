@@ -100,7 +100,7 @@ def sanity_check():
 	if hash_failed or not_exists:
 		_warnings.append(ComponentsFaultyWarning(hash_failed+not_exists))
 	else:
-		log.debug('External components hash check succeeded')
+		log.debug('External components hash check passed')
 			
 	# iTunes' availablity check
 	itunesPath = os.path.expanduser(r'~\My Documents\My Music\iTunes\iTunes Media\Automatically Add to iTunes')

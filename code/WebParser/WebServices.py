@@ -217,10 +217,15 @@ def get_newestversion():
 @utils.decorators.memoize(config.memoize_timeout)
 def get_components_data():
 	"Function queries the iQuality website for components json data"
-	# obj = urllib2.urlopen(config.newest_version_API_webpage, timeout=config.webservices_timeout)
-	# x = obj.read(1024)
-	# obj.close()
+	obj = urllib2.urlopen(config.components_json_url, timeout=config.webservices_timeout)
+	data = obj.read()
+	obj.close()
+	obj = urllib2.urlopen("%s.sign" % config.components_json_url, timeout=config.webservices_timeout)
+	sign = obj.read()
+	obj.close()
 	
-	with open(r'C:\Scripts\iQuality\code\components.json', 'r') as f:
-		data = json.loads(f.read(), object_pairs_hook=OrderedDict)
-	return data
+	if utils.verify_signature(data, sign, config.pubkey_path):
+		log.debug('components_json_url signature check passed')
+		return json.loads(data, object_pairs_hook=OrderedDict)
+	log.error('components_json_url signature check FAILED')
+	return {}

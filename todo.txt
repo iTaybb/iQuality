@@ -1,15 +1,11 @@
 For version 0.16:
-* components checker:
-	- move file to web
-	- add SSL
+* soko kara nani ga mieru
 * make spell checking not blocking
 * make listening not blocking
 * Instant startup screen: http://wiki.maemo.org/PyQt_Tips_and_Tricks
 * thin-updater:
 	- http://pypi.python.org/pypi/esky
 	- http://stackoverflow.com/questions/1750757/restarting-a-self-updating-python-script
-* better exceptions handeling
-* automated logs send: http://stackoverflow.com/questions/14439477/log-files-collecting-and-handling-system
 
 * מסך הפעלה ראשוני?
 * מצב Basic/Advanced?
@@ -20,16 +16,29 @@ For version 0.16:
 * check all english & hebrew charts, try to improve score algorithm
 * run pytest & pylint before release.
 * test with windows xp, 7, 8.
-	
+
+For version 0.17:
+* automated logs send: http://stackoverflow.com/questions/14439477/log-files-collecting-and-handling-system
+* better exceptions handeling
+
+* מסך הפעלה ראשוני?
+* מצב Basic/Advanced?
+* explorer select mode: use SHParseDisplayName for windows7/8. (waiting for pywin build 219)
+* work with EXCEPTIONS and WARNINGS all over.
+
+* bugs
+* check all english & hebrew charts, try to improve score algorithm
+* run pytest & pylint before release.
+* test with windows xp, 7, 8.
+
 For the long run:
 * fix phonon
 * Custom Launch: support for videos
 * add more images sources
 * making songs amount spinbox accurate
-* make urls pop before all media sources has done fetching results
 * load many links in once, and download them all
-* apply all IMPROVE tags
 * add a download queue, so people can continue searching while downloading.
+* apply all IMPROVE tags
 	
 for the very long run:
 * add a window where users can custom the relevance scoring values.

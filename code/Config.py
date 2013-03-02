@@ -38,7 +38,7 @@ import threading
 from win32com.shell import shell, shellcon
 
 __version__ = "0.16"
-__rev__ = 112 # auto-generated
+__rev__ = 117 # auto-generated
 __date__ = '??/03/13'
 __author__ = 'Itay Brandes (Brandes.Itay@gmail.com)'
 
@@ -150,6 +150,7 @@ except NameError: # if not already initialized
 		'browser_website': "http://iquality.itayb.net/version-{0}.php?v=%s" % __version__,
 		'online_users_counter_webpage': "http://iquality.itayb.net/visitors.php?echo=1",
 		'newest_version_API_webpage': "http://iquality.itayb.net/vars.php?show=newest_version",
+		'components_json_url': 'http://iquality.itayb.net/components.json',
 
 		### Script ###
 		'temp_dir': r"%s\iQuality" % os.environ["Temp"],
@@ -162,6 +163,7 @@ except NameError: # if not already initialized
 		'logfile2_path': r"%s\debug.calcScore.log" % utils.module_path(__file__),
 		'logfile2_maxsize': 250*1024, # 250KB
 		'logfile2_backupCount': 0,
+		'pubkey_path': r"%s\public.key" % utils.module_path(__file__),
 		
 		### Thread Counts ###
 		'buildSongObjs_processes': 7,
