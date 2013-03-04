@@ -145,37 +145,26 @@ def parse_uktop40():
 @utils.decorators.memoize(config.memoize_timeout)
 def parse_glgltz():
 	"Parses the top songs from glgltz"
-	url = "http://www.glgltz.co.il/default.asp"
+	url = 'http://www.glgltz.co.il/1177-he/Galgalatz.aspx'
 	obj = urllib2.urlopen(url, timeout=config.webservices_timeout)
 	response = obj.read()
-
-	parardeIDs = []
 	soup = BeautifulSoup(response)
 
-	for link in soup.find_all('a', href=re.compile('paradeID')):
-		parardeID = link['href'].split('paradeID=')[-1].split('&')[0]
-		parardeIDs.append(parardeID)
-	
-	for parardeID in parardeIDs:
-		data_octets = "p=%s&" % parardeID
-		data_octets += 'iint=0&iann=0&pt=%D7%94%D7%9E%D7%A6%D7%A2%D7%93+%D7%94%D7%99%D7%A9%D7%A8%D7%90%D7%9C%D7%99&nos=2&submit1=%D7%9C%D7%AA%D7%97%D7%99%D7%9C%D7%AA+%D7%94%D7%93%D7%99%D7%A8%D7%95%D7%92+%D7%A0%D7%90+%D7%9C%D7%9C%D7%97%D7%95%D7%A5+%D7%9B%D7%90%D7%9F'
-		
-		con = httplib.HTTPConnection("www.glgltz.co.il")
-		con.request("POST", "/voteSong1.asp", data_octets, {'content-type': 'application/x-www-form-urlencoded'})
-		response = con.getresponse().read()
-		
-		excluded_words = [u'דרגו את', u'המצעד הישראלי', u'שלב 1 מתוך 2']
-		songs = []
-		soup = BeautifulSoup(response)
+	tag = soup.find('a', id='Master_ContentPlaceHolder1_rptTabs_ctl00_ancTab')
+	catid = tag['catid']
 
-		for link in soup.find_all('tr', class_="trItem"):
-			song = link.contents[5].text
-			if utils.isHebrew(song) and not song in excluded_words:
-				song = "%s - %s" % (song.split(' - ', 1)[1], song.split(' - ', 1)[0])
-				songs.append(song)
-		if songs: break
-	else:
-		return []
+	url = 'http://www.glgltz.co.il/Shared/Ajax/GetTophitsByCategory.aspx?FolderId=%s&amp;lang=he' % catid
+	obj = urllib2.urlopen(url)
+	response = obj.read()
+
+	songs = []
+	soup = BeautifulSoup(response)
+
+	for tag in soup.find_all('div', class_='hit'):
+		title = tag.h4.text
+		artist = tag.span.text
+		songs.append("%s - %s" % (artist, title))
+	
 	return songs
 	
 @utils.decorators.retry(Exception, logger=log)

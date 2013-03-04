@@ -102,6 +102,11 @@ def test_MetadataGrabber_songlyrics_songs_by_lyrics():
 	
 	assert ans == "Adele - Skyfall"
 	
+def test_MetadataGrabber_songlyrics_songs_by_lyrics():
+	ans = Main.WebParser.MetadataGrabber.parse_animelyrics_songs_by_lyrics("Hito wa naze yurushiau koto")
+	
+	assert ans == "Guilty Crown - Euterpe"
+	
 def test_MetadataGrabber_musicbrainz():
 	ans = Main.WebParser.MetadataGrabber.parse_musicBrainz('Bebot', 'The Black Eyed Peas')
 	
@@ -138,7 +143,7 @@ def test_parse_dilandau():
 		urllib2.urlopen(utils.url_fix(x))
 		
 def test_parse_Mp3skull():
-	ans = Main.WebParser.LinksGrabber.parse_Mp3skull('LMFAO - Sexy and I know It')
+	ans = Main.WebParser.LinksGrabber.parse_Mp3skull('Harlem Shake')
 	
 	for i in range(3):
 		x = ans.next().url

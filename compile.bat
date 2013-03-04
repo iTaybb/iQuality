@@ -1,1 +1,1 @@
-python -OO setup.py
+python -OO setup.py py2exe

@@ -682,6 +682,8 @@ class LyricsFulltextSearchThread(QtCore.QThread):
 			track = Main.WebParser.MetadataGrabber.parse_shironet_songs_by_lyrics(self.lyric)
 		else:
 			track = Main.WebParser.MetadataGrabber.parse_songlyrics_songs_by_lyrics(self.lyric)
+			if not track:
+				track = Main.WebParser.MetadataGrabber.parse_animelyrics_songs_by_lyrics(self.lyric)
 			
 		self.output.emit(track)
 	
@@ -689,49 +691,3 @@ class LyricsFulltextSearchThread(QtCore.QThread):
 		"Setting _terminated to True"
 		self._terminated = True
 		super(LyricsFulltextSearchThread, self).terminate()
-		
-class PhononThread(QtCore.QThread):
-	# output = QtCore.pyqtSignal(basestring)
-	
-	def __init__(self, url, volumeChanged_slot, tick_slot, parent=None):
-		QtCore.QThread.__init__(self, parent)
-		self._terminated = False
-		
-		self.url = url
-		self.volumeChanged_slot = volumeChanged_slot
-		self.tick_slot = tick_slot
-		self.start()
-	
-	@utils.decorators.log_exceptions(Exception, log)
-	def run(self): # Called by Qt once the thread environment has been set up.
-		mediaSource = Phonon.MediaSource(self.url) # creates a media source
-		mediaSource.setAutoDelete(True)
-		audioOutput = Phonon.AudioOutput(Phonon.MusicCategory) # create an audio output device
-		# audioOutput.setVolume(config.listen_volumeSlider_volume)
-		# audioOutput.volumeChanged.connect(self.volumeChanged_slot)
-		
-		self.player = Phonon.MediaObject() # creates the audio handler
-		self.player.setCurrentSource(mediaSource) # loads the media source in the audio handler
-		
-		Phonon.createPath(self.player, audioOutput) # links the audio handler and the audio output device
-		
-		self.player.setTickInterval(100)
-		# self.player.tick.connect(self.tick_slot)
-		
-		self.player.play()
-		# self.mediaSlider.setMediaObject(self.player)
-		# self.mediaVolumeSlider.setAudioOutput(audioOutput)
-		
-	def play(self):
-		self.player.play()
-		
-	def stop(self):
-		self.player.stop()
-		
-	def pause(self):
-		self.player.pause()
-	
-	def terminate(self):
-		"Setting _terminated to True"
-		self._terminated = True
-		super(PhononThread, self).terminate()

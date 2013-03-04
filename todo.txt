@@ -1,23 +1,11 @@
 For version 0.16:
-* soko kara nani ga mieru
-* make spell checking not blocking
-* make listening not blocking
-* Instant startup screen: http://wiki.maemo.org/PyQt_Tips_and_Tricks
-* thin-updater:
-	- http://pypi.python.org/pypi/esky
-	- http://stackoverflow.com/questions/1750757/restarting-a-self-updating-python-script
-
-* מסך הפעלה ראשוני?
-* מצב Basic/Advanced?
-* explorer select mode: use SHParseDisplayName for windows7/8. (waiting for pywin build 219)
-* work with EXCEPTIONS and WARNINGS all over.
-
 * bugs
 * check all english & hebrew charts, try to improve score algorithm
 * run pytest & pylint before release.
 * test with windows xp, 7, 8.
 
 For version 0.17:
+* make spell checking not blocking
 * automated logs send: http://stackoverflow.com/questions/14439477/log-files-collecting-and-handling-system
 * better exceptions handeling
 

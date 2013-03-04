@@ -29,7 +29,7 @@ import Main
 import Config; config = Config.config
 import logger
 from logger import log
-from Gui_Threads import GenericThread, SearchThread, DownloadThread, ArtistSearchThread, ArtistLookupThread, LyricsFulltextSearchThread, PhononThread
+from Gui_Threads import GenericThread, SearchThread, DownloadThread, ArtistSearchThread, ArtistLookupThread, LyricsFulltextSearchThread
 from GuiSubWindows import ID3Window, PostDownloadWindow, TracksExplorerWindow, ChartsExplorerWindow, SettingsWindow, HelpSearchWindow, ComponentFetcherWindow
 from CustomExceptions import NoSpaceWarning, NoResultsException, NewerVersionWarning, NoInternetConnectionException, NoDnsServerException, NotSupportedFiletypeException, FileInUseException, YoutubeException, ComponentsFaultyWarning
 import Hints
@@ -191,8 +191,8 @@ class MainWindow(QtGui.QMainWindow):
 		opendir_act = QtGui.QAction(QtGui.QIcon(r'pics\folder.png'), tr('Open downloaded files folder'), self)
 		opendir_act.triggered.connect(self.slot_opendir)
 		
-		toolsMenu.addAction(chart_act)
 		toolsMenu.addAction(rand_act)
+		toolsMenu.addAction(chart_act)
 		toolsMenu.addAction(opendir_act)
 		
 		# Settings Menu
@@ -267,8 +267,8 @@ class MainWindow(QtGui.QMainWindow):
 		buttonsLayout.addSpacerItem(QtGui.QSpacerItem(10, 1))
 		buttonsLayout.addWidget(helpSearch_button)
 		buttonsLayout.addSpacerItem(QtGui.QSpacerItem(15, 1))
-		buttonsLayout.addWidget(charts_button)
 		buttonsLayout.addWidget(rand_button)
+		buttonsLayout.addWidget(charts_button)
 		buttonsLayout.addWidget(opendir_button)
 		buttonsLayout.addSpacerItem(QtGui.QSpacerItem(15, 1))
 		buttonsLayout.addWidget(facebook_button)
@@ -582,7 +582,7 @@ class MainWindow(QtGui.QMainWindow):
 				
 		if not luckyMode and not isUrl:
 			self.searchString = song
-			if config.lyrics_lookup and len(song) >= 25 and '-' not in song: # already contains ArtistLookup in it
+			if config.lyrics_lookup and len(song) >= 22 and '-' not in song: # already contains ArtistLookup in it
 				self.lyrics_fulltext_thread.search(self.searchString)
 			elif ArtistLookup:
 				self.artist_search_thread.search(self.searchString)
@@ -638,8 +638,6 @@ class MainWindow(QtGui.QMainWindow):
 			url = ans.url
 
 		log.debug("Starting audio player (%s)..." % url)
-		# self.phonon_thread = PhononThread(url, self.volumeChanged_slot, self.updatePlayerLength)
-		# self.phonon_thread.play()
 		
 		mediaSource = Phonon.MediaSource(url) # creates a media source
 		mediaSource.setAutoDelete(True)

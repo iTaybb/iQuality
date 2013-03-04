@@ -12,23 +12,36 @@ import pdb
 from pprint import pprint as pp
 
 from bs4 import BeautifulSoup
+import bs4.element
 
 sys.path.append(r'C:\Scripts\iQuality\code')
 import utils
 import WebParser
 
-url = 'http://www.youtube.com/playlist?p=SPv1EAqcvJFuG-CMLxveY7eNEcse3xXm1a'
+s = "soko kara nani ga mieru"
+
+url = 'http://www.animelyrics.com/search.php?q=%s&t=romaji&searchcat=anime' % s.replace(' ', '+')
 obj = urllib2.urlopen(url)
 response = obj.read()
+
+DOMAIN = "www.animelyrics.com"
+CREDITS = "Lyrics from Animelyrics.com"
 soup = BeautifulSoup(response)
 
-pdb.set_trace()
-
-for link in soup.find_all('a', class_='yt-uix-tile-link yt-uix-sessionlink', href=re.compile('^/watch')):
-	pdb.set_trace()
-	url = link['href'] + link['url'] # dont ask me why. dilandabu decided to split their url addresses.
+for tag in soup.find_all(text=re.compile('RESULT ITEM START')):
+	url = "http://%s%s" % (DOMAIN, tag.next_element['href'])
+	title = tag.next_element.text
+	artist = tag.previous_element.previous_element
 	
-	utils.classes.MetaUrl(url, 'SoundCloud', track)
+	obj = urllib2.urlopen(url)
+	response = obj.read()
+	
+	soup = BeautifulSoup(response)
+	lyrics = '\n'.join([x.text.replace(CREDITS,'').replace(u'\xa0',' ').replace('\r','\n').replace('  ',' ') for x in soup.find_all('td', class_='romaji')])
+	lyrics += "\n\n [ Lyrics from %s ] " % url
+	lyricsObj = utils.classes.LyricsData(lyrics, artist, title)
+	
+	yield lyricsObj
 
 pdb.set_trace()
 	

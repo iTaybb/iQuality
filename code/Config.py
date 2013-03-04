@@ -38,7 +38,7 @@ import threading
 from win32com.shell import shell, shellcon
 
 __version__ = "0.16"
-__rev__ = 117 # auto-generated
+__rev__ = 123 # auto-generated
 __date__ = '??/03/13'
 __author__ = 'Itay Brandes (Brandes.Itay@gmail.com)'
 

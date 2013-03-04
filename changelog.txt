@@ -7,11 +7,13 @@ each version.
 ======================
 (Version 0.16 beta; 02/03/13)
 - NEW: Full mediasource added: SoundCloud.
+- NEW: New lyrics full-text search source: AnimeLyrics.
 - NEW: Source managment moved to GitHub (https://github.com/iTaybb/iQuality).
 - IMPROVE: Added support for youtube playlists.
 - IMPROVE: Dependencies being downloaded apart from the application, resulting in 40% smaller installer filesize.
 - IMPROVE: Improved relevance algorithm accuracy.
 - FIX: Dilandau parser got broken, and got rewritten.
+- FIX: Glgltz parser got broken, and got rewritten.
 - FIX: Minor bug fixes.
 
 (Version 0.15 beta; 01/02/13)

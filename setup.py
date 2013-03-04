@@ -1,3 +1,4 @@
+from esky import bdist_esky
 from distutils.core import setup
 import py2exe
 import sys
@@ -27,7 +28,7 @@ rar_path = r'C:\Program Files\WinRAR\WinRar.exe'
 os.chdir(r"C:\Scripts\iQuality")
 sys.path.append(r"C:\Scripts\iQuality\DLLs")
 sys.path.append(r"C:\Scripts\iQuality\code")
-sys.argv.append('py2exe')
+# sys.argv.append('py2exe')
 
 rev = __import__('Config').__rev__
 new_rev = rev+1

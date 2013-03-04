@@ -118,6 +118,39 @@ def parse_songlyrics_songs_by_lyrics(searchString):
 		break
 		
 	return track
+	
+@utils.decorators.retry(Exception, logger=log)
+@utils.decorators.memoize(config.memoize_timeout)
+def parse_animelyrics_songs_by_lyrics(searchString):
+	"Uses AnimeLyrics.com for lyrics grabbing by a line of it's lyrics"
+	log.debug("Searching for a song that contains the line '%s' on AnimeLyrics.com..." % searchString)
+	url = 'http://www.animelyrics.com/search.php?q=%s&t=romaji&searchcat=anime' % urllib2.quote(searchString.encode("utf8"))
+	log.debug('Fetching %s...' % url)
+	obj = urllib2.urlopen(url)
+	response = obj.read()
+	
+	DOMAIN = "www.animelyrics.com"
+	CREDITS = "Lyrics from Animelyrics.com"
+	soup = BeautifulSoup(response)
+
+	for tag in soup.find_all(text=re.compile('RESULT ITEM START')):
+		# url = "http://%s%s" % (DOMAIN, tag.next_element['href'])
+		title = tag.next_element.text
+		artist = tag.previous_element.previous_element
+		
+		return "%s - %s" % (artist, title)
+		
+		# obj = urllib2.urlopen(url)
+		# response = obj.read()
+		
+		# soup = BeautifulSoup(response)
+		# lyrics = '\n'.join([x.text.replace(CREDITS,'').replace(u'\xa0',' ').replace('\r','\n').replace('  ',' ') for x in soup.find_all('td', class_='romaji')])
+		# lyrics += "\n\n [ Lyrics from %s ] " % url
+		# lyricsObj = utils.classes.LyricsData(lyrics, artist, title)
+		
+		# yield lyricsObj
+		
+	return ""
 
 @utils.decorators.retry(Exception, logger=log)
 @utils.decorators.memoize(config.memoize_timeout)
