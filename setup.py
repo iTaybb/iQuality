@@ -79,7 +79,7 @@ setup(
 					('imageformats', glob(r'C:\Python27\Lib\site-packages\PyQt4\plugins\imageformats\*.dll')),
 					("pics", glob(r'code\pics\*.*')),
 					("ts", glob(r'code\ts\*.qm')),
-					("", glob(r'*.txt'))
+					("", glob(r'*.txt')+[r'code\public.key'])
 					],
 	windows = [{"script": r"code\Gui.py", 
 				"icon_resources": [(1, r'code\pics\iQUACK.ico')],

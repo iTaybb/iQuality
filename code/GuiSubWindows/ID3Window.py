@@ -552,7 +552,7 @@ class AlbumArtWin(QtGui.QDialog):
 		for art in self.albumArts:
 			pixLayout.addWidget(art)
 		
-		mainLayout.addWidget(QtGui.QLabel(tr("<h2>Please choose a new album art.</h2>")), alignment = QtCore.Qt.AlignCenter)
+		mainLayout.addWidget(QtGui.QLabel(tr("<h2>Choose a new album art:</h2>")), alignment = QtCore.Qt.AlignCenter)
 		mainLayout.addLayout(pixLayout)
 		if config.id3_action != 'noask':
 			mainLayout.addWidget(self.saveSelection_CheckBox)

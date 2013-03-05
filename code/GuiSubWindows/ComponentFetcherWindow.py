@@ -44,7 +44,7 @@ class MainWin(QtGui.QDialog):
 		self.setLayout(mainLayout)
 		
 	def start_update(self):
-		bin_path = r'C:\Scripts\iQuality\code\bin'
+		bin_path = 'bin'
 		
 		if not os.path.exists(bin_path):
 			os.makedirs(bin_path)
@@ -71,8 +71,8 @@ class MainWin(QtGui.QDialog):
 					
 			ext = os.path.splitext(obj.get_dest())[1].lower()
 			if ext == '.zip':
-				zip = zipfile.ZipFile(obj.get_dest())
-				zip.extract(file_to_extract, bin_path)
+				zipObj = zipfile.ZipFile(obj.get_dest())
+				zipObj.extract(file_to_extract, bin_path)
 			elif ext == '.7z':
 				cmd = r'"%s\7za.exe" e "%s" -ir!%s -y -o"%s"' % (bin_path, obj.get_dest(), file_to_extract, bin_path)
 				subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)

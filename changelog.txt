@@ -5,7 +5,7 @@ Below you find a list with the added features, changes and fixes for
 each version.
 
 ======================
-(Version 0.16 beta; 02/03/13)
+(Version 0.16 beta; 05/03/13)
 - NEW: Full mediasource added: SoundCloud.
 - NEW: New lyrics full-text search source: AnimeLyrics.
 - NEW: Source managment moved to GitHub (https://github.com/iTaybb/iQuality).

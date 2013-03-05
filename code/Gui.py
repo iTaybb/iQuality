@@ -219,6 +219,9 @@ class MainWindow(QtGui.QMainWindow):
 		act_help = QtGui.QAction(QtGui.QIcon(r'pics\support.png'), tr('Search Field Help'), self)
 		act_help.setStatusTip(tr('Search Field Help'))
 		act_help.triggered.connect(self.helpSearch_slot)
+		act_logfile = QtGui.QAction(QtGui.QIcon(r'pics\file_broken.png'), tr('Open Log File'), self)
+		act_logfile.setStatusTip(tr('Open Log File'))
+		act_logfile.triggered.connect(self.logfile_slot)
 		act_credits = QtGui.QAction(QtGui.QIcon(r'pics\pokeball.png'), tr('About'), self)
 		act_credits.setStatusTip(tr('Show Credits'))
 		act_credits.triggered.connect(self.creditsWindow_slot)
@@ -230,6 +233,7 @@ class MainWindow(QtGui.QMainWindow):
 		act_facebook.triggered.connect(self.visit_facebook_slot)
 		
 		helpMenu.addAction(act_help)
+		helpMenu.addAction(act_logfile)
 		helpMenu.addSeparator()
 		helpMenu.addAction(act_credits)
 		helpMenu.addAction(act_website)
@@ -326,6 +330,9 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def visit_facebook_slot(self):
 		QtGui.QDesktopServices.openUrl(QtCore.QUrl(config.facebook_page))
+		
+	def logfile_slot(self):
+		os.startfile(config.logfile_path)
 		
 	def init_widgets(self):
 		"initialize application widgets"

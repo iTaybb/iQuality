@@ -6,7 +6,8 @@ Module for project's Web Services that are not lyrics or links grabbing.
 '''
 
 import sys
-import urllib2, json
+import traceback
+import urllib2
 import httplib, xml.dom.minidom
 import re
 import json
@@ -51,7 +52,7 @@ def spell_fix(s):
 	dom = xml.dom.minidom.parseString(response)
 	dom_data = dom.getElementsByTagName('spellresult')[0]
 
-	for i, node in enumerate(dom_data.childNodes):
+	for node in dom_data.childNodes:
 		att_o = int(node.attributes.item(2).value) # The offset from the start of the text of the word
 		att_l = int(node.attributes.item(1).value) # Length of misspelled word
 		att_s = int(node.attributes.item(0).value) # Confidence of the suggestion
@@ -206,15 +207,18 @@ def get_newestversion():
 @utils.decorators.memoize(config.memoize_timeout)
 def get_components_data():
 	"Function queries the iQuality website for components json data"
-	obj = urllib2.urlopen(config.components_json_url, timeout=config.webservices_timeout)
-	data = obj.read()
-	obj.close()
-	obj = urllib2.urlopen("%s.sign" % config.components_json_url, timeout=config.webservices_timeout)
-	sign = obj.read()
-	obj.close()
-	
-	if utils.verify_signature(data, sign, config.pubkey_path):
+	try:
+		obj = urllib2.urlopen(config.components_json_url, timeout=config.webservices_timeout)
+		data = obj.read()
+		obj.close()
+		obj = urllib2.urlopen("%s.sign" % config.components_json_url, timeout=config.webservices_timeout)
+		sign = obj.read()
+		obj.close()
+		
+		assert utils.verify_signature(data, sign, config.pubkey_path)
 		log.debug('components_json_url signature check passed')
 		return json.loads(data, object_pairs_hook=OrderedDict)
-	log.error('components_json_url signature check FAILED')
+	except:
+		log.error('components_json_url signature check FAILED:')
+		log.error(traceback.format_exc())
 	return {}
