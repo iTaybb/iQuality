@@ -16,9 +16,10 @@ import shutil
 import urllib
 import urlparse
 import hashlib
-import rsa
 
-from win32com.shell import shell
+import rsa
+import regobj
+from win32com.shell import shell, shellcon
 from mutagen.compatid3 import CompatID3 # hack for IDv2.3 tags writing with mutagen
 from mutagen.id3 import ID3NoHeaderError
 
@@ -29,7 +30,8 @@ __all__ = ['makeDummyMP3', 'setID3Tags', 'append_bold_changes', 'get_free_space'
 			'parse_title_from_filename', 'add_item_to_playlist', 'add_item_to_wpl_playlist',
 			'add_item_to_m3u_playlist', 'add_item_to_itunes_playlist', 'move_item_to_top',
 			'open_with_notepad', 'url_fix', 'trim_between', 'guess_image_mime_type', 
-			'parse_artists_from_artist', 'calc_sha256', 'verify_signature']
+			'parse_artists_from_artist', 'calc_sha256', 'verify_signature', 'get_home_dir',
+			'terminate_thread', 'register_with_context_menu', 'unregister_with_context_menu']
 
 def makeDummyMP3(dir_):
 	'''
@@ -77,7 +79,7 @@ def setID3Tags(ID3Tags, fn):
 def parse_title_from_filename(fn):
 	"Trying to parse title and artist out of filename"
 	delims = ['-', ':', '|', '@']
-	oppo_delims = [' by ']
+	oppo_delims = [' by ', '/', '\\']
 	
 	if '-' in fn and fn.count("-") > 1 and fn.count(" - ") == 1:
 			artist, title = fn.split(" - ")
@@ -370,7 +372,7 @@ def add_item_to_m3u_playlist(m3u, item):
 
 def add_item_to_itunes_playlist(item):
 	"Adds item to iTunes playlist"
-	dst = os.path.expanduser(r'~\My Documents\My Music\iTunes\iTunes Media\Automatically Add to iTunes')
+	dst = r'%s\My Documents\My Music\iTunes\iTunes Media\Automatically Add to iTunes' % get_home_dir()
 	
 	if not os.path.exists(item):
 		raise IOError('%s does not exists' % item)
@@ -442,7 +444,7 @@ def launch_file_explorer(path, files=None):
 			os.startfile(path)
 			
 def calc_sha256(path):
-	"Gets a file and calculates it's sha224 digest."
+	"Gets a file and calculates it's sha256 digest."
 	with open(path, 'rb') as f:
 		hash = hashlib.sha256(f.read()).hexdigest()
 	return hash
@@ -458,3 +460,42 @@ def verify_signature(data, sign, pubkey_path):
 	except rsa.pkcs1.VerificationError:
 		return False
 	return True
+	
+def get_home_dir():
+	'''
+	Returns the home dir of the current running user as unicode.
+	We can't use os.environ['UserProfile'] or os.path.expanduser because they
+	don't return unicode answers.
+	'''
+	return shell.SHGetFolderPath(0, shellcon.CSIDL_PROFILE, None, 0)
+	
+def terminate_thread(thread):
+	'''
+	Terminates a python thread from another thread.
+	taken from http://code.activestate.com/recipes/496960-thread2-killable-threads/
+
+	:param thread: a threading.Thread instance
+	'''
+	if not thread.isAlive():
+		return
+
+	exc = ctypes.py_object(SystemExit)
+	res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+		ctypes.c_long(thread.ident), exc)
+	if res == 0:
+		raise ValueError("nonexistent thread id")
+	elif res > 1:
+		# """if it returns a number greater than one, you're in trouble,
+		# and you should call it again with exc=NULL to revert the effect"""
+		ctypes.pythonapi.PyThreadState_SetAsyncExc(thread.ident, None)
+		raise SystemError("PyThreadState_SetAsyncExc failed")
+		
+def register_with_context_menu():
+	regobj.HKCR.mp3file.shell.iQuality = 'Edit Tags with iQuality'
+	if hasattr(sys, "frozen"): # if compiled into py2exe
+		regobj.HKCR.mp3file.shell.iQuality.command = r'"%s" /id3 "%%1"' % unicode(sys.executable, sys.getfilesystemencoding())
+	else:
+		regobj.HKCR.mp3file.shell.iQuality.command = r'python "%s\Gui.py" /id3 "%%1"' % "\\".join(module_path().split('\\')[:-1])
+	
+def unregister_with_context_menu():
+	del regobj.HKCR.mp3file.shell.iQuality

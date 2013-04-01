@@ -8,6 +8,7 @@ from functools import wraps
 import threading
 import time
 import traceback
+import socket
 
 __all__ = ['count_runtime', 'retry', 'memoize', 'log_exceptions']
 
@@ -32,7 +33,9 @@ def log_exceptions(e, logger):
 		def f_log(*args, **kwargs):
 			try:
 				return f(*args, **kwargs)
-			except e:
+			except socket.timeout:
+				logger.debug('timeout: function %s timed out' % f.__name__)
+			except:
 				logger.error(traceback.format_exc())
 		return f_log  # true decorator
 	return deco_log

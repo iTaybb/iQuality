@@ -5,6 +5,19 @@ Below you find a list with the added features, changes and fixes for
 each version.
 
 ======================
+(Version 0.17 beta; 01/04/13)
+- NEW: Now can drag and drop mp3 files to the main window - the ID3 editor will spawn.
+- NEW: ID3 Editor can now edit existing mp3 files in your
+		computer, via the regular explorer context menu.
+- NEW: A new shortcut is added to the Start Menu folder: "ID3 Tagger".
+- IMPROVE: Many bug fixes and improvements in the ID3 editor.
+- IMPROVE: Improved relevance algorithm accuracy.
+- FIX: When canceling downloads, the task continued to download in the background.
+- FIX: Users with a unicode username had some issues with saving tracks to playlists.
+- FIX: When downloaded videos from youtube that are larger from 2GB,
+		download counter showed negative filesize.
+- FIX: Minor bug fixes.
+
 (Version 0.16 beta; 05/03/13)
 - NEW: Full mediasource added: SoundCloud.
 - NEW: New lyrics full-text search source: AnimeLyrics.

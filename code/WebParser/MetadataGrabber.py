@@ -25,7 +25,7 @@ import LyricsGrabber
 @utils.decorators.memoize(config.memoize_timeout)
 def parse_musicBrainz(title, artist):
 	"Uses musicBrainz API for releases data grabbing"
-	url = 'http://www.musicbrainz.org/ws/2/recording?query="%s" AND artist:"%s"' % (title, artist)
+	url = 'http://www.musicbrainz.org/ws/2/recording?query="%s" AND artist:"%s"' % (urllib2.quote(title.encode("utf8")), urllib2.quote(artist.encode("utf8")))
 	url = utils.url_fix(url)
 	
 	log.debug('Fetching %s...' % url)

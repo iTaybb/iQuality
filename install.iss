@@ -1,5 +1,5 @@
 #define MyAppName "iQuality"
-#define MyAppVersion "0.16"
+#define MyAppVersion "0.17"
 #define MyAppPublisher "Itay Brandes"
 #define MyAppURL "http://iQuality.iTayb.net"
 #define MyAppExeName "iQuality.exe"
@@ -42,6 +42,7 @@ Source: "C:\Scripts\iQuality\build\*"; DestDir: "{app}"; Flags: ignoreversion re
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\ID3 Tagger"; Filename: "{app}\{#MyAppExeName}"; Parameters: "/id3"; IconFilename: "{app}\pics\id3edit.ico"
 Name: "{group}\Uninstall"; Filename: "{uninstallexe}"
 Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: quicklaunchicon

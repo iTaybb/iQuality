@@ -69,7 +69,8 @@ def get_file_details(urlObj):
 		utils.setID3Tags(ID3TagsToEdit, ID3File)
 		
 	return urlObj.url, filesize, SupportsHTTPRange, bitrate, title, artist, ID3File, \
-			urlObj.source, urlObj.length_seconds, urlObj.itag, urlObj.youtube_videoid
+			urlObj.source, urlObj.length_seconds, urlObj.itag, urlObj.youtube_videoid, \
+			urlObj.view_count
 
 @utils.decorators.memoize(config.memoize_timeout)
 def get_id3info(url):

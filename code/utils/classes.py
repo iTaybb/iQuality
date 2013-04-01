@@ -87,13 +87,14 @@ class ItagData(object):
 
 class MetaUrl(object):
 	"a url structure data with extra metadata"
-	def __init__(self, url, source="", trackName="", length_seconds=0, itag="", youtube_videoid=""):
+	def __init__(self, url, source="", trackName="", length_seconds=0, itag="", youtube_videoid="", view_count=0):
 		self.url = str(url) if core.isAscii(url) else core.url_fix(url)
 		self.source = source
 		self.videoName = trackName # Youtube&SoundCloud Links Only
 		self.length_seconds = length_seconds # Youtube Links Only
 		self.itag = itag # Youtube Links Onlys
 		self.youtube_videoid = youtube_videoid # Youtube Links Onlys
+		self.view_count = view_count # Youtube Links Onlys
 	
 	def __repr__(self):
 		return "<MetaUrl '%s' | %s>" % (self.url, self.source)
@@ -156,7 +157,7 @@ class Song(object):
 	"A class defining a song."
 	def __init__(self, url, filesize, SupportsHTTPRange, bitrate=-1, title="",
 					artist="", id3tags_file="", source="", length_seconds="", video_itag="",
-					youtube_videoid="", searchString="", constantFileName=None):
+					youtube_videoid="", youtube_views_count=0, searchString="", constantFileName=None):
 		self.url = url
 		self.filename = url.split('/')[-1].split('?')[0]
 		self.filesize = filesize
@@ -170,6 +171,7 @@ class Song(object):
 		self.video_itag = video_itag # youtube only
 		self.youtube_videoid = youtube_videoid # youtube only
 		self.youtube_watchurl = "http://www.youtube.com/watch?v=%s" % youtube_videoid # youtube only
+		self.youtube_views_count = youtube_views_count # youtube only
 		self.searchString = searchString.lower()
 		self.constantFileName = constantFileName # If set, this will be the name of the file.
 
@@ -223,7 +225,7 @@ class Song(object):
 		
 		chars_to_delete = r'*:<>?\/|"'
 		for c in chars_to_delete:
-			fn = fn.replace(c,'')
+			fn = fn.replace(c, '')
 		
 		fn = os.path.normpath(fn)
 		return fn
@@ -287,11 +289,7 @@ class Song(object):
 		score = 0.0
 		given_score_for_artist_match = False
 		searchString_title, searchString_artist = core.parse_title_from_filename(self.searchString)
-		# debug_data = ["[ utils.classes.Song.calcScore() debug data ]"
-						# "self.searchString: %s" % self.searchString,
-						# "self.artist: %s" % self.artist,
-						# "self.title: %s" % self.title]
-						
+				
 		log.debug("self.url: %s" % self.url)
 		log.debug("self.searchString: %s" % self.searchString)
 		log.debug("self.artist: %s" % self.artist)
@@ -305,8 +303,8 @@ class Song(object):
 				score += 0.5
 		
 		# If we weren't searching for 'dj', 'mix', 'live' and the song do include these strings: -1.5
-		forbidden_words_in_artist = ['dj', 'rmx', 'instrumental', 'piano', 'live', 'cover', 'karaoke', 'acapella', 'playback', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע', u'פסנתר']
-		forbidden_words_in_title = ['mix', 'rmx', 'instrumental', 'piano', 'live', 'cover', 'karaoke', 'acapella', 'playback', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע', u'פסנתר']
+		forbidden_words_in_artist = ['dj', 'rmx', 'instrumental', 'piano', 'live', 'cover', 'karaoke', 'acapella', 'playback', 'parody', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע', u'פסנתר', u'פרודיה', u'פארודיה']
+		forbidden_words_in_title = ['mix', 'rmx', 'instrumental', 'piano', 'live', 'cover', 'karaoke', 'acapella', 'playback', 'parody', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע', u'פסנתר', u'פרודיה', u'פארודיה']
 				
 		if self.artist:
 			for word in forbidden_words_in_artist:
@@ -370,6 +368,19 @@ class Song(object):
 				score -= 0.5
 			if len(self.title) > 100:
 				log.debug('title\'s length is over 100 chars: -1.0')
+				score -= 1.0
+		
+		# If it is youtube, and views are over 50,000: +0.5
+		# Else, if the views counter are less then 2,500: -0.5
+		if self.source == "youtube":
+			if self.youtube_views_count > 50000:
+				log.debug('Views counter (%s) is over 50,000: +0.5' % "{:,}".format(self.youtube_views_count))
+				score += 0.5
+			elif 750 <= self.youtube_views_count < 2500:
+				log.debug('Views counter (%s) is between 2,500 and 750: -0.5' % "{:,}".format(self.youtube_views_count))
+				score -= 0.5
+			elif self.youtube_views_count < 750:
+				log.debug('Views counter (%s) is below 750: -1.0' % "{:,}".format(self.youtube_views_count))
 				score -= 1.0
 				
 		if self.artist and not given_score_for_artist_match:
@@ -449,8 +460,8 @@ class Song(object):
 				log.debug("%s, and search string is in hebrew: +0.5" % self.source)
 				score += 0.5
 			elif self.source == 'soundcloud':
-				log.debug("%s, but search string is not in hebrew: -1.0" % self.source)
-				score -= 1.0
+				log.debug("%s, but search string is not in hebrew: -1.5" % self.source)
+				score -= 1.5
 			else:
 				log.debug("%s, but search string is not in hebrew: -0.5" % self.source)
 				score -= 0.5

@@ -5,12 +5,15 @@
 A class that creates and manipulates a threadpool.
 '''
 
-from Queue import Queue, Empty
+import Queue
 import threading
 import traceback
 import inspect
 import logging
 import time
+import socket
+
+import utils
 
 class TerminatedException(Exception):
 	pass
@@ -23,30 +26,32 @@ class ThreadPool:
 		self.stack_size = stack_size
 		self.log_returns = log_returns
 		self.catch_returns = catch_returns
+		self.threads = []
 		self._terminated = False
 		self._paused = False
 
-		self.call_queue = Queue()
-		self.returns = Queue(return_queue)
+		self.call_queue = Queue.Queue()
+		self.returns = Queue.Queue(return_queue)
 		self.spawn_workers()
 
-	def __call__(self, func):
+	def __call__(self, f):
 		def wrapper(*args, **kwargs):
-			self.call_queue.put((func, args, kwargs))
+			self.call_queue.put((f, args, kwargs))
 		return wrapper
 	
 	def spawn_workers(self):
 		for i in xrange(self.max):
-			thread = threading.Thread(target=self.worker, args=(self.call_queue, ))
-			thread.daemon = True
-			thread.start()
+			t = threading.Thread(target=self.worker, args=(self.call_queue, ))
+			t.daemon = True
+			t.start()
+			self.threads.append(t)
 	
 	def worker(self, call):
 		while True:
-			func, args, kwargs = call.get() # get a func and args data
+			f, args, kwargs = call.get() # get a func and args data
 			try:
 				self.processEvents()
-				result = func(*args, **kwargs) # launches it
+				result = f(*args, **kwargs) # launches it
 				self.processEvents()
 				if self.catch_returns or self.log_returns:
 					if inspect.isgenerator(result) or 'itertools' in str(result.__class__):
@@ -55,8 +60,10 @@ class ThreadPool:
 							self.returned(x)
 					else:
 						self.returned(result)
-			except TerminatedException:
+			except (TerminatedException, SystemExit):
 				pass
+			except socket.timeout:
+				self.logger.debug('timeout: function %s timed out' % f.__name__)
 			except:
 				self.logger.exception(traceback.format_exc())
 			finally:
@@ -89,7 +96,7 @@ class ThreadPool:
 		while self.call_queue.unfinished_tasks > 0:
 			try:
 				yield self.returns.get(timeout=0.1)
-			except Empty:
+			except Queue.Empty:
 				pass
 		
 		while not self.returns.empty():
@@ -99,7 +106,7 @@ class ThreadPool:
 		"clear and return the function returns queue"
 		if self.catch_returns:
 			results = tuple(self.returns.queue)
-			self.returns = Queue()
+			self.returns = Queue.Queue()
 			return results
 
 		return ()
@@ -118,15 +125,24 @@ class ThreadPool:
 	
 	def terminate(self):
 		"Terminates the object, blocks."
-		self.logger.debug("Terminating...")
+		self.logger.debug("Terminating threadpool...")
 		self._terminated = True
 		self.finish()
 		
 	def terminate_nowait(self):
 		"Terminates the object, does not block."
-		self.logger.debug("Terminating...")
+		self.logger.debug("Terminating threadpool (nowait)...")
 		self._terminated = True
 		self.flush()
+		
+	def terminate_now_nowait(self):
+		"Terminates the object at the moment, RISKY, does not block."
+		self.logger.debug("Terminating threadpool (now nowait)...")
+		self._terminated = True
+		self.flush()
+		
+		for t in self.threads:
+			utils.terminate_thread(t)
 	
 	def isFinished(self):
 		return not self.call_queue.unfinished_tasks

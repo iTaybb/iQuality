@@ -80,6 +80,7 @@ class SmartDL:
 		self.filesize = 0
 		self.shared_var = multiprocessing.Value(c_int, 0) # a ctypes var that counts the bytes already downloaded
 		self.status = "ready"
+		self._killed = False
 		
 		self.post_threadpool_thread = None
 		self.control_thread = None
@@ -118,7 +119,6 @@ class SmartDL:
 				self.logger.debug("%s." % str(e))
 				raise
 				
-			from PyQt4 import QtCore; import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
 		meta = urlObj.info()
 		try:
 			self.filesize = int(meta.getheaders("Content-Length")[0])
@@ -130,7 +130,7 @@ class SmartDL:
 		args = calc_args(self.filesize, self.max_threads, self.minChunkFile)
 		bytes_per_thread = args[0][1]-args[0][0]
 		if len(args)>1:
-			self.logger.debug("Launching %d threads (downloads %dKB in each thread)." % (len(args), bytes_per_thread/1024))
+			self.logger.debug("Launching %d threads (downloads %sKB in each thread)." % (len(args),  "{:,}".format(bytes_per_thread/1024)))
 		else:
 			self.logger.debug("Launching 1 thread.")
 		
@@ -182,7 +182,8 @@ class SmartDL:
 			self.pool.unpause()
 	def stop(self):
 		if self.status == "downloading":
-			self.pool.terminate_nowait()
+			self.pool.terminate_now_nowait()
+			self._killed = True
 
 class ControlThread(threading.Thread):
 	"A class that shows information about a running SmartDL object."
@@ -221,6 +222,10 @@ class ControlThread(threading.Thread):
 				status = status + chr(8)*(len(status)+1)
 				print status,
 			time.sleep(0.1)
+			
+		if self.obj._killed:
+			self.logger.debug("File download process has been stopped.")
+			return
 			
 		if self.show_output:
 			if self.obj.filesize:

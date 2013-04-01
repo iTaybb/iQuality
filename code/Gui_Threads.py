@@ -216,15 +216,20 @@ class DownloadThread(QtCore.QThread):
 		
 		dl_obj = Main.SmartDL(url, dest_path, logger=log)
 		dl_obj.start()
+		self.dl_obj = dl_obj
 		
 		while not dl_obj.isFinished():
-			self.downloadProgress.emit(int(dl_obj.get_progress()*100), dl_obj.get_speed(), dl_obj.get_eta(), dl_obj.get_downloaded_size(), filesize)
-			
-			if not informed_combine_files and dl_obj.status == 'combining':
+			if dl_obj.status == 'combining':
 				self.status.emit(tr("Combining Parts..."))
-				informed_combine_files = True
+				break
 				
+			self.downloadProgress.emit(int(dl_obj.get_progress()*100), dl_obj.get_speed(), dl_obj.get_eta(), dl_obj.get_downloaded_size(), filesize)
 			time.sleep(0.1)
+		while not dl_obj.isFinished():
+			# if we were breaking the last loop, we are waiting for
+			# parts to get combined. we shall wait.
+			time.sleep(0.1)
+			
 		self.downloadProgress.emit(100, dl_obj.get_speed(), dl_obj.get_eta(), filesize, filesize)
 		dl_time = dl_obj.get_dl_time()
 		dl_time_s = int(dl_time)%60
@@ -233,12 +238,12 @@ class DownloadThread(QtCore.QThread):
 		if not self.isMultimediaFile or self.songObj.ext == "mp3":
 			if filesize/dl_time/1024**2 > 1: # If dlRate is in MBs
 				if dl_time_m:
-					stats_str = tr('Download: %dm%ds (%.2f MB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024**2)
+					stats_str = tr('Download: %d:%.2d (%.2f MB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024**2)
 				else:
 					stats_str = tr('Download: %ds (%.2f MB/s)') % (dl_time, filesize/dl_time/1024**2)
 			else:
 				if dl_time_m:
-					stats_str = tr('Download: %dm%ds (%.2f KB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024)
+					stats_str = tr('Download: %d:%.2d (%.2f KB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024)
 				else:
 					stats_str = tr('Download: %ds (%.2f KB/s)') % (dl_time, filesize/dl_time/1024)
 
@@ -324,12 +329,12 @@ class DownloadThread(QtCore.QThread):
 			
 			if filesize/dl_time/1024**2 > 1: # If dlRate is in MBs
 				if dl_time_m:
-					stats_str = tr('Download: %dm%ds (%.2f MB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024**2)
+					stats_str = tr('Download: %d:%.2d (%.2f MB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024**2)
 				else:
 					stats_str = tr('Download: %ds (%.2f MB/s)') % (dl_time, filesize/dl_time/1024**2)
 			else:
 				if dl_time_m:
-					stats_str = tr('Download: %dm%ds (%.2f KB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024)
+					stats_str = tr('Download: %d:%.2d (%.2f KB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024)
 				else:
 					stats_str = tr('Download: %ds (%.2f KB/s)') % (dl_time, filesize/dl_time/1024)
 			
@@ -345,7 +350,7 @@ class DownloadThread(QtCore.QThread):
 	def terminate(self):
 		self._terminated = True
 		try:
-			self.pool.terminate()
+			self.dl_obj.stop()
 		except:
 			pass
 		super(DownloadThread, self).terminate()
@@ -370,10 +375,11 @@ class GoogleImagesGrabberThread(QtCore.QThread):
 		pool = ThreadPool(max_threads=config.GoogleImagesGrabber_processes, catch_returns=True, logger=log)
 		
 		fn_list = []
-		while len(fn_list) < self.numOfPhotos:
+		while len(fn_list) < self.numOfPhotos and google_ans:
 			urls = []
 			for i in range(self.numOfPhotos-len(fn_list)):
-				urls.append(google_ans.pop(0))
+				if google_ans:
+					urls.append(google_ans.pop(0))
 
 			for url in urls:
 				pool(self.fetchPhoto)(url)
@@ -391,7 +397,11 @@ class GoogleImagesGrabberThread(QtCore.QThread):
 		req = urllib2.Request(url, headers=config.generic_http_headers)
 		try:
 			urlObj = urllib2.urlopen(req, timeout=config.GoogleImagesGrabber_timeout)
-		except urllib2.URLError:
+			meta = urlObj.info()
+			filesize = int(meta.getheaders("Content-Length")[0])
+			if filesize > config.GoogleImagesGrabber_maxsize:
+				return ""
+		except urllib2.URLError, IndexError:
 			return ""
 		with open(utils.get_rand_filename(config.temp_dir), 'wb') as f:
 			f.write(urlObj.read())

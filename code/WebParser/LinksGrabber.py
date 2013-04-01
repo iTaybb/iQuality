@@ -267,19 +267,19 @@ def get_youtube_dl_link(video_id, q_priority=config.youtube_quality_priority,
 	@return MetaUrlObj: MetaUrl Object.
 	'''
 	
-	data = get_youtube_dl_links(video_id)
+	data = get_youtube_dl_links_api1(video_id)
 	for q_p in q_priority:
 		for fmt_p in fmt_priority:
 			for stream in data['fmt_stream_map']:
 				itagData = utils.classes.ItagData(stream['itag'])
 				if itagData.quality == q_p and itagData.format == fmt_p:
-					return utils.classes.MetaUrl(stream['url'], 'youtube', data['title'], int(data['length_seconds']), itagData, video_id)
+					return utils.classes.MetaUrl(stream['url'], 'youtube', data['title'], int(data['length_seconds']), itagData, video_id, int(data['view_count']))
 	log.error("No youtube link has been found in get_youtube_dl_link.")
 	return
 
 @utils.decorators.memoize(config.memoize_timeout)
 @utils.decorators.retry(urllib2.HTTPError, delay=0.3, tries=3, logger=log)
-def get_youtube_dl_links(video_id):
+def get_youtube_dl_links_api1(video_id):
 	'''
 	Function gets the video_ids for a videoclip
 	This function parses the get_video_info format of youtube.
@@ -328,7 +328,7 @@ def get_youtube_dl_links(video_id):
 
 @utils.decorators.memoize(config.memoize_timeout)
 @utils.decorators.retry(urllib2.HTTPError, delay=0.3, tries=3, logger=log)
-def get_youtube_dl_links2(video_id):
+def get_youtube_dl_links_api2(video_id):
 	'''
 	same as get_youtube_dl_links, but uses the watch?v=xxx API instead of get_video_info.
 	'''

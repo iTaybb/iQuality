@@ -61,6 +61,9 @@ class MainWin(QtGui.QDialog):
 		self.search_autocomplete = QtGui.QCheckBox(tr("Search Auto-completion"))
 		self.search_autocomplete.setCheckState(config.search_autocomplete)
 		self.search_autocomplete.setTristate(False)
+		self.id3editor_in_context_menu = QtGui.QCheckBox(tr("Show ID3 Editor in Explorer's Context Menu"))
+		self.id3editor_in_context_menu.setCheckState(config.id3editor_in_context_menu)
+		self.id3editor_in_context_menu.setTristate(False)
 		self.parse_links_from_clipboard_at_startup = QtGui.QCheckBox(tr("Parse links from clipboard at startup"))
 		self.parse_links_from_clipboard_at_startup.setCheckState(config.parse_links_from_clipboard_at_startup)
 		self.parse_links_from_clipboard_at_startup.setTristate(False)
@@ -170,6 +173,7 @@ class MainWin(QtGui.QDialog):
 		layout4.addWidget(self.id3_autoalbumart)
 		lay.addWidget(self.label1, 0, 0)
 		lay.addLayout(layout4, 1, 0)
+		lay.addWidget(self.id3editor_in_context_menu, 2, 0)
 		id3GroupBox.setLayout(lay)
 		
 		mediaSourcesTab = QtGui.QWidget()
@@ -335,7 +339,7 @@ class MainWin(QtGui.QDialog):
 			if config.post_download_playlist_path:
 				dialog.setDirectory(os.path.dirname(config.post_download_playlist_path))
 			else:
-				dialog.setDirectory(os.path.expanduser(r'~\My Documents\My Music\My Playlists')) # The default playlist directory
+				dialog.setDirectory(r'%s\My Documents\My Music\My Playlists' % utils.get_home_dir()) # The default playlist directory
 			
 			f = unicode(dialog.getOpenFileName(caption=tr("Open Playlist"), filter=tr("Supported Playlist Files") + " (*.m3u *.wpl)"))
 			f = f.replace('/','\\')
@@ -422,6 +426,7 @@ class MainWin(QtGui.QDialog):
 		config.relevance_minimum = self.score_spinBox.value()
 		config.temp_dir = self.temp_dir.displayText()
 		config.post_download_custom_wait_checkbox = self.post_download_custom_wait_checkbox.isChecked()
+		config.id3editor_in_context_menu = self.id3editor_in_context_menu.isChecked()
 		self.close()
 	
 	def slot_restore(self):

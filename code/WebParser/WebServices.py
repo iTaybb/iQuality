@@ -92,7 +92,7 @@ def googleImageSearch(s):
 	obj = urllib2.urlopen(url, timeout=config.webservices_timeout)
 	json_data = obj.read()
 	data = json.loads(json_data)
-	if data['responseData'] == 'null':
+	if not data['responseData'] or data['responseData'] == 'null':
 		return "Response %s: %s" % (data['responseStatus'], data['responseDetails'])
 	
 	images = [image_info['unescapedUrl'] for image_info in data['responseData']['results']]

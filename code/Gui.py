@@ -2,7 +2,7 @@
 # Copyright (C) 2012-2013 Itay Brandes
 
 '''
-PyQt4 GUI for the iQuality program
+PyQt4 GUI for the iQuality application
 '''
 
 import os
@@ -24,6 +24,7 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 from PyQt4 import QAxContainer
 from PyQt4.phonon import Phonon
+import regobj
 
 import Main
 import Config; config = Config.config
@@ -49,6 +50,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.resize(*config.mainWindow_resolution)
 		self.setWindowTitle(config.windowTitle)
 		self.setWindowIcon(QtGui.QIcon(r'pics\pokeball.png'))
+		self.setAcceptDrops(True)
 		             
 		self.artistsObjs = []
 		self.songsObjs = []
@@ -74,20 +76,21 @@ class MainWindow(QtGui.QMainWindow):
 			self.thread4.init(Main.WebParser.WebServices.parse_chartscoil)
 		
 		if len(sys.argv) > 1 and sys.argv[1]:
-			if sys.argv[1] in ['-c', '--config', '/config']:
+			if sys.argv[1] in ['-c', '--conf', '--config', '/conf', '/config']:
 				self.settingsWindow_slot()
 				sys.exit()
-			elif sys.argv[1] in ['/test']: #TEMP
-				# progress = QtGui.QProgressDialog("Copying files...", "Abort Copy", 0, 8)
-				# progress.setWindowModality(QtCore.Qt.WindowModal)
+			elif sys.argv[1] in ['-i', '--id3', '/id3']:
+				if len(sys.argv) > 2:
+					self.id3Window_slot(sys.argv[2])
+				else:
+					self.id3Window_slot()
+					ans = QtGui.QMessageBox.question(self, tr("ID3 Editor"), tr("Do you want to edit another song's tags?"), QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+					while ans == QtGui.QMessageBox.Yes:
+						self.id3Window_slot()
+						ans = QtGui.QMessageBox.question(self, tr("ID3 Editor"), tr("Do you want to edit another song's tags?"), QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
 				
-				# for i in range(0,8):
-					# progress.setValue(i)
-					# QtGui.QApplication.processEvents()
-					# time.sleep(1)
-			
-			
-			
+				sys.exit()
+			elif sys.argv[1] in ['/test']: #TEMP
 				w = ComponentFetcherWindow.MainWin()
 				w.exec_()
 				# sys.exit()
@@ -105,6 +108,29 @@ class MainWindow(QtGui.QMainWindow):
 			if 'youtube.com' in x.lower() or 'youtu.be' in x.lower() or 'soundcloud.com' in x.lower():
 				self.search_lineEdit.setText(x)
 				self.search_slot()
+				
+	def dragEnterEvent(self, event):
+		if event.mimeData().hasUrls:
+			event.accept()
+		else:
+			event.ignore()
+
+	def dragMoveEvent(self, event):
+		if event.mimeData().hasUrls:
+			event.setDropAction(QtCore.Qt.CopyAction)
+			event.accept()
+		else:
+			event.ignore()
+
+	def dropEvent(self, event):
+		if event.mimeData().hasUrls:
+			event.setDropAction(QtCore.Qt.CopyAction)
+			event.accept()
+			links = []
+			path = unicode(event.mimeData().urls()[0].toLocalFile())
+			self.id3Window_slot(path)
+		else:
+			event.ignore()
 	
 	def reload_thread(self, thread, do_log=True):
 		'''
@@ -279,10 +305,11 @@ class MainWindow(QtGui.QMainWindow):
 		
 		self.menuBar().setCornerWidget(menuPushButtonsWidget)
 		
-	def id3Window_slot(self):
-		dialog = QtGui.QFileDialog()
-		dialog.setFileMode(QtGui.QFileDialog.ExistingFile)
-		f = unicode(dialog.getOpenFileName(caption=tr('Choose the mp3 file'), filter="MP3 file (*.mp3)"))
+	def id3Window_slot(self, f = None):
+		if not f:
+			dialog = QtGui.QFileDialog()
+			dialog.setFileMode(QtGui.QFileDialog.ExistingFile)
+			f = unicode(dialog.getOpenFileName(caption=tr('Choose the mp3 file'), filter="MP3 file (*.mp3)"))
 		if f:
 			log.debug('Changing ID3 data for %s' % f)
 			w = ID3Window.MainWin(f, 'ask_albumart')
@@ -295,6 +322,16 @@ class MainWindow(QtGui.QMainWindow):
 	def settingsWindow_slot(self):
 		w = SettingsWindow.MainWin()
 		w.exec_()
+		
+		try:
+			if config.id3editor_in_context_menu and not 'iQuality' in regobj.HKCR.mp3file.shell:
+				log.debug("Registering Context Menu Object...")
+				utils.register_with_context_menu()
+			if not config.id3editor_in_context_menu and 'iQuality' in regobj.HKCR.mp3file.shell:
+				log.debug("Unregistering Context Menu Object...")
+				utils.unregister_with_context_menu()
+		except:
+			log.error(traceback.format_exc())
 		
 		self.downloadAudio_checkbox.setCheckState(config.downloadAudio)
 		self.downloadAudio_checkbox.setTristate(False)
@@ -607,7 +644,7 @@ class MainWindow(QtGui.QMainWindow):
 	
 	def cancel_download_slot(self):
 		self.reload_thread('dl_thread')
-		log.debug("Download task was canceled.")
+		# log.debug("Download task was canceled.")
 		self.status_txt.setText(tr("Task was canceled."))
 		self.finished_signals_count = 0
 		self.enableDownloadUi()
@@ -616,14 +653,16 @@ class MainWindow(QtGui.QMainWindow):
 		if config.warn_listen_slot:
 			QtGui.QMessageBox.warning(self, tr("Warning"), tr("The listening feature is experimental and may not work properly."), QtGui.QMessageBox.Ok)
 			config.warn_listen_slot = False
-		
+			
 		if self.table.selectedIndexes():
 			index = self.table.selectedIndexes()[0]
+			url = str(index.data(QtCore.Qt.UserRole).toString())
+		elif len(self.songsObjs) == 1:
+			url = self.songsObjs[0].url
 		else:
 			QtGui.QMessageBox.critical(self, tr("Error"), tr("Please choose a song."), QtGui.QMessageBox.Ok)
 			return
 		
-		url = str(index.data(QtCore.Qt.UserRole).toString())
 		songObj = [x for x in self.songsObjs if x.url == url][0]
 		
 		if hasattr(self, 'player'):
@@ -688,12 +727,14 @@ class MainWindow(QtGui.QMainWindow):
 		# Check if user has choosen a song
 			if self.table.selectedIndexes():
 				index = self.table.selectedIndexes()[0]
+				url = str(index.data(QtCore.Qt.UserRole).toString())
+			elif len(self.songsObjs) == 1:
+				url = self.songsObjs[0].url
 			else:
 				QtGui.QMessageBox.critical(self, tr("Error"), tr("Please choose a song."), QtGui.QMessageBox.Ok)
 				return
 			
 			# retriving url and deep-copying songobj
-			url = str(index.data(QtCore.Qt.UserRole).toString())
 			self.songObj = [x for x in self.songsObjs if x.url == url][0]
 			self.songObj = copy.deepcopy(self.songObj)
 		else:
@@ -963,23 +1004,26 @@ class MainWindow(QtGui.QMainWindow):
 		eta_s = eta%60
 		eta_m = eta/60
 		
+		if filesize < 0:
+			filesize += 2 * (sys.maxint + 1) # fix int overflow. will work with files up to 4GB.
+		
 		self.prg_bar.setValue(i)
 		if dlRate/1024**2 > 1: # If dlRate is in MBs
 			if eta:
 				if eta_m:
-					self.status_txt.setText(tr("Downloading @ %.2f MB/s, %dm%ds left... [%.2f/%.2f MB]") % (dlRate/1024**2, eta_m, eta_s, currentBytes/1024.0**2, filesize/1024.0**2))
+					self.status_txt.setText(tr("Downloading @ %.2f MB/s, %d:%.2d left... [%s/%s MB]") % (dlRate/1024**2, eta_m, eta_s, "{:,.2f}".format(currentBytes/1024.0**2), "{:,.2f}".format(filesize/1024.0**2)))
 				else:
-					self.status_txt.setText(tr("Downloading @ %.2f MB/s, %ds left... [%.2f/%.2f MB]") % (dlRate/1024**2, eta, currentBytes/1024.0**2, filesize/1024.0**2))
+					self.status_txt.setText(tr("Downloading @ %.2f MB/s, %ds left... [%s/%s MB]") % (dlRate/1024**2, eta, "{:,.2f}".format(currentBytes/1024.0**2), "{:,.2f}".format(filesize/1024.0**2)))
 			else:
-				self.status_txt.setText(tr("Downloading @ %.2f MB/s... [%.2f/%.2f MB]") % (dlRate/1024**2, currentBytes/1024.0**2, filesize/1024.0**2))
+				self.status_txt.setText(tr("Downloading @ %.2f MB/s... [%s/%s MB]") % (dlRate/1024**2, "{:,.2f}".format(currentBytes/1024.0**2), "{:,.2f}".format(filesize/1024.0**2)))
 		else: # If dlRate is in KBs
 			if eta:
 				if eta_m:
-					self.status_txt.setText(tr("Downloading @ %.2f KB/s, %dm%ds left... [%.2f/%.2f MB]") % (dlRate/1024, eta_m, eta_s, currentBytes/1024.0**2, filesize/1024.0**2))
+					self.status_txt.setText(tr("Downloading @ %.2f KB/s, %d:%.2d left... [%s/%s MB]") % (dlRate/1024, eta_m, eta_s, "{:,.2f}".format(currentBytes/1024.0**2), "{:,.2f}".format(filesize/1024.0**2)))
 				else:
-					self.status_txt.setText(tr("Downloading @ %.2f KB/s, %ds left... [%.2f/%.2f MB]") % (dlRate/1024, eta, currentBytes/1024.0**2, filesize/1024.0**2))
+					self.status_txt.setText(tr("Downloading @ %.2f KB/s, %ds left... [%s/%s MB]") % (dlRate/1024, eta, "{:,.2f}".format(currentBytes/1024.0**2), "{:,.2f}".format(filesize/1024.0**2)))
 			else:
-				self.status_txt.setText(tr("Downloading @ %.2f KB/s... [%.2f/%.2f MB]") % (dlRate/1024, currentBytes/1024.0**2, filesize/1024.0**2))
+				self.status_txt.setText(tr("Downloading @ %.2f KB/s... [%s/%s MB]") % (dlRate/1024, "{:,.2f}".format(currentBytes/1024.0**2), "{:,.2f}".format(filesize/1024.0**2)))
 		
 	def update_enc_progress_bar(self, i, currentBytes, filesize):
 		"updates download progress bar"
@@ -1187,6 +1231,7 @@ class MainWindow(QtGui.QMainWindow):
 			s += "Search String: %s" % songObj.searchString
 			if songObj.source == "youtube":
 				s += "\nYotube WatchUrl: %s" % songObj.youtube_watchurl
+				s += "\nYotube View Counter: %s" % "{:,}".format(songObj.youtube_views_count)
 			clipboard.setText(s)
 		if songObj.source == "youtube" and action == act_copywatchurl:
 			clipboard.setText(songObj.youtube_watchurl)
@@ -1236,14 +1281,14 @@ class MyTableModel(QtCore.QAbstractTableModel):
 				pix_list = []
 				
 				for i in range(int(value)):
-					pix_list.append(QtGui.QPixmap('pics/fullstar.png'))
+					pix_list.append(QtGui.QPixmap(r'pics\fullstar.png'))
 				if not value.is_integer():
-					pix_list.append(QtGui.QPixmap('pics/halfstar.png'))
+					pix_list.append(QtGui.QPixmap(r'pics\halfstar.png'))
 				for i in range(5-int(math.ceil(value))):
-					pix_list.append(QtGui.QPixmap('pics/emptystar.png'))
+					pix_list.append(QtGui.QPixmap(r'pics\emptystar.png'))
 				
 				pix = utils.qt.combine_pixmaps(pix_list)
-				if app.isRightToLeft(): # If the app is in RTL mode, we need to reverse the pixmap
+				if app.isRightToLeft() and value != 0 and value != 5: # If the app is in RTL mode, we need to reverse the pixmap
 					pix = pix.transformed(QtGui.QTransform().scale(-1, 1))
 				return pix
 			else:
@@ -1252,12 +1297,14 @@ class MyTableModel(QtCore.QAbstractTableModel):
 		if role != QtCore.Qt.DisplayRole:
 			return QtCore.QVariant()
 			
-		if index.column() == 5 and value: # if source length
-			value = "%.1d:%.2d" % (value/60, value%60)
-		if index.column() == 7: # if source column
-			value = value.capitalize()
-			
-		if value == 0:
+		if value:
+			if index.column() == 3 or index.column() == 4: # if video/audio size
+				value = "{:,.2f}".format(value)
+			elif index.column() == 5: # if source length
+				value = "%.1d:%.2d" % (value/60, value%60)
+			elif index.column() == 7: # if source column
+				value = value.capitalize()
+		else:
 			value = '-----'
 			
 		return QtCore.QVariant(value)

@@ -1,7 +1,10 @@
-* bugs
+for v0.18:
+* context menu for windows 7
+* http://hadagnahash.bandcamp.com/album/time-to-wake-up-zman-lehitorer
+* faster response when website is down
 * make spell checking not blocking
 * making songs amount spinbox accurate
-* add id3 tag to context manu + drag & drop
+* add id3 tag to context manu
 * load many links in once, and download them all
 * add a download queue, so people can continue searching while downloading.
 * automated logs send: http://stackoverflow.com/questions/14439477/log-files-collecting-and-handling-system

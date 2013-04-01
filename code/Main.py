@@ -2,8 +2,13 @@
 
 '''Main Script Module'''
 
-import os, sys
+import os
+import sys
 import traceback
+import time
+import math
+
+import regobj
 
 import HTTPQuery
 from SmartDL import SmartDL
@@ -54,18 +59,24 @@ def sanity_check():
 	config.count_application_runs += 1
 	_warnings = []
 	
-	# Newest version check
-	try:
-		newest_version = WebParser.WebServices.get_newestversion()
-		if newest_version > float(__version__):
-			log.warning("A new version of iQuality is available (%s)." % newest_version)
-			_warnings.append(NewerVersionWarning(newest_version))
-	except IOError as e:
-		log.error("Could not check for the newest version (%s)" % str(e))
+	### LOCAL CHECKS ###
 	
 	# Windows version check
 	winver = sys.getwindowsversion()
 	log.debug('Running iQuality v%s (r%d) on Windows %d.%d.%d %s' % (__version__, __rev__, winver.major, winver.minor, winver.build, winver.service_pack))
+	
+	# Python version check
+	if sys.version_info < (2, 6) or sys.version_info >= (3, 0):
+		msg = "must use python 2.7"
+		log.critical(msg)
+		raise Exception(msg)
+		
+	# Free space check
+	freespace = utils.get_free_space(config.temp_dir)
+	if freespace < 200*1024**2: # 200 MB
+		drive = os.path.splitdrive(config.temp_dir)[0]
+		log.warning("There are less than 200MB available in drive %s (%.2fMB left)." % (drive, freespace/1024.0**2))
+		_warnings.append(NoSpaceWarning(drive, freespace))
 	
 	# Phonon version check
 	try:
@@ -75,53 +86,25 @@ def sanity_check():
 		# log.debug("Available Mime Types are %s" % str(mimeTypes))
 	except ImportError:
 		log.warning("Could not load the phonon module")
-	
-	# External Components Check
-	if not os.path.exists('bin/'):
-		os.makedirs('bin/')
-		
-	hash_failed = []
-	not_exists = []
-	
-	d = WebParser.WebServices.get_components_data()
-	for name, t in d.items():
-		urls, archive_hash, file_to_extract, file_hash = t
-		
-		if not os.path.exists(r'bin\%s' % file_to_extract):
-			log.warning('External component was not found: %s' % name)
-			not_exists.append(name)
-			continue
-		
-		computed_hash = utils.calc_sha256(r'bin\%s' % file_to_extract)
-		if file_hash != computed_hash:
-			log.warning('External components hash check failed for %s' % name)
-			hash_failed.append(name)
-			continue
-	if hash_failed or not_exists:
-		_warnings.append(ComponentsFaultyWarning(hash_failed+not_exists))
-	else:
-		log.debug('External components hash check passed')
-			
+
 	# iTunes' availablity check
-	itunesPath = os.path.expanduser(r'~\My Documents\My Music\iTunes\iTunes Media\Automatically Add to iTunes')
+	itunesPath = r'%s\My Documents\My Music\iTunes\iTunes Media\Automatically Add to iTunes' % utils.get_home_dir()
 	if not os.path.exists(itunesPath):
 		config.is_itunes_installed = False
 		if config.post_download_action == 'addItunes':
 			config.post_download_action = 'ask'
 		log.warning("iTunes Media not found. setting is_itunes_installed to False")
-	
-	# Free space check
-	freespace = utils.get_free_space(config.temp_dir)
-	if freespace < 200*1024**2: # 200 MB
-		drive = os.path.splitdrive(config.temp_dir)[0]
-		log.warning("There are less than 200MB available in drive %s (%.2fMB left)." % (drive, freespace/1024.0**2))
-		_warnings.append(NoSpaceWarning(drive, freespace))
-	
-	# Python version check
-	if sys.version_info < (2, 6) or sys.version_info >= (3, 0):
-		msg = "must use python 2.7"
-		log.critical(msg)
-		raise Exception(msg)
+		
+	# Context Menu check
+	try:
+		if config.id3editor_in_context_menu and not 'iQuality' in regobj.HKCR.mp3file.shell:
+			log.debug("Registering Context Menu Object...")
+			utils.register_with_context_menu()
+		if not config.id3editor_in_context_menu and 'iQuality' in regobj.HKCR.mp3file.shell:
+			log.debug("Unregistering Context Menu Object...")
+			utils.unregister_with_context_menu()
+	except:
+		log.error(traceback.format_exc())
 			
 	# Configuration sanity checks
 	if config.post_download_action == 'customLaunch':
@@ -140,5 +123,48 @@ def sanity_check():
 		if not pl_path or pl_path.count('"')%2 != 0 or not os.path.exists(pl_path):
 			log.warning("config.post_download_playlist_path is empty, malformed or does not exist. changing to config.post_download_action to 'ask'.")
 			config.post_download_action = 'ask'
+			
+	### ONLINE CHECKS ###
+	timestamp = math.fabs(time.time() - config.last_sanity_check_timestamp)
+	if timestamp > 30*60: # if the last check was before more than 30 minutes
+		# Newest version check
+		try:
+			newest_version = WebParser.WebServices.get_newestversion()
+			if newest_version > float(__version__):
+				log.warning("A new version of iQuality is available (%s)." % newest_version)
+				_warnings.append(NewerVersionWarning(newest_version))
+		except IOError as e:
+			log.error("Could not check for the newest version (%s)" % str(e))
+		
+		# External Components Check
+		if not os.path.exists('bin/'):
+			os.makedirs('bin/')
+			
+		hash_failed = []
+		not_exists = []
+		
+		d = WebParser.WebServices.get_components_data()
+		for name, t in d.items():
+			urls, archive_hash, file_to_extract, file_hash = t
+			
+			if not os.path.exists(r'bin\%s' % file_to_extract):
+				log.warning('External component was not found: %s' % name)
+				not_exists.append(name)
+				continue
+			
+			computed_hash = utils.calc_sha256(r'bin\%s' % file_to_extract)
+			if file_hash != computed_hash:
+				log.warning('External components hash check failed for %s' % name)
+				hash_failed.append(name)
+				continue
+		if hash_failed or not_exists:
+			_warnings.append(ComponentsFaultyWarning(hash_failed+not_exists))
+		else:
+			log.debug('External components hash check passed')
+			
+		if not _warnings:
+			config.last_sanity_check_timestamp = time.time()
+	else:
+		log.debug('Last successful sanity check was launched %d minutes ago. Skipping...' % math.ceil(timestamp/60))
 	
 	return _warnings

@@ -164,7 +164,7 @@ class MainWin(QtGui.QDialog):
 			dialog.setDirectory(os.path.dirname(config.post_download_playlist_path))
 		else:
 			# The default playlist directory
-			dialog.setDirectory(os.path.expanduser(r'~\My Documents\My Music\My Playlists'))
+			dialog.setDirectory(r'%s\My Documents\My Music\My Playlists' % utils.get_home_dir())
 		
 		f = unicode(dialog.getOpenFileName(caption=tr("Open Playlist"), filter=tr("Supported Playlist Files") + " (*.m3u *.wpl)"))
 		f = f.replace('/','\\')

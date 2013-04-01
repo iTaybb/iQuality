@@ -2,6 +2,8 @@
 
 ''' ID3 Window '''
 
+import os.path
+
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from mutagen.mp3 import MP3, HeaderNotFoundError
@@ -22,6 +24,7 @@ class MainWin(QtGui.QDialog):
 		self.path = songPath
 		self.id3_action = id3_action if id3_action else config.id3_action
 		self.changed_AlbumArt = False
+		self.pix_path = ""
 		self.albumArt_task = "nothing"
 		
 		'''
@@ -43,9 +46,10 @@ class MainWin(QtGui.QDialog):
 		# If value is 0, notfound errors won't be suppressed. Any other value will suppress all errors.
 		self.suppress_notfound_errors = 0
 		
-		self.setWindowTitle(tr("Set ID3 Data"))
-		self.resize(600, 430)
+		self.setWindowTitle(tr("ID3 Editor"))
+		self.resize(650, 430)
 		self.setWindowIcon(QtGui.QIcon(r'pics\id3edit.png'))
+		self.empty_cdbox_path = r"pics\empty_cdbox_%s.png" % config.lang if os.path.exists("pics\empty_cdbox_%s.png" % config.lang) else r"pics\empty_cdbox.png"
 		
 		log.debug("Initializing SetID3Window Widgets...")
 		self.init_threads()
@@ -105,22 +109,19 @@ class MainWin(QtGui.QDialog):
 			self.originalLyrics = ""
 		
 		APIC_Tag = [x for x in self.ID3Obj.keys() if x.startswith('APIC')]
-		if not APIC_Tag:
-			self.pix_path = r"pics\cdbox.png"
-			return
+		if APIC_Tag:
+			APIC_Tag = APIC_Tag[0]
 			
-		APIC_Tag = APIC_Tag[0]
-		
-		mime = self.ID3Obj[APIC_Tag].mime
-		if mime == u'image/jpeg':
-			self.pix_path = r"%s\album_art.jpg" % (config.temp_dir)
-		elif mime == u'image/png':
-			self.pix_path = r"%s\album_art.png" % (config.temp_dir)
-		else:
-			self.pix_path = r"%s\album_art.pic" % (config.temp_dir)
-		
-		with open(self.pix_path, 'wb') as f:
-			f.write(self.ID3Obj[APIC_Tag].data)
+			mime = self.ID3Obj[APIC_Tag].mime
+			if mime == u'image/jpeg':
+				self.pix_path = r"%s\album_art.jpg" % (config.temp_dir)
+			elif mime == u'image/png':
+				self.pix_path = r"%s\album_art.png" % (config.temp_dir)
+			else:
+				self.pix_path = r"%s\album_art.pic" % (config.temp_dir)
+			
+			with open(self.pix_path, 'wb') as f:
+				f.write(self.ID3Obj[APIC_Tag].data)
 		
 	def init_widgets(self):
 		self.title = QtGui.QLineEdit(utils.fix_faulty_unicode(self.easyID3Obj['title'][0])) if 'title' in self.easyID3Obj.keys() else QtGui.QLineEdit("")
@@ -133,14 +134,10 @@ class MainWin(QtGui.QDialog):
 		self.original_album = unicode(self.album.displayText())
 		self.original_date = unicode(self.date.displayText())
 		
-		self.lyrics = QtGui.QPlainTextEdit(self.originalLyrics)
-		
-		self.changeLyricsButton = QtGui.QPushButton(tr("Load Lyrics From The Web"))
-		self.changeLyricsButton.clicked.connect(self.slot_changeLyrics)
-		
-		pixmap = QtGui.QPixmap(self.pix_path)
+		pixmap = QtGui.QPixmap(self.pix_path) if self.pix_path else QtGui.QPixmap(self.empty_cdbox_path)
 		if max(pixmap.width(), pixmap.height()) > 200:
 			pixmap = pixmap.scaled(200, 200, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
+			
 		self.albumArt = QtGui.QLabel()
 		self.albumArt.setPixmap(pixmap)
 		self.albumArt.setStyleSheet("border-style:solid; border-color:#999792; border-width:1px;")
@@ -148,7 +145,7 @@ class MainWin(QtGui.QDialog):
 		self.remove_albumart_button = QtGui.QPushButton(QtGui.QIcon(r'pics\cancel.png'), "")
 		self.remove_albumart_button.clicked.connect(self.remove_albumart_slot)
 		self.remove_albumart_button.setFlat(True)
-		if self.pix_path == r"pics\cdbox.png":
+		if not self.pix_path:
 			self.remove_albumart_button.setEnabled(False)
 
 		# Row Layouts
@@ -160,9 +157,12 @@ class MainWin(QtGui.QDialog):
 		buttonLayout.addWidget(applyButton)
 		buttonLayout.addWidget(closeButton)
 		
-		self.changeImageButton = QtGui.QPushButton(tr("Load Album Arts From The Web"))
+		self.changeImageButton = QtGui.QPushButton(tr("Fetch From The Web"))
+		self.changeImageButton.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
 		self.changeImageButton.clicked.connect(self.slot_changeImage)
-		
+		self.loadLocalImageButton = QtGui.QPushButton(tr("Choose Image Locally"))
+		self.loadLocalImageButton.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+		self.loadLocalImageButton.clicked.connect(self.slot_loadLocalImage)
 		self.loadFreeDBButton = QtGui.QPushButton(tr("Load From MusicBrainz"))
 		self.loadFreeDBButton.clicked.connect(self.slot_loadFreeDBButton)
 		self.restoreOriginalButton = QtGui.QPushButton(tr("Restore Original"))
@@ -175,7 +175,7 @@ class MainWin(QtGui.QDialog):
 		### RIGHT ###
 		rightLayout = QtGui.QVBoxLayout()
 		
-		basicTagsGroup = QtGui.QGroupBox(tr("Basic ID3 Tags"))
+		basicTagsGroup = QtGui.QGroupBox(tr("ID3 Tags"))
 		layout = QtGui.QFormLayout()
 		layout.addRow(tr("Title:"), self.title)
 		layout.addRow(tr("Artist:"), self.artist)
@@ -189,13 +189,22 @@ class MainWin(QtGui.QDialog):
 		
 		albumArtGroup = QtGui.QGroupBox(tr("Album Art"))
 		layout = QtGui.QGridLayout()
-		layout.addWidget(self.albumArt, 1, 0)
-		layout.addWidget(self.remove_albumart_button, 1, 1)
-		layout.addWidget(self.changeImageButton, 2, 0, 1, 0)
+		layout.addWidget(self.albumArt, 0, 0, 1, 3, QtCore.Qt.AlignCenter)
+		layout.addWidget(self.changeImageButton, 1, 0)
+		layout.addWidget(self.loadLocalImageButton, 1, 1)
+		layout.addWidget(self.remove_albumart_button, 1, 2)
 		albumArtGroup.setLayout(layout)
 		
 		rightLayout.addWidget(basicTagsGroup)
 		rightLayout.addWidget(albumArtGroup)
+		
+		### LEFT ###
+		self.changeLyricsButton = QtGui.QPushButton(tr("Load Lyrics From The Web"))
+		self.changeLyricsButton.clicked.connect(self.slot_changeLyrics)
+		self.changeLyricsButton.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+		self.deleteLyricsButton = QtGui.QPushButton(QtGui.QIcon(r'pics\cancel.png'), "")
+		self.deleteLyricsButton.setFlat(True)
+		self.deleteLyricsButton.clicked.connect(self.slot_deleteLyrics)
 		
 		self.lyrics_left_button = QtGui.QPushButton("<<")
 		self.lyrics_left_button.setEnabled(False)
@@ -203,11 +212,11 @@ class MainWin(QtGui.QDialog):
 		self.lyrics_right_button = QtGui.QPushButton(">>")
 		self.lyrics_right_button.setEnabled(False)
 		self.lyrics_right_button.clicked.connect(self.slot_lyrics_right_button)
-		self.changeLyricsLabel = QtGui.QLabel("")
+		self.changeLyricsLabel = QtGui.QLabel(tr("* Loaded from file's tags *")) if self.originalLyrics else QtGui.QLabel("")
 		self.changeLyricsLabel.setFrameStyle(QtGui.QFrame.Panel | QtGui.QFrame.Sunken)
 		self.changeLyricsLabel.setWordWrap(True)
 		
-		### LEFT ###
+		self.lyrics = QtGui.QPlainTextEdit(self.originalLyrics)
 		leftLayout = QtGui.QGroupBox(tr("Lyrics"))
 		self.lyricsGroupBox = leftLayout # For manipulating the title name
 		layout = QtGui.QVBoxLayout()
@@ -217,7 +226,10 @@ class MainWin(QtGui.QDialog):
 		inner_layout.addWidget(self.changeLyricsLabel)
 		inner_layout.addWidget(self.lyrics_right_button)
 		layout.addLayout(inner_layout)
-		layout.addWidget(self.changeLyricsButton)
+		inner_layout = QtGui.QHBoxLayout()
+		inner_layout.addWidget(self.changeLyricsButton)
+		inner_layout.addWidget(self.deleteLyricsButton, alignment=QtCore.Qt.AlignRight)
+		layout.addLayout(inner_layout)
 		leftLayout.setLayout(layout)
 		
 		### Exit Counter Layout ###
@@ -283,7 +295,6 @@ class MainWin(QtGui.QDialog):
 			
 		self.changeLyricsButton.setEnabled(True)
 		self.changeImageButton.setEnabled(True)
-		self.remove_albumart_button.setEnabled(True)
 		self.loadFreeDBButton.setEnabled(True)
 		self.restoreOriginalButton.setEnabled(True)
 	
@@ -300,11 +311,13 @@ class MainWin(QtGui.QDialog):
 
 		if lyrics:
 			if utils.isHebrew(lyrics):
-				self.ID3TagsToEdit["USLT"] = USLT(encoding=3, lang=u'heb', desc=u'', text=lyrics)
+				self.ID3TagsToEdit['USLT'] = USLT(encoding=3, lang=u'heb', desc=u'', text=lyrics)
 			else:
-				self.ID3TagsToEdit["USLT"] = USLT(encoding=3, lang=u'eng', desc=u'', text=lyrics)
+				self.ID3TagsToEdit['USLT'] = USLT(encoding=3, lang=u'eng', desc=u'', text=lyrics)
+		else:
+			self.ID3TagsToEdit['USLT'] = ''
 
-		if self.albumArt_task == 'add':
+		if self.albumArt_task == 'add' and self.pix_path:
 			with open(self.pix_path, 'rb') as f:
 				data = f.read()
 			self.ID3TagsToEdit['APIC'] = APIC(encoding=0, mime=utils.guess_image_mime_type(self.pix_path),
@@ -325,22 +338,34 @@ class MainWin(QtGui.QDialog):
 		else:
 			self.slot_error(tr("No title or artist values were given."))
 			return
+		self.last_search_string = s
 			
 		splash_movie = QtGui.QMovie(r'pics\loading_row.gif')
 		self.splash = utils.qt.MovieSplashScreen(splash_movie, QtCore.Qt.WindowStaysOnTopHint)
 		self.splash.show()
 		
 		self.changeImageButton.setEnabled(False)
-		self.remove_albumart_button.setEnabled(False)
 		
 		if autochoose:
 			self.googleImages_thread.search(s, 1)
 		else:
 			self.googleImages_thread.search(s, 3)
+			
+	def slot_loadLocalImage(self):
+		dialog = QtGui.QFileDialog()
+		dialog.setFileMode(QtGui.QFileDialog.ExistingFile)
+		f = unicode(dialog.getOpenFileName(caption=tr('Choose the artwork'), filter=tr("Images (*.png *.jpg)")))
+		if f:
+			self.pix_path = f
+			pixmap = QtGui.QPixmap(self.pix_path)
+			if max(pixmap.width(), pixmap.height()) > 200:
+				pixmap = pixmap.scaled(200, 200, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
+			self.albumArt.setPixmap(pixmap)
+			self.albumArt_task = 'add'
+			self.remove_albumart_button.setEnabled(True)
 	
 	def slot_googleImagesResult(self, fn_list):
 		self.changeImageButton.setEnabled(True)
-		self.remove_albumart_button.setEnabled(True)
 		
 		if self.suppress_notfound_errors <= 1:
 			self.splash.finish(self)
@@ -355,12 +380,20 @@ class MainWin(QtGui.QDialog):
 		if len(fn_list) == 1:
 			self.pix_path = fn_list[0]
 		else:
-			w = AlbumArtWin(fn_list)
+			w = AlbumArtWin(fn_list, self.last_search_string)
 			w.exec_()
 			if hasattr(w, 'pix'):
 				self.pix_path = w.pix
+			if hasattr(w, 'search_string'):
+				splash_movie = QtGui.QMovie(r'pics\loading_row.gif')
+				self.splash = utils.qt.MovieSplashScreen(splash_movie, QtCore.Qt.WindowStaysOnTopHint)
+				self.splash.show()
+				
+				self.last_search_string = w.search_string
+				self.googleImages_thread.search(w.search_string, 3)
+				return
 
-		if hasattr(self, 'pix_path'):
+		if self.pix_path:
 			pixmap = QtGui.QPixmap(self.pix_path)
 			if max(pixmap.width(), pixmap.height()) > 200:
 				pixmap = pixmap.scaled(200, 200, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
@@ -386,10 +419,15 @@ class MainWin(QtGui.QDialog):
 		self.changeLyricsButton.setEnabled(False)
 		
 		self.thread.search(title, artist)
+		
+	def slot_deleteLyrics(self):
+		self.changeLyricsLabel.setText("")
+		self.lyrics.setPlainText("")
 	
 	def remove_albumart_slot(self):
 		self.albumArt_task = 'delete'
-		self.albumArt.setPixmap(QtGui.QPixmap(r"pics\cdbox.png"))
+		self.pix_path = ""
+		self.albumArt.setPixmap(QtGui.QPixmap(self.empty_cdbox_path))
 		self.remove_albumart_button.setEnabled(False)
 		log.debug('AlbumArt is marked for deletion.')
 	
@@ -411,9 +449,9 @@ class MainWin(QtGui.QDialog):
 		self.lyrics.setPlainText(lyrics.lyrics)
 		self.changeLyricsLabel.setText("%s - %s" % (lyrics.artist, lyrics.title))
 		if self.lyricsList_EOF:
-			self.lyricsGroupBox.setTitle(tr("Lyrics") + " (%d/%d)" % (self.lyricsListIndex+1, len(self.lyricsList)))
+			self.lyricsGroupBox.setTitle(tr("Lyrics (%d/%d)") % (self.lyricsListIndex+1, len(self.lyricsList)))
 		else:
-			self.lyricsGroupBox.setTitle(tr("Lyrics") + " (%d/%d+)" % (self.lyricsListIndex+1, len(self.lyricsList)))
+			self.lyricsGroupBox.setTitle(tr("Lyrics (%d/%d+)") % (self.lyricsListIndex+1, len(self.lyricsList)))
 		
 	def slot_lyrics_minor(self, lyrics):
 		self.changeLyricsButton.setEnabled(True)
@@ -423,7 +461,7 @@ class MainWin(QtGui.QDialog):
 			
 		self.lyricsList.append(lyrics)
 		self.lyrics_right_button.setEnabled(True)
-		self.lyricsGroupBox.setTitle(tr("Lyrics") + " (%d/%d+)" % (self.lyricsListIndex+1, len(self.lyricsList)))
+		self.lyricsGroupBox.setTitle(tr("Lyrics (%d/%d+)") % (self.lyricsListIndex+1, len(self.lyricsList)))
 	
 	def slot_lyrics_eof(self):
 		self.changeLyricsButton.setEnabled(True)
@@ -509,10 +547,11 @@ class MainWin(QtGui.QDialog):
 			self.artist.setText(artist)
 			
 class AlbumArtWin(QtGui.QDialog):
-	def __init__(self, fn_list, parent=None):
+	def __init__(self, fn_list, last_search_string, parent=None):
 		super(AlbumArtWin, self).__init__(parent)
 		
 		self.fn_list = fn_list
+		self.last_search_string = last_search_string
 		
 		self.setWindowTitle(tr("Set Album Art"))
 		self.resize(20, 10)
@@ -529,13 +568,13 @@ class AlbumArtWin(QtGui.QDialog):
 			if max(pixmap.width(), pixmap.height()) > 200:
 				pixmap = pixmap.scaled(200, 200, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
 			
-			button = QtGui.QPushButton(QtGui.QIcon(pixmap),'')
+			button = QtGui.QPushButton(QtGui.QIcon(pixmap), '')
 			button.setIconSize(pixmap.size())
 			button.clicked.connect(self.slot_select)
 			button.pix_path = pix_path
 			self.albumArts.append(button)
 			
-		self.saveSelection_CheckBox = QtGui.QCheckBox(tr("Choose album art automatically next time."))
+		self.saveSelection_CheckBox = QtGui.QCheckBox(tr("Choose album art automatically next time"))
 		self.saveSelection_CheckBox.setTristate(False)
 		if config.id3_action == 'ask':
 			self.saveSelection_CheckBox.setCheckState(True)
@@ -552,8 +591,22 @@ class AlbumArtWin(QtGui.QDialog):
 		for art in self.albumArts:
 			pixLayout.addWidget(art)
 		
+		searchLabel = QtGui.QLabel(tr("Look for:"))
+		self.search_lineEdit = QtGui.QLineEdit(self.last_search_string)
+		self.search_lineEdit.returnPressed.connect(self.slot_search)
+		search_button = QtGui.QPushButton(tr("Search"))
+		search_button.clicked.connect(self.slot_search)
+		
+		textboxLayout = QtGui.QHBoxLayout()
+		textboxLayout.addWidget(searchLabel)
+		textboxLayout.addWidget(self.search_lineEdit)
+		textboxLayout.addWidget(search_button)
+		
 		mainLayout.addWidget(QtGui.QLabel(tr("<h2>Choose a new album art:</h2>")), alignment = QtCore.Qt.AlignCenter)
 		mainLayout.addLayout(pixLayout)
+		mainLayout.addWidget(QtGui.QLabel(tr("<h2>Or search for other images:</h2>")), alignment = QtCore.Qt.AlignCenter)
+		mainLayout.addLayout(textboxLayout)
+		
 		if config.id3_action != 'noask':
 			mainLayout.addWidget(self.saveSelection_CheckBox)
 		mainLayout.addWidget(closeButton)
@@ -570,3 +623,6 @@ class AlbumArtWin(QtGui.QDialog):
 			
 		self.close()
 		
+	def slot_search(self):
+		self.search_string = unicode(self.search_lineEdit.displayText()).strip()
+		self.close()

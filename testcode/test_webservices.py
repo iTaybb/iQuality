@@ -183,7 +183,7 @@ def test_parse_youtube_videoinfo():
 	youtube_download_links = []
 	
 	for id in video_ids:
-		ans = Main.WebParser.LinksGrabber.get_youtube_dl_links(id)
+		ans = Main.WebParser.LinksGrabber.get_youtube_dl_links_api1(id)
 		for stream in ans['fmt_stream_map']:
 			url = stream['url']
 			youtube_download_links.append(url)

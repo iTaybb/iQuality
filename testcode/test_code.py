@@ -42,6 +42,7 @@ def test_PyEnviron():
 		#this is the python3 version of ConfigParser. a backport for python2 is available.
 		import pytest
 		import rsa
+		import regobj
 
 	except ImportError, e:
 		raise Exception("Depencency not found: %s" % str(e))

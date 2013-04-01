@@ -37,9 +37,9 @@ import threading
 
 from win32com.shell import shell, shellcon
 
-__version__ = "0.16"
-__rev__ = 136 # auto-generated
-__date__ = '05/03/13'
+__version__ = "0.17"
+__rev__ = 149 # auto-generated
+__date__ = '01/04/13'
 __author__ = 'Itay Brandes (Brandes.Itay@gmail.com)'
 
 class ConfigInterface(object):
@@ -178,6 +178,7 @@ except NameError: # if not already initialized
 		'metadata_timeout': 5,
 		'webservices_timeout': 4,
 		'GoogleImagesGrabber_timeout': 5,
+		'GoogleImagesGrabber_maxsize': 650*1024, # 650KB
 		'get_id3info_timeout': 4,
 		'memoize_timeout': 30*60, # 30 mins
 		'id3_noask_wait_interval': 4,
@@ -214,6 +215,7 @@ except NameError: # if not already initialized
 		'parse_links_from_clipboard_at_startup': True,
 		'artist_lookup': True,
 		'lyrics_lookup': True,
+		'id3editor_in_context_menu': True,
 		
 		# Table DoubleClick Task
 		'table_doubleClick_action_dict': OrderedDict({'listen': tr('Listen'),
@@ -235,7 +237,7 @@ except NameError: # if not already initialized
 		'id3_action_dict': OrderedDict({'noask': tr('Choose albumart for me & close window afterwards'),
 										'ask': tr('Choose albumart for me, but the window open'),
 										'ask_albumart': tr('Let me choose an albumart')}),		
-		'id3_action': "ask_albumart",
+		'id3_action': 'ask_albumart',
 		
 		'is_itunes_installed': True, # will be checked on sanity check
 		'post_download_playlist_path': "",
@@ -248,6 +250,7 @@ except NameError: # if not already initialized
 		# Statistics
 		'count_application_runs': 0,
 		'count_download': 0,
+		'last_sanity_check_timestamp': 0, # timestamp of the last successful full sanity check
 		
 	### Credits ###
 	'credits_text': u'''
@@ -305,12 +308,14 @@ iQuality Copyright© 2012-2013 by Itay Brandes (iTayb). All rights reserved.
 					'post_download_action', 'lang', 'search_sources', 'youtube_quality_priority',
 					'id3_action', 'count_application_runs', 'count_download', 'listen_volumeSlider_volume',
 					'post_download_custom_wait_checkbox', 'warn_listen_slot', 'prefetch_charts',
-					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup']
+					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup',
+					'id3editor_in_context_menu', 'last_sanity_check_timestamp']
 	vars_to_eval = ['relevance_minimum', 'downloadAudio', 'downloadVideo', 'ver', 'youtube_quality_priority',
 					'youtube_formats_priority', 'enableSpellCheck', 'songs_count_spinBox', 'search_sources',
 					'editID3', 'count_application_runs', 'count_download', 'listen_volumeSlider_volume',
 					'post_download_custom_wait_checkbox', 'warn_listen_slot', 'prefetch_charts',
-					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup']
+					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup',
+					'id3editor_in_context_menu', 'last_sanity_check_timestamp']
 	vars_to_override = ['ver']
 
 	config = ConfigInterface(d, ini_path, vars_to_save, vars_to_eval)
