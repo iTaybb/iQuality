@@ -6,7 +6,7 @@ Dependencies:
 * py2exe >= 0.6.9
 * BeautifulSoup >= 4.1.3
 * lxml >= 2.3.3
-* mutagen >= 1.12 + IDv2.3 tags fix:
+* mutagen >= 1.12
 * mutagen IDv2.3 tags fix:
 		grab fix from http://bazaar.launchpad.net/~musicbrainz-developers/picard/trunk/annotate/head%3A/picard/formats/mutagenext/compatid3.py
 		or https://groups.google.com/forum/?fromgroups#!topic/quod-libet-development/krPCx4hhM_Q
@@ -14,10 +14,10 @@ Dependencies:
 * configparser python2 port >= 3.2.0
 * pytest >= 2.3.4
 * python-rsa >= 3.1.1
-* import regobj >= 0.2.2
+* regobj >= 0.2.2
 * Inno Setup >= 5.5.1
-* 7za.exe (copy to c:\windows\system32 or c:\windows\syswow64)
-* ffmpeg (will be downloaded if not exists)
+* 7za.exe (will be downloaded if not exists)
+* ffmpeg.exe (will be downloaded if not exists)
 
 1. Make sure all the Dependencies are met, by running:
 	cd C:\Scripts\iQuality\testcode

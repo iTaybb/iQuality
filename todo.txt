@@ -1,5 +1,6 @@
 for v0.18:
 * context menu for windows 7
+* compomnent updater retry
 * http://hadagnahash.bandcamp.com/album/time-to-wake-up-zman-lehitorer
 * faster response when website is down
 * make spell checking not blocking
