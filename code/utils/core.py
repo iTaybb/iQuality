@@ -16,6 +16,7 @@ import shutil
 import urllib
 import urlparse
 import hashlib
+import htmlentitydefs
 
 import rsa
 import regobj
@@ -23,7 +24,7 @@ from win32com.shell import shell, shellcon
 from mutagen.compatid3 import CompatID3 # hack for IDv2.3 tags writing with mutagen
 from mutagen.id3 import ID3NoHeaderError
 
-__all__ = ['makeDummyMP3', 'setID3Tags', 'append_bold_changes', 'get_free_space',
+__all__ = ['makeDummyMP3', 'appendDummyID3', 'setID3Tags', 'append_bold_changes', 'get_free_space',
 			'module_path', 'launch_without_console', 'get_rand_string', 'get_rand_filename',
 			'isHebrew', 'isAscii', 'isJibrish', 'fix_faulty_unicode', 'convert_html_entities',
 			'combine_files', 'progress_bar', 'delete_duplicates_ordered', 'launch_file_explorer',
@@ -31,7 +32,8 @@ __all__ = ['makeDummyMP3', 'setID3Tags', 'append_bold_changes', 'get_free_space'
 			'add_item_to_m3u_playlist', 'add_item_to_itunes_playlist', 'move_item_to_top',
 			'open_with_notepad', 'url_fix', 'trim_between', 'guess_image_mime_type', 
 			'parse_artists_from_artist', 'calc_sha256', 'verify_signature', 'get_home_dir',
-			'terminate_thread', 'register_with_context_menu', 'unregister_with_context_menu']
+			'terminate_thread', 'register_with_context_menu', 'unregister_with_context_menu',
+			'check_context_menu_status', 'attemp_to_fix_unicode_problems', 'set_term_color']
 
 def makeDummyMP3(dir_):
 	'''
@@ -46,6 +48,18 @@ def makeDummyMP3(dir_):
 	with open(path, 'wb') as f:
 		f.write('ID3\x04\x00\x00\x00\x00\x00\x00\xff\xfb\x90\x04\x00\x0f\xf0\x00\x00i\x00\x00\x00\x08\x00\x00\r \x00\x00\x01\x00\x00\x01\xa4\x00\x00\x00 \x00\x004\x80\x00\x00\x04UUU\xff\xfb\x92\x04@\x8f\xf0\x00\x00i\x00\x00\x00\x08\x00\x00\r \x00\x00\x01\x00\x00\x01\xa4\x00\x00\x00 \x00\x004\x80\x00\x00\x04')
 	return path
+	
+def appendDummyID3(path):
+	'''
+	Appends empty ID3 tags to a file.
+	@param path: Destination file folder.
+	@type path: string
+	'''
+	with open(path, 'rb') as f:
+		data = f.read()
+	data = 'ID3\x04\x00\x00\x00\x00\x00\x00' + data # Adding ID3 data
+	with open(path, 'wb') as f:
+		f.write(data)
 
 def setID3Tags(ID3Tags, fn):
 	'''
@@ -61,11 +75,7 @@ def setID3Tags(ID3Tags, fn):
 	try:
 		ID3Obj = CompatID3(fn)
 	except ID3NoHeaderError:
-		with open(fn, 'rb') as f:
-			data = f.read()
-		data = 'ID3\x04\x00\x00\x00\x00\x00\x00' + data # Adding ID3 data
-		with open(fn, 'wb') as f:
-			f.write(data)
+		appendDummyID3(fn)
 		ID3Obj = CompatID3(fn)
 	
 	for tagName, tagData in ID3Tags.items():
@@ -152,11 +162,11 @@ def module_path(_file=__file__):
 		return os.path.dirname(unicode(sys.executable, sys.getfilesystemencoding()))
 	return os.path.dirname(unicode(_file, sys.getfilesystemencoding()))
 
-def launch_without_console(cmd):
+def launch_without_console(cmd, shell=False):
 	"Function launches a process without spawning a window. Returns subprocess.Popen object."
 	suinfo = subprocess.STARTUPINFO()
 	suinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
-	p = subprocess.Popen(cmd, -1, stdout=subprocess.PIPE, stderr=subprocess.PIPE, startupinfo=suinfo)
+	p = subprocess.Popen(cmd, -1, stdout=subprocess.PIPE, stderr=subprocess.PIPE, startupinfo=suinfo, shell=shell)
 	return p
 
 def get_rand_string(length=8):
@@ -491,11 +501,70 @@ def terminate_thread(thread):
 		raise SystemError("PyThreadState_SetAsyncExc failed")
 		
 def register_with_context_menu():
-	regobj.HKCR.mp3file.shell.iQuality = 'Edit Tags with iQuality'
+	# May raise WindowsError for Permission denied.
+	try:
+		progId = regobj.HKCU.Software.Microsoft.Windows.CurrentVersion.Explorer.FileExts.get_subkey('.mp3').UserChoice['Progid'].data
+	except AttributeError:
+		progId = regobj.HKCR.get_subkey('.mp3')[''].data
+	working_dir = "\\".join(module_path().split('\\')[:-1])
+	
+	if not 'shell' in regobj.HKCR.get_subkey(progId):
+		regobj.HKCR.get_subkey(progId).shell = ''
+	regobj.HKCR.get_subkey(progId).shell.iQuality = 'Edit Tags with iQuality'
+	regobj.HKCR.get_subkey(progId).shell.iQuality['Icon'] = r"%s\pics\music_pencil_icon.ico" % working_dir
 	if hasattr(sys, "frozen"): # if compiled into py2exe
-		regobj.HKCR.mp3file.shell.iQuality.command = r'"%s" /id3 "%%1"' % unicode(sys.executable, sys.getfilesystemencoding())
+		regobj.HKCR.get_subkey(progId).shell.iQuality.command = r'"%s" /id3 "%%1"' % unicode(sys.executable, sys.getfilesystemencoding())
 	else:
-		regobj.HKCR.mp3file.shell.iQuality.command = r'python "%s\Gui.py" /id3 "%%1"' % "\\".join(module_path().split('\\')[:-1])
+		regobj.HKCR.get_subkey(progId).shell.iQuality.command = r'python "%s\Gui.py" /id3 "%%1"' % working_dir
+		
+	
 	
 def unregister_with_context_menu():
-	del regobj.HKCR.mp3file.shell.iQuality
+	try:
+		progId = regobj.HKCU.Software.Microsoft.Windows.CurrentVersion.Explorer.FileExts.get_subkey('.mp3').UserChoice['Progid'].data
+	except AttributeError:
+		progId = regobj.HKCR.get_subkey('.mp3')[''].data
+		
+	try:
+		del regobj.HKCR.get_subkey(progId).shell.iQuality
+	except AttributeError: # Bug of regobj
+		raise WindowsError(5, 'Access is denied')
+
+def check_context_menu_status():
+	try:
+		progId = regobj.HKCU.Software.Microsoft.Windows.CurrentVersion.Explorer.FileExts.get_subkey('.mp3').UserChoice['Progid'].data
+	except AttributeError:
+		progId = regobj.HKCR.get_subkey('.mp3')[''].data
+		
+	try:
+		regobj.HKCR.get_subkey(progId).shell.iQuality
+	except AttributeError:
+		return False
+	return True
+	
+def attemp_to_fix_unicode_problems(path):
+	if os.path.exists(path):
+		return path
+		
+	dir_, fn = os.path.split(path)
+	fn_base, fn_ext = os.path.splitext(fn)
+	
+	dir_ = attemp_to_fix_unicode_problems(dir_)
+	if not dir_:
+		return None
+	
+	if '?' in fn_base:
+		for f in os.listdir(unicode(dir_)):
+			if f.encode('ascii', 'replace') == fn:
+				fn = f
+	fixed_path = os.path.join(dir_, fn)
+	if os.path.exists(fixed_path):
+		return fixed_path
+	return None
+	
+def set_term_color(hex):
+	# Taken from http://stackoverflow.com/questions/287871/print-in-terminal-with-colors-using-python
+
+	STD_OUTPUT_HANDLE = -11
+	stdout_handle = ctypes.windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
+	ctypes.windll.kernel32.SetConsoleTextAttribute(stdout_handle, hex)

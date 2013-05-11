@@ -161,9 +161,9 @@ def musicbrainz_artist_search(s):
 	Returns a list of MetadataArtist.
 	'''
 	log.debug("Searching for %s in the artists list on musicbrainz..." % s)
-	url = 'http://www.musicbrainz.org/ws/2/artist?query=artist:"%s"&limit=5' % s
+	url = 'http://www.musicbrainz.org/ws/2/artist?query=artist:"%s"&limit=5' % utils.url_fix(s)
 	log.debug('Fetching %s...' % url)
-	url = utils.url_fix(url)
+
 	obj = urllib2.urlopen(url, timeout=config.metadata_timeout)
 	response = obj.read()
 	obj.close()

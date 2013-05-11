@@ -231,10 +231,9 @@ class Song(object):
 		return fn
 		
 	def calcFinalFilesize(self):
-		if self.source != "youtube":
-			return self.filesize
-		else:
+		if self.source == "youtube":
 			return self.bitrate/8.0 * self.mediaLength
+		return self.filesize
 		
 	def calcLength(self):
 		"Calculates the media stream length in seconds."
@@ -303,8 +302,8 @@ class Song(object):
 				score += 0.5
 		
 		# If we weren't searching for 'dj', 'mix', 'live' and the song do include these strings: -1.5
-		forbidden_words_in_artist = ['dj', 'rmx', 'instrumental', 'piano', 'live', 'cover', 'karaoke', 'acapella', 'playback', 'parody', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע', u'פסנתר', u'פרודיה', u'פארודיה']
-		forbidden_words_in_title = ['mix', 'rmx', 'instrumental', 'piano', 'live', 'cover', 'karaoke', 'acapella', 'playback', 'parody', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע', u'פסנתר', u'פרודיה', u'פארודיה']
+		forbidden_words_in_artist = ['dj', 'rmx', 'instrumental', 'piano', 'live', 'cover', 'karaoke', 'acapella', 'playback', 'parody', 'acoustic', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע', u'פסנתר', u'פרודיה', u'פארודיה', u'אקוסטי']
+		forbidden_words_in_title = ['mix', 'rmx', 'instrumental', 'piano', 'live', 'cover', 'karaoke', 'acapella', 'playback', 'parody', 'acoustic', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע', u'פסנתר', u'פרודיה', u'פארודיה', u'אקוסטי']
 				
 		if self.artist:
 			for word in forbidden_words_in_artist:
@@ -371,16 +370,17 @@ class Song(object):
 				score -= 1.0
 		
 		# If it is youtube, and views are over 50,000: +0.5
-		# Else, if the views counter are less then 2,500: -0.5
+		# Else, if the views counter are less then 2,500, but more than 1000: -0.5
+		# Else, -1.0
 		if self.source == "youtube":
 			if self.youtube_views_count > 50000:
 				log.debug('Views counter (%s) is over 50,000: +0.5' % "{:,}".format(self.youtube_views_count))
 				score += 0.5
-			elif 750 <= self.youtube_views_count < 2500:
+			elif 100 <= self.youtube_views_count < 2500:
 				log.debug('Views counter (%s) is between 2,500 and 750: -0.5' % "{:,}".format(self.youtube_views_count))
 				score -= 0.5
-			elif self.youtube_views_count < 750:
-				log.debug('Views counter (%s) is below 750: -1.0' % "{:,}".format(self.youtube_views_count))
+			elif self.youtube_views_count < 1000:
+				log.debug('Views counter (%s) is below 1000: -1.0' % "{:,}".format(self.youtube_views_count))
 				score -= 1.0
 				
 		if self.artist and not given_score_for_artist_match:
@@ -452,8 +452,8 @@ class Song(object):
 		# If source is Youtube&SouncCloud, we should look if we're looking for an Hebrew song.
 		# If True, +0.5, as Youtube&SouncCloud is the sole sources for Hebrew songs.
 		# Else, because other sources are prefered over Youtube&SouncCloud:
-		# 	Youtube: -0.5
-		#	SouncCloud: -1.0
+		# 	Youtube: -1.0
+		#	SouncCloud: -1.5
 		if self.source in ["youtube", 'soundcloud']:
 			# if search string is in hebrew
 			if any(u"\u0590" <= c <= u"\u05EA" for c in self.searchString):
@@ -463,8 +463,8 @@ class Song(object):
 				log.debug("%s, but search string is not in hebrew: -1.5" % self.source)
 				score -= 1.5
 			else:
-				log.debug("%s, but search string is not in hebrew: -0.5" % self.source)
-				score -= 0.5
+				log.debug("%s, but search string is not in hebrew: -1.0" % self.source)
+				score -= 1.0
 		
 		# if media length is valid, but less than one minute, -1.5
 		# if media length is over 20 mins, -0.5
@@ -472,7 +472,7 @@ class Song(object):
 			log.debug("media length (%ds) is between 0 and 60: -1.5" % self.mediaLength)
 			score -= 1.5
 		if self.mediaLength > 20*60:
-			log.debug("media length (%ds) is longer than 20min: -1.5" % self.mediaLength)
+			log.debug("media length (%ds) is longer than 20min: -0.5" % self.mediaLength)
 			score -= 0.5
 		
 		# score has to be in range of 0.0 and 5.0

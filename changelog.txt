@@ -5,6 +5,19 @@ Below you find a list with the added features, changes and fixes for
 each version.
 
 ======================
+(Version 0.18 beta; 11/05/13)
+- NEW: Trimming silence - will trim silence from the edges of a downloaded song.
+- IMPROVE: Compomnent updater now works smoothly.
+- IMPROVE: The download module now handles dropped connections better.
+- IMPROVE: Now tries to parse artist/title data from the filenames of the songs.
+- IMPROVE: Performance improvements.
+- IMPROVE: Improved relevance algorithm accuracy.
+- FIX: Listening to songs didn't work where codec pack wasn't install. Now installs CCCP if needed.
+- FIX: ID3 Editor's right-click context menu is now available for Windows Vista/7/8 as well.
+- FIX: Galgaltz's parser has been fixed.
+- FIX: Musicbrainz's parser has been fixed.
+- FIX: Minor bug fixes.
+
 (Version 0.17 beta; 01/04/13)
 - NEW: Now can drag and drop mp3 files to the main window - the ID3 editor will spawn.
 - NEW: ID3 Editor can now edit existing mp3 files in your
@@ -100,4 +113,4 @@ each version.
 - FIX: Fixed a bug where the download directory path wasn't saved correctly in some cases.
 
 (Version 0.10 beta; 01/09/12)
-- first beta release
+- first public beta release

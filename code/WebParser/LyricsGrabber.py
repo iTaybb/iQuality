@@ -145,6 +145,9 @@ def parse_LyricsMode(title, artist):
 		soup = BeautifulSoup(response)
 
 		div = soup.find('div', id='songlyrics_h')
+		if not div:
+			return
+			
 		lyrics = div.text
 		if div.span: # credits block
 			credits = div.span.text
@@ -210,7 +213,8 @@ def parse_ChartLyrics(song, artist):
 		obj = urllib2.urlopen(url)
 		response = obj.read()
 	except urllib2.HTTPError:
-		return "lyricsGrabber_ChartLyrics: HTTP Error 500"
+		# lyricsGrabber_ChartLyrics: HTTP Error 500
+		return (x for x in [])
 	obj.close()
 	
 	dom = xml.dom.minidom.parseString(response)
@@ -221,7 +225,7 @@ def parse_ChartLyrics(song, artist):
 		title = dom_GetLyricResult.getElementsByTagName('LyricSong')[0].childNodes[0].data
 		
 	except IndexError:
-		return ""
+		return (x for x in [])
 		
 	lyrics += "\n\n [ Lyrics from ChartLyrics ] "
 	lyricsObj = utils.classes.LyricsData(lyrics, artist, title)
@@ -251,11 +255,14 @@ def parse_shironet(s):
 		response = obj.read()
 		soup = BeautifulSoup(response)
 
-		lyrics = soup.find(class_="artist_lyrics_text").text
-		lyrics += u'\n\n[ נלקח מאתר שירונט: %s ] ' % url
-		artist = soup.find(class_="artist_singer_title").text
-		title = soup.find(class_="artist_song_name_txt").text.strip()
-		
+		try:
+			lyrics = soup.find(class_="artist_lyrics_text").text
+			lyrics += u'\n\n[ נלקח מאתר שירונט: %s ] ' % url
+			artist = soup.find(class_="artist_singer_title").text
+			title = soup.find(class_="artist_song_name_txt").text.strip()
+		except AttributeError:
+			return
+			
 		lyricsObj = utils.classes.LyricsData(lyrics, artist, title)
 		yield lyricsObj
 	return 

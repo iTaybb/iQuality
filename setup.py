@@ -81,7 +81,8 @@ setup(
 					("ts", glob(r'code\ts\*.qm')),
 					("", glob(r'*.txt')+[r'code\public.key'])
 					],
-	windows = [{"script": r"code\Gui.py", 
+	windows = [{"script": r"code\Gui.py",
+				# 'uac_info': "requireAdministrator",
 				"icon_resources": [(1, r'code\pics\iQUACK.ico')],
 				"dest_base": "iQuality"},
 				],

@@ -12,13 +12,14 @@ def get_hints():
 	"hints for the project"
 	hints = [
 				tr('Did you know? iQuality can downloads clips from Youtube.'),
-				tr('Did you know? iQuality supports foreign languages.'),	
+				tr('Did you know? iQuality supports foreign languages songs.'),	
 				tr('Did you know? iQuality can add tracks to iTunes playlists.'),
 				tr('Did you know? iQuality searches can show you random tracks.'),
 				tr('Did you know? iQuality can append lyrics to songs.'),
 				tr('Did you know? iQuality downloads album arts for you.'),
 				tr('Did you know? iQuality can download the top charts songs.'),
-				tr('Did you know? iQuality can handle Youtube playlists.')
+				tr('Did you know? iQuality can handle Youtube playlists.'),
+				tr('Did you know? iQuality can trim silence from the audio edges.')
 				]
 				
 	i = random.randint(0, len(hints)-1)

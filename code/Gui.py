@@ -24,7 +24,6 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 from PyQt4 import QAxContainer
 from PyQt4.phonon import Phonon
-import regobj
 
 import Main
 import Config; config = Config.config
@@ -48,6 +47,7 @@ class MainWindow(QtGui.QMainWindow):
 		super(MainWindow, self).__init__(parent)
 		
 		self.resize(*config.mainWindow_resolution)
+		self.setStyleSheet(config.mainWindow_styleSheet)
 		self.setWindowTitle(config.windowTitle)
 		self.setWindowIcon(QtGui.QIcon(r'pics\pokeball.png'))
 		self.setAcceptDrops(True)
@@ -64,9 +64,9 @@ class MainWindow(QtGui.QMainWindow):
 			if isinstance(w, NoSpaceWarning):
 				QtGui.QMessageBox.warning(self, tr("Warning"), tr("There are less than 200MB available in drive %s (%.2fMB left). Application may not function properly.") % (w.drive, w.space/1024.0**2), QtGui.QMessageBox.Ok)
 			if isinstance(w, NewerVersionWarning):
-				QtGui.QMessageBox.information(self, tr("Information"), tr("A new version of iQuality is available (%s). Updates includes performance enhancements, bug fixes, new features and fixed parsers.<br />For the complete changes list, you can visit our <a href=\"%s\">facebook page</a>.<br /><br />You can grab it from the bottom box of the main window, or from the <a href=\"%s\">iQuality website</a>.") % (w.newest, config.facebook_page, config.website), QtGui.QMessageBox.Ok)
+				QtGui.QMessageBox.information(self, tr("Information"), tr("A new version of iQuality is available (%s). Updates includes performance enhancements, bug fixes, new features and fixed parsers.<br /><br />The application is not guaranteed to work if it's not updated, and will probably fail.<br />For the complete changes list, you can visit our <a href=\"%s\">facebook page</a>.<br /><br />You can grab it from the bottom box of the main window, or from the <a href=\"%s\">iQuality website</a>.") % (w.newest, config.facebook_page, config.website), QtGui.QMessageBox.Ok)
 			if isinstance(w, ComponentsFaultyWarning):
-				win = ComponentFetcherWindow.MainWin(w.components)
+				win = ComponentFetcherWindow.MainWin('update', w.components)
 				win.exec_()
 		
 		### Caching
@@ -81,13 +81,14 @@ class MainWindow(QtGui.QMainWindow):
 				sys.exit()
 			elif sys.argv[1] in ['-i', '--id3', '/id3']:
 				if len(sys.argv) > 2:
-					self.id3Window_slot(sys.argv[2])
+					self.id3Window_slot(unicode(sys.argv[2], sys.getfilesystemencoding()))
 				else:
-					self.id3Window_slot()
-					ans = QtGui.QMessageBox.question(self, tr("ID3 Editor"), tr("Do you want to edit another song's tags?"), QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-					while ans == QtGui.QMessageBox.Yes:
+					while True:
 						self.id3Window_slot()
+						
 						ans = QtGui.QMessageBox.question(self, tr("ID3 Editor"), tr("Do you want to edit another song's tags?"), QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+						if ans != QtGui.QMessageBox.Yes:
+							break
 				
 				sys.exit()
 			elif sys.argv[1] in ['/test']: #TEMP
@@ -126,7 +127,6 @@ class MainWindow(QtGui.QMainWindow):
 		if event.mimeData().hasUrls:
 			event.setDropAction(QtCore.Qt.CopyAction)
 			event.accept()
-			links = []
 			path = unicode(event.mimeData().urls()[0].toLocalFile())
 			self.id3Window_slot(path)
 		else:
@@ -306,11 +306,24 @@ class MainWindow(QtGui.QMainWindow):
 		self.menuBar().setCornerWidget(menuPushButtonsWidget)
 		
 	def id3Window_slot(self, f = None):
+		"Runs the ID3 Editor"
 		if not f:
 			dialog = QtGui.QFileDialog()
 			dialog.setFileMode(QtGui.QFileDialog.ExistingFile)
 			f = unicode(dialog.getOpenFileName(caption=tr('Choose the mp3 file'), filter="MP3 file (*.mp3)"))
 		if f:
+			if not os.path.exists(f):
+				log.debug('File "%s" does not exists. Trying to fix unicode problems...' % f)
+				fixed_path = utils.attemp_to_fix_unicode_problems(f)
+
+				if fixed_path:
+					log.debug('Fix succeeded: %s --> %s' % (f, fixed_path))
+					f = fixed_path
+				if not fixed_path:
+					log.debug('Fix didn\'t succeed. File "%s" does not exist.' % f)
+					QtGui.QMessageBox.critical(self, tr("Error"), tr('File "%s" does not exist.') % f, QtGui.QMessageBox.Ok)
+					return
+			
 			log.debug('Changing ID3 data for %s' % f)
 			w = ID3Window.MainWin(f, 'ask_albumart')
 			if w.isValid:
@@ -322,16 +335,6 @@ class MainWindow(QtGui.QMainWindow):
 	def settingsWindow_slot(self):
 		w = SettingsWindow.MainWin()
 		w.exec_()
-		
-		try:
-			if config.id3editor_in_context_menu and not 'iQuality' in regobj.HKCR.mp3file.shell:
-				log.debug("Registering Context Menu Object...")
-				utils.register_with_context_menu()
-			if not config.id3editor_in_context_menu and 'iQuality' in regobj.HKCR.mp3file.shell:
-				log.debug("Unregistering Context Menu Object...")
-				utils.unregister_with_context_menu()
-		except:
-			log.error(traceback.format_exc())
 		
 		self.downloadAudio_checkbox.setCheckState(config.downloadAudio)
 		self.downloadAudio_checkbox.setTristate(False)
@@ -360,7 +363,7 @@ class MainWindow(QtGui.QMainWindow):
 		QtCore.QCoreApplication.exit(1000) # 1000 is the RESTART code
 		
 	def creditsWindow_slot(self):
-		QtGui.QMessageBox.information(self, tr("About"), config.credits_text, QtGui.QMessageBox.Ok)
+		QtGui.QMessageBox.about(self, tr("About"), config.credits_text)
 	
 	def visitWebsite_slot(self):
 		QtGui.QDesktopServices.openUrl(QtCore.QUrl(config.website))
@@ -447,6 +450,12 @@ class MainWindow(QtGui.QMainWindow):
 		self.downloadVideo_checkbox.setCheckState(config.downloadVideo)
 		self.downloadVideo_checkbox.setTristate(False)
 		self.downloadVideo_checkbox.stateChanged.connect(self.slot_downloadVideo_changed_checkbox)
+		self.trimSilence_checkbox = QtGui.QCheckBox(tr("Trim Silence"))
+		self.trimSilence_checkbox.setCheckState(config.trimSilence)
+		self.trimSilence_checkbox.setTristate(False)
+		self.trimSilence_checkbox.stateChanged.connect(self.slot_trimSilence_changed_checkbox)
+		if not config.downloadAudio:
+			self.trimSilence_checkbox.setEnabled(False)
 		
 		self.status_txt = QtGui.QLabel(Hints.get_hints())
 		self.status_txt.setFont(QtGui.QFont(*config.status_txt_font))
@@ -488,6 +497,7 @@ class MainWindow(QtGui.QMainWindow):
 		videoaudio_checkboxs_Layout = QtGui.QVBoxLayout()
 		videoaudio_checkboxs_Layout.addWidget(self.downloadAudio_checkbox)
 		videoaudio_checkboxs_Layout.addWidget(self.downloadVideo_checkbox)
+		videoaudio_checkboxs_Layout.addWidget(self.trimSilence_checkbox)
 		
 		row_5_6_Layout = QtGui.QGridLayout()
 		# row_5_6_Layout.addWidget(self.listen_button, 0, 0, 1, 2)
@@ -650,9 +660,19 @@ class MainWindow(QtGui.QMainWindow):
 		self.enableDownloadUi()
 		
 	def listen_slot(self, QModelIndex=None):
-		if config.warn_listen_slot:
-			QtGui.QMessageBox.warning(self, tr("Warning"), tr("The listening feature is experimental and may not work properly."), QtGui.QMessageBox.Ok)
-			config.warn_listen_slot = False
+		if not Phonon.BackendCapabilities.isMimeTypeAvailable('video/x-flv'):
+			ans = QtGui.QMessageBox.question(self, tr("Missing component"), tr('Your system does not support audio streaming. Installing a codec pack is required in order to listen to songs.<br /><br /><b><a href="http://www.cccp-project.net">The Combined Community Codec Pack</a></b> is a simple playback pack for Windows that allows you to play songs and movies. <br /><br />Do you want iQuality to install the "<b>Combined Community Codec Pack</b>" for you?'), QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+			if ans == QtGui.QMessageBox.No:
+				return
+			if ans == QtGui.QMessageBox.Yes:
+				win = ComponentFetcherWindow.MainWin('install', ['Combined Community Codec Pack'])
+				win.exec_()
+				
+				if Phonon.BackendCapabilities.isMimeTypeAvailable('video/x-flv'):
+					QtGui.QMessageBox.information(self, tr("Successful Installation"), tr("Installation completed successfully."), QtGui.QMessageBox.Ok)
+				else:
+					QtGui.QMessageBox.critical(self, tr("Error"), tr("The installation failed. Please download and install the package maunaly from <b><a href=\"http://www.cccp-project.net\">http://www.cccp-project.net</a></b>."), QtGui.QMessageBox.Ok)
+					return
 			
 		if self.table.selectedIndexes():
 			index = self.table.selectedIndexes()[0]
@@ -804,7 +824,7 @@ class MainWindow(QtGui.QMainWindow):
 						dialog.setDirectory(config.dl_dir)
 						ans = unicode(dialog.getSaveFileName(caption=tr("Choose a new filename for %s") % path).replace('/','\\'))
 						if not ans:
-							break
+							return
 						config.dl_dir, dl_filename = os.path.split(ans)
 						
 						log.debug('dl_dir is now %s' % config.dl_dir)
@@ -817,6 +837,7 @@ class MainWindow(QtGui.QMainWindow):
 		# Disable Ui
 		self.downloadAudio_checkbox.setEnabled(False)
 		self.downloadVideo_checkbox.setEnabled(False)
+		self.trimSilence_checkbox.setEnabled(False)
 		self.dl_button.setEnabled(False)
 		self.dl_cancel_button.setEnabled(True)
 		self.status_gif.setVisible(True)
@@ -863,8 +884,10 @@ class MainWindow(QtGui.QMainWindow):
 				ans = QtGui.QMessageBox.critical(self, tr("Error"), tr('No songs were found. Also, some media sources are disabled (%s). Enable them and search again?') % ", ".join(disabled_search_sources), QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
 				if ans == QtGui.QMessageBox.Yes:
 					log.debug("Enabling all media sources...")
+					# from PyQt4 import QtCore; import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
 					for k in config.search_sources.keys():
 						config.search_sources[k] = True
+					Config.config.saveToIni() # IMPROVE: Understand why it is needed here.
 					self.search_slot()
 					return
 			else:
@@ -877,6 +900,9 @@ class MainWindow(QtGui.QMainWindow):
 		elif isinstance(e, YoutubeException):
 			QtGui.QMessageBox.critical(self, tr("Error"), tr("The application was unable to fetch the Youtube video. (Error %d: %s)") % (e.errorcode, e.reason), QtGui.QMessageBox.Ok)
 			
+		elif isinstance(e, Main.SmartDL.DownloadFailedException):	
+			QtGui.QMessageBox.critical(self, tr("Error"), tr("The download has failed. It may be a network connection problem. Please try to rerun this application and try again."), QtGui.QMessageBox.Ok)
+		
 		# elif isinstance(e, Exception):
 			# pass
 			
@@ -889,18 +915,14 @@ class MainWindow(QtGui.QMainWindow):
 		self.enableDownloadUi()
 		
 	def slot_downloadAudio_changed_checkbox(self, state):
-		# IMPROVE: These two can be combined
-		if state == 0:
-			config.downloadAudio = False
-		if state == 2:
-			config.downloadAudio = True
+		config.downloadAudio = bool(state)
+		self.trimSilence_checkbox.setEnabled(bool(state))
 			
 	def slot_downloadVideo_changed_checkbox(self, state):
-		# IMPROVE: These two can be combined
-		if state == 0:
-			config.downloadVideo = False
-		if state == 2:
-			config.downloadVideo = True
+		config.downloadVideo = bool(state)
+			
+	def slot_trimSilence_changed_checkbox(self, state):
+		config.trimSilence = bool(state)
 		
 	### THREAD FINISHED FUNCTIONS ###
 	
@@ -1025,10 +1047,9 @@ class MainWindow(QtGui.QMainWindow):
 			else:
 				self.status_txt.setText(tr("Downloading @ %.2f KB/s... [%s/%s MB]") % (dlRate/1024, "{:,.2f}".format(currentBytes/1024.0**2), "{:,.2f}".format(filesize/1024.0**2)))
 		
-	def update_enc_progress_bar(self, i, currentBytes, filesize):
+	def update_enc_progress_bar(self, i):
 		"updates download progress bar"
 		self.prg_bar.setValue(i)
-		# self.status_txt.setText(tr("Encoding... [%.2f MB / %.2f MB]") % (currentBytes/1024.0**2, filesize/1024.0**2))
 		
 	### OTHER FUNCTIONS ###
 	def enableSearchUi(self):
@@ -1042,6 +1063,7 @@ class MainWindow(QtGui.QMainWindow):
 		"Make download button clickable again"
 		self.downloadAudio_checkbox.setEnabled(True)
 		self.downloadVideo_checkbox.setEnabled(True)
+		self.trimSilence_checkbox.setEnabled(True)
 		self.dl_button.setEnabled(True)
 		self.dl_cancel_button.setEnabled(False)
 		
@@ -1433,6 +1455,6 @@ if __name__ == '__main__':
 			log.debug("Stopped logging.")
 			logger.stop()
 			if os.path.exists(config.temp_dir):
-				p = utils.launch_without_console(r'cmd /c rd /S /Q %s' % config.temp_dir)
+				p = utils.launch_without_console(r'del /S /Q "%s"' % config.temp_dir, shell=True)
 				p.wait()
 			sys.exit(exitcode)

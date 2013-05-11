@@ -34,7 +34,7 @@ def log_exceptions(e, logger):
 			try:
 				return f(*args, **kwargs)
 			except socket.timeout:
-				logger.debug('timeout: function %s timed out' % f.__name__)
+				logger.debug('timeout: function %s timed out.' % f.__name__)
 			except:
 				logger.error(traceback.format_exc())
 		return f_log  # true decorator

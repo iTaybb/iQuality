@@ -17,7 +17,7 @@ class MainWin(QtGui.QDialog):
 		self.artists = artists
 		self.artist = self.artists[0].name
 		
-		self.setWindowTitle(tr("Tracks Explorer (%s)") % self.artist)
+		self.setWindowTitle(tr("Tracks Explorer - %s") % self.artist)
 		self.resize(400, 300)
 		self.setWindowIcon(QtGui.QIcon(r'pics\cdaudio.png'))
 		

@@ -1,11 +1,11 @@
-for v0.18:
-* context menu for windows 7
-* compomnent updater retry
-* http://hadagnahash.bandcamp.com/album/time-to-wake-up-zman-lehitorer
+* check if it's possible to reset config (remove config.ini) under windows 8 while app running
+* loading image
+* check benchmarking (maybe adding time.sleep() sometimes will help!)
+* Bandcamp intergration:
+	- http://hadagnahash.bandcamp.com/album/time-to-wake-up-zman-lehitorer
 * faster response when website is down
 * make spell checking not blocking
 * making songs amount spinbox accurate
-* add id3 tag to context manu
 * load many links in once, and download them all
 * add a download queue, so people can continue searching while downloading.
 * automated logs send: http://stackoverflow.com/questions/14439477/log-files-collecting-and-handling-system
@@ -22,6 +22,7 @@ for v0.18:
 * test with windows xp, 7, 8.
 
 For the long run:
+* str(e) --> unicode(e)
 * fix phonon
 * Custom Launch: support for videos
 * add more images sources

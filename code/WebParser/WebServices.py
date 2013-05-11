@@ -150,9 +150,10 @@ def parse_glgltz():
 	obj = urllib2.urlopen(url, timeout=config.webservices_timeout)
 	response = obj.read()
 	soup = BeautifulSoup(response)
-
-	tag = soup.find('a', id='Master_ContentPlaceHolder1_rptTabs_ctl00_ancTab')
-	catid = tag['catid']
+	
+	# from PyQt4 import QtCore; import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
+	tags = soup.find_all('a', id=re.compile('Master_ContentPlaceHolder1_rptTabs'))
+	catid = [x['catid'] for x in tags if u"המצעד הישראלי" in x.text][0]
 
 	url = 'http://www.glgltz.co.il/Shared/Ajax/GetTophitsByCategory.aspx?FolderId=%s&amp;lang=he' % catid
 	obj = urllib2.urlopen(url)
@@ -192,7 +193,10 @@ def get_currentusers():
 	obj = urllib2.urlopen(config.online_users_counter_webpage, timeout=config.webservices_timeout)
 	x = obj.read(1024)
 	obj.close()
-	return int(x)
+	try:
+		return int(x)
+	except ValueError:
+		return 0
 
 @utils.decorators.retry(Exception, logger=log)
 @utils.decorators.memoize(config.memoize_timeout)
@@ -201,12 +205,20 @@ def get_newestversion():
 	obj = urllib2.urlopen(config.newest_version_API_webpage, timeout=config.webservices_timeout)
 	x = obj.read(1024)
 	obj.close()
-	return float(x)
+	try:
+		return float(x)
+	except ValueError:
+		return 0.0
 	
 @utils.decorators.retry(Exception, logger=log)
 @utils.decorators.memoize(config.memoize_timeout)
-def get_components_data():
+def get_components_data(local=False):
 	"Function queries the iQuality website for components json data"
+	if local:
+		with open(r"%s\components.json" % config.local_json_files, 'r') as f:
+			data = f.read()
+		return json.loads(data, object_pairs_hook=OrderedDict)
+		
 	try:
 		obj = urllib2.urlopen(config.components_json_url, timeout=config.webservices_timeout)
 		data = obj.read()
@@ -220,5 +232,30 @@ def get_components_data():
 		return json.loads(data, object_pairs_hook=OrderedDict)
 	except:
 		log.error('components_json_url signature check FAILED:')
+		log.error(traceback.format_exc())
+	return {}
+	
+@utils.decorators.retry(Exception, logger=log)
+@utils.decorators.memoize(config.memoize_timeout)
+def get_packages_data(local=False):
+	"Function queries the iQuality website for packages json data"
+	if local:
+		with open(r"%s\packages.json" % config.local_json_files, 'r') as f:
+			data = f.read()
+		return json.loads(data, object_pairs_hook=OrderedDict)
+		
+	try:
+		obj = urllib2.urlopen(config.packages_json_url, timeout=config.webservices_timeout)
+		data = obj.read()
+		obj.close()
+		obj = urllib2.urlopen("%s.sign" % config.packages_json_url, timeout=config.webservices_timeout)
+		sign = obj.read()
+		obj.close()
+		
+		assert utils.verify_signature(data, sign, config.pubkey_path)
+		log.debug('packages_json_url signature check passed')
+		return json.loads(data, object_pairs_hook=OrderedDict)
+	except:
+		log.error('packages_json_url signature check FAILED:')
 		log.error(traceback.format_exc())
 	return {}

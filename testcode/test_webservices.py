@@ -233,7 +233,7 @@ def test_get_newest_version():
 	ans = Main.WebParser.WebServices.get_newestversion()
 	assert isinstance(ans, float)
 	
-def test_get_components_data():
+def atest_get_components_data():
 	d = Main.WebParser.WebServices.get_components_data()
 	assert d
 	for name, t in d.items():
@@ -258,3 +258,20 @@ def test_get_components_data():
 			subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
 		assert file_hash == utils.calc_sha256(r"%s\%s" % (config.temp_dir, file_to_extract))
+	
+def test_get_components_data_fast():
+	d = Main.WebParser.WebServices.get_components_data()
+	assert d
+	for name, t in d.items():
+		urls, archive_hash, file_to_extract, file_hash = t
+		
+		for url in urls:
+			urllib2.urlopen(url)
+def test_get_packages_data_fast():
+	d = Main.WebParser.WebServices.get_packages_data()
+	assert d
+	for name, t in d.items():
+		urls, file_hash, install_param = t
+		
+		for url in urls:
+			urllib2.urlopen(url)

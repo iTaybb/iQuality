@@ -37,9 +37,9 @@ import threading
 
 from win32com.shell import shell, shellcon
 
-__version__ = "0.17"
-__rev__ = 149 # auto-generated
-__date__ = '01/04/13'
+__version__ = "0.18"
+__rev__ = 176 # auto-generated
+__date__ = '11/05/13'
 __author__ = 'Itay Brandes (Brandes.Itay@gmail.com)'
 
 class ConfigInterface(object):
@@ -61,7 +61,11 @@ class ConfigInterface(object):
 			
 		obj = configparser.RawConfigParser()
 		obj.optionxform = unicode # Enable case sensitive
-		obj.readfp(codecs.open(self.ini_path, 'rb', 'utf-8'))
+		try:
+			obj.readfp(codecs.open(self.ini_path, 'rb', 'utf-8'))
+		except configparser.MissingSectionHeaderError:
+			# os.unlink(self.ini_path)
+			return
 		
 		if not 'Settings' in obj.sections():
 			return
@@ -135,11 +139,13 @@ except NameError: # if not already initialized
 		'appStyle': "plastique", # "windows", "motif", "cde", "plastique", "windowsxp", or "macintosh".
 		'mainWindow_resolution': (1000, 475),
 		'table_DefaultSectionSize': 19,
-		'table_styleSheet': "background: #C9C5BD;",
 		'table_font': ("Segoe UI", 10), # QtGui.QFont
+		'mainWindow_styleSheet': "",
+		'table_styleSheet': "background: #C9C5BD;",
 		'table_odd_color': (206, 206 ,206), # QtGui.QColor
 		'table_even_color': (189, 189, 189), # QtGui.QColor
 		'table_foreground_color': (115, 115, 115), # QtGui.QColor
+		
 		'status_txt_font': ("Segoe UI", 20, 75), # QtGui.QFont, 75 is QtGui.QFont.Bold
 		'browser_height': 85,
 		'show_ads': False, # auto-generated
@@ -151,6 +157,8 @@ except NameError: # if not already initialized
 		'online_users_counter_webpage': "http://iquality.itayb.net/visitors.php?echo=1",
 		'newest_version_API_webpage': "http://iquality.itayb.net/vars.php?show=newest_version",
 		'components_json_url': 'http://iquality.itayb.net/components.json',
+		'packages_json_url': 'http://iquality.itayb.net/packages.json',
+		'local_json_files': r'C:\Scripts\iquality-misc\json', # for dev only
 
 		### Script ###
 		'temp_dir': r"%s\iQuality" % os.environ["Temp"],
@@ -182,6 +190,7 @@ except NameError: # if not already initialized
 		'get_id3info_timeout': 4,
 		'memoize_timeout': 30*60, # 30 mins
 		'id3_noask_wait_interval': 4,
+		'interval_between_network_sanity_checks': 30, # IMPROVE: make the interval.
 		
 		### ETC ###
 		'lang': '',
@@ -209,6 +218,7 @@ except NameError: # if not already initialized
 		'enableSpellCheck': True,
 		'downloadAudio': True,
 		'downloadVideo': False,
+		'trimSilence': False,
 		'editID3': True,
 		'search_autocomplete': True,
 		'prefetch_charts': True,
@@ -244,11 +254,8 @@ except NameError: # if not already initialized
 		'post_download_custom_cmd': "",
 		'post_download_custom_wait_checkbox': True,
 		
-		# Notifications
-		'warn_listen_slot': True,
-		
 		# Statistics
-		'count_application_runs': 0,
+		'count_application_runs': 1,
 		'count_download': 0,
 		'last_sanity_check_timestamp': 0, # timestamp of the last successful full sanity check
 		
@@ -261,7 +268,8 @@ Python
 Qt Project
 PyQt
 FFmpeg
-mutagen
+Mutagen
+SoX
 BeautifulSoup
 py2exe
 Inno Setup
@@ -307,15 +315,15 @@ iQuality Copyright© 2012-2013 by Itay Brandes (iTayb). All rights reserved.
 					'songs_count_spinBox', 'relevance_minimum', 'editID3', 'post_download_playlist_path',
 					'post_download_action', 'lang', 'search_sources', 'youtube_quality_priority',
 					'id3_action', 'count_application_runs', 'count_download', 'listen_volumeSlider_volume',
-					'post_download_custom_wait_checkbox', 'warn_listen_slot', 'prefetch_charts',
+					'post_download_custom_wait_checkbox', 'prefetch_charts',
 					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup',
-					'id3editor_in_context_menu', 'last_sanity_check_timestamp']
+					'id3editor_in_context_menu', 'last_sanity_check_timestamp', 'trimSilence']
 	vars_to_eval = ['relevance_minimum', 'downloadAudio', 'downloadVideo', 'ver', 'youtube_quality_priority',
 					'youtube_formats_priority', 'enableSpellCheck', 'songs_count_spinBox', 'search_sources',
 					'editID3', 'count_application_runs', 'count_download', 'listen_volumeSlider_volume',
-					'post_download_custom_wait_checkbox', 'warn_listen_slot', 'prefetch_charts',
+					'post_download_custom_wait_checkbox', 'prefetch_charts',
 					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup',
-					'id3editor_in_context_menu', 'last_sanity_check_timestamp']
+					'id3editor_in_context_menu', 'last_sanity_check_timestamp', 'trimSilence']
 	vars_to_override = ['ver']
 
 	config = ConfigInterface(d, ini_path, vars_to_save, vars_to_eval)

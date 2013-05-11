@@ -16,6 +16,7 @@ import socket
 import utils
 
 class TerminatedException(Exception):
+	"An exception raised when the download is stopped due to an error."
 	pass
 
 class ThreadPool:
@@ -29,6 +30,7 @@ class ThreadPool:
 		self.threads = []
 		self._terminated = False
 		self._paused = False
+		self._got_timeout = False
 
 		self.call_queue = Queue.Queue()
 		self.returns = Queue.Queue(return_queue)
@@ -64,12 +66,14 @@ class ThreadPool:
 				pass
 			except socket.timeout:
 				self.logger.debug('timeout: function %s timed out' % f.__name__)
+				self._got_timeout = True
 			except:
 				self.logger.exception(traceback.format_exc())
 			finally:
 				call.task_done()
 				
 	def processEvents(self):
+		"Processes events."
 		if self._terminated:
 			raise TerminatedException()
 		while self._paused:
@@ -112,9 +116,12 @@ class ThreadPool:
 		return ()
 	
 	def pause(self):
+		"Pauses the download task."
 		self.logger.debug("Pausing...")
 		self._paused = True
+		
 	def unpause(self):
+		"Unpauses the download task."
 		self.logger.debug("Unpausing...")
 		self._paused = False
 
@@ -145,4 +152,9 @@ class ThreadPool:
 			utils.terminate_thread(t)
 	
 	def isFinished(self):
+		"Is the threadpool finished?"
 		return not self.call_queue.unfinished_tasks
+		
+	def isGotTimeout(self):
+		"Did we get a timeout?"
+		return self._got_timeout

@@ -4,10 +4,10 @@ iQuality User License Agreement
 IMPORTANT NOTICE:
 
 The Software aims at providing a search engine system which leads users to
-MP3 resources legally available to everyone on Internet. The Software has no
+MP3 resources legally available to everyone on the Internet. The Software has no
 control or ownership over the content of these songs. All the content searched
 in The Software is provided by other servers which we have no relationship with.
-Users should delete the download from computer after listening, for not more than
+Users should delete the download from computer after listening, after not less than
 48 hours. Otherwise, users will be solely responsible for the possible consequences.
 
 This software is provided "as-is", without any express or implied warranty.

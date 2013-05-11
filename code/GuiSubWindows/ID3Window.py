@@ -56,6 +56,12 @@ class MainWin(QtGui.QDialog):
 		self.init_id3data()
 		if not self.isValid:
 			return
+		if not [x for x in self.easyID3Obj.values() if x[0]]: # If all values are actually blank, we shall attemp to parse it from the filename.
+			fn = os.path.splitext(os.path.basename(self.path))[0]
+			title, artist = utils.parse_title_from_filename(fn)
+			self.easyID3Obj['title'] = [title]
+			self.easyID3Obj['artist'] = [artist]
+			
 		self.init_widgets()
 		
 		if self.id3_action == 'ask_albumart':
@@ -88,7 +94,7 @@ class MainWin(QtGui.QDialog):
 		except error:
 			pass
 		except HeaderNotFoundError:
-			log.warning("This MP3 files seems to be faulty. Cannot edit it's ID3 data.")
+			log.warning("This MP3 files seems to be faulty. Cannot edit it's ID3 data. (Error: HeaderNotFoundError)")
 			QtGui.QMessageBox.critical(self, tr("Error"), tr("This MP3 files seems to be faulty. Cannot edit it's ID3 data."), QtGui.QMessageBox.Ok)
 			self.isValid = False
 			return
@@ -96,17 +102,13 @@ class MainWin(QtGui.QDialog):
 			self.easyID3Obj = EasyID3(self.path)
 			self.ID3Obj = ID3(self.path)
 		except ID3NoHeaderError:
-			log.warning("This MP3 files seems to be faulty. Cannot edit it's ID3 data.")
-			QtGui.QMessageBox.critical(self, tr("Error"), tr("This MP3 files seems to be faulty. Cannot edit it's ID3 data."), QtGui.QMessageBox.Ok)
-			self.isValid = False
-			return
-		
+			# That means mp3Obj.add_tags() didn't work for a reason.
+			utils.appendDummyID3(self.path)
+			self.easyID3Obj = EasyID3(self.path)
+			self.ID3Obj = ID3(self.path)
+
 		USLT_Tag = [x for x in self.ID3Obj.keys() if x.startswith('USLT')]
-		
-		if USLT_Tag:
-			self.originalLyrics = self.ID3Obj[USLT_Tag[0]].text
-		else:
-			self.originalLyrics = ""
+		self.originalLyrics = self.ID3Obj[USLT_Tag[0]].text if USLT_Tag else ""
 		
 		APIC_Tag = [x for x in self.ID3Obj.keys() if x.startswith('APIC')]
 		if APIC_Tag:

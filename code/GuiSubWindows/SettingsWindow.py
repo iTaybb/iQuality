@@ -2,6 +2,7 @@
 
 ''' Settings Window '''
 
+import sys
 import os.path
 import re
 
@@ -61,9 +62,10 @@ class MainWin(QtGui.QDialog):
 		self.search_autocomplete = QtGui.QCheckBox(tr("Search Auto-completion"))
 		self.search_autocomplete.setCheckState(config.search_autocomplete)
 		self.search_autocomplete.setTristate(False)
-		self.id3editor_in_context_menu = QtGui.QCheckBox(tr("Show ID3 Editor in Explorer's Context Menu"))
+		self.id3editor_in_context_menu = QtGui.QCheckBox(tr("Show ID3 Editor in Explorer's Context Menu (shown when you right-click a .mp3 file)"))
 		self.id3editor_in_context_menu.setCheckState(config.id3editor_in_context_menu)
 		self.id3editor_in_context_menu.setTristate(False)
+		self.id3editor_in_context_menu.clicked.connect(self.slot_register_id3editor_in_context_menu)
 		self.parse_links_from_clipboard_at_startup = QtGui.QCheckBox(tr("Parse links from clipboard at startup"))
 		self.parse_links_from_clipboard_at_startup.setCheckState(config.parse_links_from_clipboard_at_startup)
 		self.parse_links_from_clipboard_at_startup.setTristate(False)
@@ -353,6 +355,38 @@ class MainWin(QtGui.QDialog):
 		
 		config.post_download_action = val
 		self.slot_changed_checkbox()
+		
+	def slot_register_id3editor_in_context_menu(self, val):
+		if val and not utils.check_context_menu_status():
+			log.debug("Registering Context Menu Object...")
+			try:
+				utils.register_with_context_menu()
+			except WindowsError, e:
+				if e.winerror == 5: # Access is denied
+					log.debug("Access is denied. Setting id3editor_in_context_menu to False.")
+					QtGui.QMessageBox.critical(self, tr("Error"), tr("Access is denied. Please run this application as an administrator and try again."), QtGui.QMessageBox.Ok)
+					self.id3editor_in_context_menu.setCheckState(False)
+					self.id3editor_in_context_menu.setTristate(False)
+				else:
+					raise
+			else:
+				if sys.getwindowsversion().major == 6: # If Windows Vista/7/8
+					QtGui.QMessageBox.information(self, tr("Error"), tr("You need to restart your computer for the changes to take effect."), QtGui.QMessageBox.Ok)
+		if not val and utils.check_context_menu_status():
+			log.debug("Unregistering Context Menu Object...")
+			try:
+				utils.unregister_with_context_menu()
+			except WindowsError, e:
+				if e.winerror == 5: # Access is denied
+					log.debug("Access is denied. Setting id3editor_in_context_menu to True.")
+					QtGui.QMessageBox.critical(self, tr("Error"), tr("Access is denied. Please run this application as an administrator and try again."), QtGui.QMessageBox.Ok)
+					self.id3editor_in_context_menu.setCheckState(True)
+					self.id3editor_in_context_menu.setTristate(False)
+				else:
+					raise
+			else:
+				if sys.getwindowsversion().major == 6: # If Windows Vista/7/8
+					QtGui.QMessageBox.information(self, tr("Error"), tr("You need to restart your computer for the changes to take effect."), QtGui.QMessageBox.Ok)
 	
 	def slot_apply(self):
 		### SANITY CHECKS ###

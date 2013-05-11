@@ -8,8 +8,6 @@ import traceback
 import time
 import math
 
-import regobj
-
 import HTTPQuery
 from SmartDL import SmartDL
 import WebParser
@@ -71,21 +69,27 @@ def sanity_check():
 		log.critical(msg)
 		raise Exception(msg)
 		
+	# Phonon version check
+	try:
+		from PyQt4.phonon import Phonon
+		log.debug("Phonon version is %s" % Phonon.phononVersion())
+	except ImportError:
+		log.warning("Could not load the phonon module")
+	else:
+		# mimeTypes = [str(name) for name in Phonon.BackendCapabilities.availableMimeTypes()]
+		# log.debug("Available Mime Types are %s" % str(mimeTypes))
+		
+		if Phonon.BackendCapabilities.isMimeTypeAvailable('video/x-flv'):
+			log.debug('video/x-flv is supported.')
+		else:
+			log.warning('video/x-flv is not supported.')
+		
 	# Free space check
 	freespace = utils.get_free_space(config.temp_dir)
 	if freespace < 200*1024**2: # 200 MB
 		drive = os.path.splitdrive(config.temp_dir)[0]
 		log.warning("There are less than 200MB available in drive %s (%.2fMB left)." % (drive, freespace/1024.0**2))
 		_warnings.append(NoSpaceWarning(drive, freespace))
-	
-	# Phonon version check
-	try:
-		from PyQt4.phonon import Phonon
-		log.debug("Phonon version is %s" % Phonon.phononVersion())
-		# mimeTypes = [str(name) for name in Phonon.BackendCapabilities.availableMimeTypes()]
-		# log.debug("Available Mime Types are %s" % str(mimeTypes))
-	except ImportError:
-		log.warning("Could not load the phonon module")
 
 	# iTunes' availablity check
 	itunesPath = r'%s\My Documents\My Music\iTunes\iTunes Media\Automatically Add to iTunes' % utils.get_home_dir()
@@ -96,13 +100,27 @@ def sanity_check():
 		log.warning("iTunes Media not found. setting is_itunes_installed to False")
 		
 	# Context Menu check
-	try:
-		if config.id3editor_in_context_menu and not 'iQuality' in regobj.HKCR.mp3file.shell:
+	try: # IMPROVE: REMOVE THE TRY-EXCEPT BLOCK
+		if config.id3editor_in_context_menu and not utils.check_context_menu_status():
 			log.debug("Registering Context Menu Object...")
-			utils.register_with_context_menu()
-		if not config.id3editor_in_context_menu and 'iQuality' in regobj.HKCR.mp3file.shell:
+			try:
+				utils.register_with_context_menu()
+			except WindowsError, e:
+				if e.winerror == 5: # Access is denied
+					log.debug("Access is denied. Setting id3editor_in_context_menu to False.")
+					config.id3editor_in_context_menu = False
+				else:
+					raise
+		if not config.id3editor_in_context_menu and utils.check_context_menu_status():
 			log.debug("Unregistering Context Menu Object...")
-			utils.unregister_with_context_menu()
+			try:
+				utils.unregister_with_context_menu()
+			except WindowsError, e:
+				if e.winerror == 5: # Access is denied
+					log.debug("Access is denied. Setting id3editor_in_context_menu to True.")
+					config.id3editor_in_context_menu = True
+				else:
+					raise
 	except:
 		log.error(traceback.format_exc())
 			
@@ -126,7 +144,8 @@ def sanity_check():
 			
 	### ONLINE CHECKS ###
 	timestamp = math.fabs(time.time() - config.last_sanity_check_timestamp)
-	if timestamp > 30*60: # if the last check was before more than 30 minutes
+	if timestamp > config.interval_between_network_sanity_checks:
+	# if the last check was before more than interval_between_network_sanity_checks
 		# Newest version check
 		try:
 			newest_version = WebParser.WebServices.get_newestversion()
@@ -134,7 +153,7 @@ def sanity_check():
 				log.warning("A new version of iQuality is available (%s)." % newest_version)
 				_warnings.append(NewerVersionWarning(newest_version))
 		except IOError as e:
-			log.error("Could not check for the newest version (%s)" % str(e))
+			log.error("Could not check for the newest version (%s)" % unicode(e))
 		
 		# External Components Check
 		if not os.path.exists('bin/'):

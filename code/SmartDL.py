@@ -42,6 +42,11 @@ shared2 has error rate of 0.06%.
 
 It is not clear why shared1 fails, but we'll stick with shared2 idea, because of very low error rate.
 
+Raises DownloadFailedException() if the download fails. If you're using the module in it's non-blocking
+state, check out self._failed.
+
+IMPROVE: make wait() raise DownloadFailedException.
+
 '''
 
 import os
@@ -50,6 +55,7 @@ import copy
 import logging
 import threading
 import time
+import math
 from urlparse import urlparse
 import multiprocessing.dummy as multiprocessing
 from ctypes import c_int
@@ -60,8 +66,15 @@ from logger import log
 import utils
 from HTTPQuery import is_ServerSupportHTTPRange
 
+class DownloadFailedException(Exception):
+	"Raised when the download task fails."
+	def __init__(self):
+		pass
+
 class SmartDL:
 	"The main SmartDL class"
+	DownloadFailedException = DownloadFailedException
+	
 	def __init__(self, urls, dest=None, max_threads=5, show_output=True, logger=None):
 		self.mirrors = [urls] if isinstance(urls, basestring) else urls
 		for i, url in enumerate(self.mirrors):
@@ -76,11 +89,14 @@ class SmartDL:
 		
 		self.headers = config.generic_http_headers
 		self.timeout = 4
+		self.current_attemp = 1 
+		self.attemps_limit = 3
 		self.minChunkFile = 1024**2 # 1MB
 		self.filesize = 0
 		self.shared_var = multiprocessing.Value(c_int, 0) # a ctypes var that counts the bytes already downloaded
 		self.status = "ready"
 		self._killed = False
+		self._failed = False
 		
 		self.post_threadpool_thread = None
 		self.control_thread = None
@@ -130,7 +146,7 @@ class SmartDL:
 		args = calc_args(self.filesize, self.max_threads, self.minChunkFile)
 		bytes_per_thread = args[0][1]-args[0][0]
 		if len(args)>1:
-			self.logger.debug("Launching %d threads (downloads %sKB in each thread)." % (len(args),  "{:,}".format(bytes_per_thread/1024)))
+			self.logger.debug("Launching %d threads (downloads %sKB/Thread)." % (len(args),  "{:,}".format(bytes_per_thread/1024)))
 		else:
 			self.logger.debug("Launching 1 thread.")
 		
@@ -140,11 +156,21 @@ class SmartDL:
 					arg[1], copy.deepcopy(self.headers), self.timeout, self.shared_var]
 			self.pool(download)(*x)
 		
-		self.post_threadpool_thread = threading.Thread(target=post_threadpool_actions, args=(self.pool, [[(self.dest+".%.3d" % i) for i in range(len(args))], self.dest]))
+		self.post_threadpool_thread = threading.Thread(target=post_threadpool_actions, args=(self.pool, [[(self.dest+".%.3d" % i) for i in range(len(args))], self.dest], self.filesize, self))
 		self.post_threadpool_thread.daemon = True
 		self.post_threadpool_thread.start()
 		
 		self.control_thread = ControlThread(self)
+		
+	def retry(self):
+		if self.current_attemp < self.attemps_limit:
+			self.current_attemp += 1
+			self.status = "ready"
+			self.shared_var.value = 0
+			self.start()
+		else:
+			self._failed = True
+			raise DownloadFailedException()
 	
 	def get_eta(self):
 		return self.control_thread.get_eta()
@@ -237,7 +263,7 @@ class ControlThread(threading.Thread):
 		self.dl_time = float(t2-t1)
 		
 		# self.logger.debug("Combining files...") # actually happens on post_threadpool_thread
-		self.obj.status = "combining"
+		# self.obj.status = "combining" # actually happens on post_threadpool_thread
 		while self.obj.post_threadpool_thread.is_alive():
 			time.sleep(0.1)
 		
@@ -293,10 +319,26 @@ class ControlThread(threading.Thread):
 			return 0
 		return self.calcETA_val
 
-def post_threadpool_actions(pool, args):
+def post_threadpool_actions(pool, args, expected_filesize, SmartDL_obj):
 	"Run function after thread pool is done. Run this in a thread."
 	while not pool.isFinished():
 		time.sleep(0.1)
+		
+	if SmartDL_obj._killed:
+		return
+		
+	if expected_filesize: # if not zero, etc expected filesize is not known
+		threads = len(args[0])
+		total_filesize = sum([os.path.getsize(x) for x in args[0]])
+		diff = math.fabs(expected_filesize - total_filesize)
+		
+		# if the difference is more than 4*thread numbers (because a thread may download 4KB more per thread because of NTFS's block size)
+		if diff > 4*threads:
+			log.warning('Diff between downloaded files and expected filesizes is %dKB. Retrying...' % diff)
+			SmartDL_obj.retry()
+			return
+	
+	SmartDL_obj.status = "combining"
 	combine_files(*args)
 	
 def calc_args(filesize, max_threads, minChunkFile):
@@ -320,7 +362,7 @@ def calc_args(filesize, max_threads, minChunkFile):
 		
 	return args
 
-@utils.decorators.retry(Exception, logger=logging.getLogger('testingLog'))
+@utils.decorators.retry(Exception, logger=log)
 def download(url, dest, startByte=0, endByte=None, headers=None, timeout=4, shared_var=None, logger=None):
 	logger = logger or logging.getLogger('dummy')
 	if not headers:
@@ -362,7 +404,8 @@ def download(url, dest, startByte=0, endByte=None, headers=None, timeout=4, shar
 		while True:
 			try:
 				buff = urlObj.read(block_sz)
-			except Exception:
+			except Exception, e:
+				print str(e)
 				if shared_var:
 					shared_var.value -= filesize_dl
 				raise

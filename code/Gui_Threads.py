@@ -21,13 +21,12 @@ import re
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-from PyQt4.phonon import Phonon
 from threadpool import ThreadPool
 
 import Main
 import Config; config = Config.config
 from logger import log
-from CustomExceptions import NoResultsException, NotSupportedFiletypeException, FileInUseException, YoutubeException
+from CustomExceptions import NoResultsException, NotSupportedFiletypeException, YoutubeException
 import utils
 tr = utils.qt.tr
 
@@ -181,9 +180,9 @@ class SearchThread(QtCore.QThread):
 
 class DownloadThread(QtCore.QThread):
 	downloadProgress = QtCore.pyqtSignal(int, float, int, int, int)
-	encProgress = QtCore.pyqtSignal(int, int, int)
+	encProgress = QtCore.pyqtSignal(int)
 	status = QtCore.pyqtSignal(str)
-	error = QtCore.pyqtSignal(str)
+	error = QtCore.pyqtSignal(Exception)
 	
 	def __init__(self, parent = None):
 		QtCore.QThread.__init__(self, parent)
@@ -193,24 +192,25 @@ class DownloadThread(QtCore.QThread):
 		self._terminated = False
 		self.songObj = songObj
 		self.dl_dir = dl_dir
-		self.isMultimediaFile = False if "non-multimedia" in songObj.source.lower() else True
-		self.lastBytesSamples = [] # list with last 50 Bytes Samples.
-		self.last_calculated_totalBytes = 0
-		self.calcETA_queue = []
-		self.calcETA_i = 0
-		self.calcETA_val = 0
+		self.isMultimediaFile = not "non-multimedia" in songObj.source.lower()
+		self.isVideo = self.isMultimediaFile and self.songObj.ext != "mp3"
+		self.isAudio = self.isMultimediaFile and self.songObj.ext == "mp3"
+		self.encode_time = 0
 		self.start()
 		
 	@utils.decorators.log_exceptions(Exception, log)
 	def run(self): # Called by Qt once the thread environment has been set up.
-		informed_combine_files = False
 		url = self.songObj.url
 		filesize = self.songObj.filesize
-
+		
+		audio_path = r"%s\%s" % (self.dl_dir, self.songObj.GetProperFilename('mp3'))
+		video_path = r"%s\%s" % (self.dl_dir, self.songObj.GetProperFilename())
+		dest_audio_path = r"%s\%s" % (config.temp_dir, "%s.mp3" % utils.get_rand_string())
+		
 		if not self.isMultimediaFile:
-			dest_path = r"%s\%s" % (self.dl_dir, self.songObj.GetProperFilename(''))
+			dest_path = r"%s\%s" % (config.temp_dir, utils.get_rand_string())
 		elif self.songObj.ext == "mp3":
-			dest_path = r"%s\%s" % (self.dl_dir, self.songObj.GetProperFilename('mp3'))
+			dest_path = dest_audio_path
 		else: # video
 			dest_path = r"%s\%s" % (config.temp_dir, "%s.vid" % utils.get_rand_string())
 		
@@ -229,46 +229,28 @@ class DownloadThread(QtCore.QThread):
 			# if we were breaking the last loop, we are waiting for
 			# parts to get combined. we shall wait.
 			time.sleep(0.1)
-			
+		if dl_obj._failed:
+			log.error("Got DownloadFailedException() for %s" % url)
+			self.error.emit(Main.SmartDL.DownloadFailedException())
+			self.terminate()
+			return
 		self.downloadProgress.emit(100, dl_obj.get_speed(), dl_obj.get_eta(), filesize, filesize)
-		dl_time = dl_obj.get_dl_time()
-		dl_time_s = int(dl_time)%60
-		dl_time_m = int(dl_time)/60
-		
-		if not self.isMultimediaFile or self.songObj.ext == "mp3":
-			if filesize/dl_time/1024**2 > 1: # If dlRate is in MBs
-				if dl_time_m:
-					stats_str = tr('Download: %d:%.2d (%.2f MB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024**2)
-				else:
-					stats_str = tr('Download: %ds (%.2f MB/s)') % (dl_time, filesize/dl_time/1024**2)
-			else:
-				if dl_time_m:
-					stats_str = tr('Download: %d:%.2d (%.2f KB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024)
-				else:
-					stats_str = tr('Download: %ds (%.2f KB/s)') % (dl_time, filesize/dl_time/1024)
-
-			self.status.emit(stats_str)
 			
-		else: # if downloaded file is a video
+		if self.isVideo:
+			dest_video_path = dest_path
 			
-			# dest_path is a video
-			video_path = r"%s\%s" % (self.dl_dir, self.songObj.GetProperFilename())
-			audio_path = r"%s\%s" % (self.dl_dir, self.songObj.GetProperFilename('mp3'))
-			temp_audio_path = r"%s\%s" % (config.temp_dir, "%s.mp3" % utils.get_rand_string())
-			
-			t3 = time.time()
-			
+			t1 = time.time()
 			if config.downloadAudio: # if we want an audio file
 				log.debug("Encoding Audio...")
 				self.status.emit(tr("Encoding Audio..."))
 				
-				cmd = r'bin\ffmpeg -y -i "%s" -vn -ac 2 -b:a %d -f mp3 "%s"' % (dest_path,
-						config.youtube_audio_bitrates[self.songObj.video_itag.quality], temp_audio_path)
+				cmd = r'bin\ffmpeg -y -i "%s" -vn -ac 2 -b:a %d -f mp3 "%s"' % (dest_video_path,
+						config.youtube_audio_bitrates[self.songObj.video_itag.quality], dest_audio_path)
 				log.debug("Running '%s'" % cmd)
 				est_final_filesize = self.songObj.final_filesize
 				
-				print "Encoding: %s (%.2f MB) to %s" % (temp_audio_path, est_final_filesize / 1024.0 / 1024.0, self.dl_dir)
-				self.encProgress.emit(0, 0, est_final_filesize)
+				print "Encoding: %s (%.2f MB) to %s" % (dest_audio_path, est_final_filesize / 1024.0 / 1024.0, self.dl_dir)
+				self.encProgress.emit(0)
 				proc = utils.launch_without_console(cmd)
 				
 				old_encoded_fs_counter = 0
@@ -285,62 +267,118 @@ class DownloadThread(QtCore.QThread):
 								status = r"Encoding: %.2f MB / %.2f MB %s [%3.2f%%]" % (encoded_fs_counter / 1024.0, est_final_filesize / 1024.0**2, utils.progress_bar(1.0*encoded_fs_counter*1024/est_final_filesize) , encoded_fs_counter*1024 * 100.0 / est_final_filesize)
 								status = status + chr(8)*(len(status)+1)
 								print status,
-								self.encProgress.emit(int(encoded_fs_counter*1024 * 100.0 / est_final_filesize), encoded_fs_counter*1024, est_final_filesize)
+								self.encProgress.emit(int(encoded_fs_counter*1024 * 100.0 / est_final_filesize))
 								old_encoded_fs_counter = encoded_fs_counter
 					time.sleep(0.1)
-				self.encProgress.emit(100, est_final_filesize, est_final_filesize)
+				self.encProgress.emit(100)
 				proc.wait()
+				
+				t2 = time.time()
+				self.encode_time += t2-t1
+				
+				if not config.downloadVideo:
+					log.debug("Removing %s..." % dest_path)
+					os.unlink(dest_path)
+				
+		if config.downloadAudio and config.trimSilence:
+			t1 = time.time()
 			
-			log.debug("Copying Files...")
-			self.status.emit(tr("Copying Files..."))
+			log.debug("Trimming Silence...")
+			self.status.emit(tr("Trimming Silence from edges..."))
 			
-			if not config.downloadVideo:
-				log.debug("Removing %s" % dest_path)
-				os.unlink(dest_path)
-			else:
-				if os.path.exists(video_path):
-					log.debug("Removing existing file '%s'..." % video_path)
+			temp_audio_trimmed_path = "%s.tmp.mp3" % dest_audio_path
+			if os.path.exists(temp_audio_trimmed_path):
+				os.unlink(temp_audio_trimmed_path)
+			os.rename(dest_audio_path, temp_audio_trimmed_path)
+			
+			cmd = r'bin\sox -S "%s" "%s" silence 1 0.1 1%% reverse silence 1 0.1 1%% reverse' % (temp_audio_trimmed_path, dest_audio_path)
+			log.debug("Running '%s'" % cmd)
+			est_final_filesize = self.songObj.final_filesize
+			
+			print "Trimming Silence: %s (%.2f MB) to %s" % (dest_audio_path, est_final_filesize / 1024.0**2, self.dl_dir)
+			self.encProgress.emit(0)
+			proc = utils.launch_without_console(cmd)
+			
+			samples = 1
+			in_value = 0
+			out_value = 0
+			while True:
+				# print out
+				out = proc.stderr.read(70)
+				if not out:
+					break
+				
+				# Duration       : 00:04:24.06 = 11644870 samples = 19804.2 CDDA sectors
+				if 'samples =' in out:
+					samples = out.split('samples')[0].split('=')[-1].strip()
+					if samples.isdigit():
+						samples = int(samples)
+				
+				# In:100%  00:04:23.96 [00:00:00.09] Out:11.6M [      |      ] Hd:0.0 Clip:400
+				if 'In:' in out:
+					t = out.split('In:')[1].split('.')[0].strip()
+					if t.isdigit() and int(t) > in_value:
+						in_value = int(t)
+				
+				# In:100%  00:04:23.96 [00:00:00.09] Out:11.6M [      |      ] Hd:0.0 Clip:400	
+				if 'Out:' in out:
+					t = out.split('Out:')[1].split(' ')[0].strip()
 					try:
-						os.unlink(video_path)
-					except WindowsError, e:
-						print str(e)
-						if e[0] == 32:
-							log.error("Got FileInUseException() for %s" % video_path)
-							self.error.emit(FileInUseException(video_path))
-							return
-							
-				log.debug("Moving %s to %s" % (dest_path, video_path))
-				shutil.move(dest_path, video_path) # IMPROVE: this crashes when a video is running in media player, os.unlink removes it, but it is still running in media player.
+						if 'k' in t:
+							out_value = t.split('k')[0]
+							out_value = float(out_value)*1000
+						elif 'M' in t:
+							out_value = t.split('M')[0]
+							out_value = float(out_value)*1000000
+					except:
+						pass
+				
+				progress = in_value*0.3+(out_value/samples*100)*0.7+1
+				status = r"Trimming Silence: %s" % utils.progress_bar(progress/100.0)
+				status = status + chr(8)*(len(status)+1)
+				print status,
+				self.encProgress.emit(progress)
+				
+				time.sleep(0.1)
+				
+			self.encProgress.emit(100)
+			proc.wait()
 			
+			t2 = time.time()
+			self.encode_time += t2-t1
+			
+		log.debug("Copying Files...")
+		self.status.emit(tr("Copying Files..."))
+		
+		if self.isVideo:
+			# IMPROVE: this crashes when a video is running in media player, os.unlink removes it, but it is still running in media player.
 			if config.downloadAudio:
-				if os.path.exists(audio_path):
-					log.debug("Removing existing file '%s'..." % audio_path)
-					try:
-						os.unlink(audio_path)
-					except WindowsError, e:
-						if e[0] == 32:
-							log.error("Got FileInUseException() for %s" % audio_path)
-							self.error.emit(FileInUseException(audio_path))
-							return
-				log.debug("Moving %s to %s" % (temp_audio_path, audio_path))
-				shutil.move(temp_audio_path, audio_path)
-			
-			t4 = time.time()
-			
-			if filesize/dl_time/1024**2 > 1: # If dlRate is in MBs
-				if dl_time_m:
-					stats_str = tr('Download: %d:%.2d (%.2f MB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024**2)
-				else:
-					stats_str = tr('Download: %ds (%.2f MB/s)') % (dl_time, filesize/dl_time/1024**2)
+				log.debug("Moving %s to %s" % (dest_audio_path, audio_path))
+				shutil.move(dest_audio_path, audio_path) 
+			if config.downloadVideo:
+				log.debug("Moving %s to %s" % (dest_video_path, video_path))
+				shutil.move(dest_video_path, video_path)
+		if self.isAudio:
+			log.debug("Moving %s to %s" % (dest_path, audio_path))
+			shutil.move(dest_path, audio_path) 
+		
+		dl_time = dl_obj.get_dl_time()
+		dl_time_s = int(dl_time)%60
+		dl_time_m = int(dl_time)/60
+		if filesize/dl_time/1024**2 > 1: # If dlRate is in MBs
+			if dl_time_m:
+				stats_str = tr('Download: %d:%.2d (%.2f MB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024**2)
 			else:
-				if dl_time_m:
-					stats_str = tr('Download: %d:%.2d (%.2f KB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024)
-				else:
-					stats_str = tr('Download: %ds (%.2f KB/s)') % (dl_time, filesize/dl_time/1024)
-			
-			if config.downloadAudio:
-				stats_str += tr('; Encoded: %d sec') % (t4-t3)
-			self.status.emit(stats_str)
+				stats_str = tr('Download: %ds (%.2f MB/s)') % (dl_time, filesize/dl_time/1024**2)
+		else:
+			if dl_time_m:
+				stats_str = tr('Download: %d:%.2d (%.2f KB/s)') % (dl_time_m, dl_time_s, filesize/dl_time/1024)
+			else:
+				stats_str = tr('Download: %ds (%.2f KB/s)') % (dl_time, filesize/dl_time/1024)
+		
+		if self.encode_time:
+			stats_str += tr('; Encoded: %ds') % self.encode_time
+		self.status.emit(stats_str)
 		
 	def isRunning(self):
 		if self._terminated:

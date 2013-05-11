@@ -16,8 +16,9 @@ Dependencies:
 * python-rsa >= 3.1.1
 * regobj >= 0.2.2
 * Inno Setup >= 5.5.1
-* 7za.exe (will be downloaded if not exists)
-* ffmpeg.exe (will be downloaded if not exists)
+* 7za.exe == 9.20 (will be downloaded if not exists)
+* ffmpeg.exe == 1.1.1 (jointed build) (will be downloaded if not exists)
+* sox.exe == SoX v14.2.0 (custom build from http://www.codeproject.com/Articles/33901/Compiling-SOX-with-Lame-and-Libmad-for-Windows?msg=3118589) (will be downloaded if not exists)
 
 1. Make sure all the Dependencies are met, by running:
 	cd C:\Scripts\iQuality\testcode
