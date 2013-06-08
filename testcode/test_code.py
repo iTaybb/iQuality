@@ -43,6 +43,7 @@ def test_PyEnviron():
 		import pytest
 		import rsa
 		import regobj
+		import chardet
 
 	except ImportError, e:
 		raise Exception("Depencency not found: %s" % str(e))

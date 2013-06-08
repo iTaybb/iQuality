@@ -106,32 +106,21 @@ class MainWin(QtGui.QDialog):
 			
 			log.debug("Downloading Component %s [%d/%d]..." % (component, i+1, len(self.components)))
 			self.label1.setText(tr("Downloading %s [%d/%d]...") % (component, i+1, len(self.components)))
-			for j in range(self.retries):
-				obj = Main.SmartDL(urls, logger=log)
-				obj.start()
-				
-				while not obj.isFinished():
-					QtGui.QApplication.processEvents()
-					self.prg_bar.setValue(int(obj.get_progress()*100))
-					time.sleep(0.1)
-				if obj._failed:
-					QtGui.QMessageBox.critical(self, tr("Error"), tr("The download has failed. It may be a network connection problem. Please try to rerun this application and try again."), QtGui.QMessageBox.Ok)
-					self.close()
-				self.prg_bar.setValue(100)
-					
-				self.label1.setText(tr("Unpacking %s...") % component)
-				
-				computed_hash = utils.calc_sha256(obj.get_dest())
-				if archive_hash == computed_hash:
-					log.debug('Hash for %s is valid.' % component)
-					break
-				else:
-					log.warning('Hash for %s is NOT valid (%s != %s). Retrying (%d/%d)...' % (component, archive_hash, computed_hash, j+1, self.retries))	
-				
-			if archive_hash != computed_hash:
-				log.error('Hash for %s is NOT valid (%s != %s).' % (component, archive_hash, computed_hash))
-				QtGui.QMessageBox.warning(self, tr("Warning"), tr("Hash check failed for %s. Please contact with the program's developer.") % component, QtGui.QMessageBox.Ok)
+			
+			obj = Main.SmartDL(urls, logger=log)
+			obj.add_hash_verification('sha256', archive_hash)
+			obj.start()
+			
+			while not obj.isFinished():
+				QtGui.QApplication.processEvents()
+				self.prg_bar.setValue(int(obj.get_progress()*100))
+				time.sleep(0.1)
+			if obj._failed:
+				QtGui.QMessageBox.critical(self, tr("Error"), tr("The download has failed. It may be a network connection problem. Please try to rerun this application and try again."), QtGui.QMessageBox.Ok)
 				self.close()
+			self.prg_bar.setValue(100)
+				
+			self.label1.setText(tr("Unpacking %s...") % component)
 					
 			ext = os.path.splitext(obj.get_dest())[1].lower()
 			if ext == '.zip':

@@ -106,7 +106,7 @@ def parse(song, artist):
 @utils.decorators.retry(socket.error, delay=1, tries=2, logger=log)
 def parse_LyricsMode(title, artist):
 	"Uses LyricsMode for lyrics grabbing"
-	url = "http://www.lyricsmode.com/search.php?what=songs&s=%s" % urllib2.quote(title.encode("utf8"))
+	url = "http://www.lyricsmode.com/search.php?search=%s" % urllib2.quote(title.encode("utf8"))
 	log.debug('Fetching %s...' % url)
 	obj = urllib2.urlopen(url)
 	response = obj.read()

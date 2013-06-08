@@ -56,7 +56,7 @@ class ThreadPool:
 				result = f(*args, **kwargs) # launches it
 				self.processEvents()
 				if self.catch_returns or self.log_returns:
-					if inspect.isgenerator(result) or 'itertools' in str(result.__class__):
+					if isinstance(result, list) or inspect.isgenerator(result) or 'itertools' in str(result.__class__):
 						for x in result:
 							self.processEvents()
 							self.returned(x)

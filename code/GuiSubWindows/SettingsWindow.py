@@ -102,6 +102,9 @@ class MainWin(QtGui.QDialog):
 		self.useSoundcloud = QtGui.QCheckBox(tr("Use %s") % "SoundCloud")
 		self.useSoundcloud.setCheckState(config.search_sources['soundcloud'])
 		self.useSoundcloud.setTristate(False)
+		self.useBandcamp = QtGui.QCheckBox(tr("Use %s") % "Bandcamp")
+		self.useBandcamp.setCheckState(config.search_sources['bandcamp'])
+		self.useBandcamp.setTristate(False)
 		self.useYoutube = QtGui.QCheckBox(tr("Use %s") % "Youtube")
 		self.useYoutube.setCheckState(config.search_sources['youtube'])
 		self.useYoutube.setTristate(False)
@@ -157,6 +160,7 @@ class MainWin(QtGui.QDialog):
 		layout2.addWidget(self.useDilandau)
 		layout2.addWidget(self.useMp3Skull)
 		layout2.addWidget(self.useSoundcloud)
+		layout2.addWidget(self.useBandcamp)
 		layout3 = QtGui.QHBoxLayout()
 		layout3.addWidget(self.useYoutube)
 		layout3.addWidget(self.prefer720p)
@@ -410,7 +414,8 @@ class MainWin(QtGui.QDialog):
 				QtGui.QMessageBox.critical(self, tr("Error"), tr("Your Post-Download action is \"Run an application\", however the application \"%s\" could not be found.") % exe_path, QtGui.QMessageBox.Ok)
 				return
 		
-		if not any([self.useDilandau.isChecked(), self.useMp3Skull.isChecked(), self.useYoutube.isChecked(), self.useSoundcloud.isChecked()]):
+		if not any([self.useDilandau.isChecked(), self.useMp3Skull.isChecked(), self.useYoutube.isChecked(), 
+						self.useSoundcloud.isChecked(), self.useBandcamp.isChecked()]):
 			QtGui.QMessageBox.critical(self, tr("Error"), tr("All media sources are disabled. Please choose at least one."), QtGui.QMessageBox.Ok)
 			return
 			
@@ -442,6 +447,7 @@ class MainWin(QtGui.QDialog):
 		config.search_sources['Dilandau'] = self.useDilandau.isChecked()
 		config.search_sources['Mp3skull'] = self.useMp3Skull.isChecked()
 		config.search_sources['soundcloud'] = self.useSoundcloud.isChecked()
+		config.search_sources['bandcamp'] = self.useBandcamp.isChecked()
 		config.search_sources['youtube'] = self.useYoutube.isChecked()
 		utils.move_item_to_top(str(self.prefered_youtube_format.currentText()), config.youtube_formats_priority)
 		

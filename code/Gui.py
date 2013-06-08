@@ -30,7 +30,7 @@ import Config; config = Config.config
 import logger
 from logger import log
 from Gui_Threads import GenericThread, SearchThread, DownloadThread, ArtistSearchThread, ArtistLookupThread, LyricsFulltextSearchThread
-from GuiSubWindows import ID3Window, PostDownloadWindow, TracksExplorerWindow, ChartsExplorerWindow, SettingsWindow, HelpSearchWindow, ComponentFetcherWindow
+from GuiSubWindows import ID3Window, PostDownloadWindow, TracksExplorerWindow, ChartsExplorerWindow, SettingsWindow, HelpSearchWindow, ComponentFetcherWindow, SupportArtistsWindow
 from CustomExceptions import NoSpaceWarning, NoResultsException, NewerVersionWarning, NoInternetConnectionException, NoDnsServerException, NotSupportedFiletypeException, FileInUseException, YoutubeException, ComponentsFaultyWarning
 import Hints
 import utils
@@ -92,9 +92,9 @@ class MainWindow(QtGui.QMainWindow):
 				
 				sys.exit()
 			elif sys.argv[1] in ['/test']: #TEMP
-				w = ComponentFetcherWindow.MainWin()
+				w = SupportArtistsWindow.MainWin()
 				w.exec_()
-				# sys.exit()
+				sys.exit()
 			else:
 				self.search_lineEdit.setText(unicode(sys.argv[1], sys.getfilesystemencoding()))
 				if len(sys.argv) > 2 and sys.argv[2] and sys.argv[2] in ['-l', '--lucky', '/lucky', '-d', '--download', '/dl' , '/download']:
@@ -106,7 +106,7 @@ class MainWindow(QtGui.QMainWindow):
 			clipboard = QtGui.QApplication.clipboard()
 			x = unicode(clipboard.text())
 
-			if 'youtube.com' in x.lower() or 'youtu.be' in x.lower() or 'soundcloud.com' in x.lower():
+			if 'youtube.com' in x.lower() or 'youtu.be' in x.lower() or 'soundcloud.com' in x.lower() or 'bandcamp.com' in x.lower():
 				self.search_lineEdit.setText(x)
 				self.search_slot()
 				
@@ -440,6 +440,10 @@ class MainWindow(QtGui.QMainWindow):
 		self.dl_cancel_button.setEnabled(False)
 		self.dl_cancel_button.setFlat(True)
 		self.dl_cancel_button.setToolTip(tr('Stop the download process'))
+		
+		self.buy_button = QtGui.QCommandLinkButton(tr("Support the artists"))
+		self.buy_button.clicked.connect(self.slot_buy)
+		
 		self.prg_bar = QtGui.QProgressBar()
 		
 		self.downloadAudio_checkbox = QtGui.QCheckBox(tr("Audio"))
@@ -498,6 +502,7 @@ class MainWindow(QtGui.QMainWindow):
 		videoaudio_checkboxs_Layout.addWidget(self.downloadAudio_checkbox)
 		videoaudio_checkboxs_Layout.addWidget(self.downloadVideo_checkbox)
 		videoaudio_checkboxs_Layout.addWidget(self.trimSilence_checkbox)
+		videoaudio_checkboxs_Layout.addStretch(5)
 		
 		row_5_6_Layout = QtGui.QGridLayout()
 		# row_5_6_Layout.addWidget(self.listen_button, 0, 0, 1, 2)
@@ -507,9 +512,10 @@ class MainWindow(QtGui.QMainWindow):
 		row_5_6_Layout.addWidget(self.mediaSlider, 0, 3)
 		row_5_6_Layout.addWidget(self.mediaTimer, 0, 4)
 		row_5_6_Layout.addWidget(self.dl_button, 1, 0)
-		row_5_6_Layout.addLayout(videoaudio_checkboxs_Layout, 1, 1)
-		row_5_6_Layout.addWidget(self.dl_cancel_button, 1, 2)
-		row_5_6_Layout.addWidget(self.prg_bar, 1, 3, 1, 2)
+		row_5_6_Layout.addWidget(self.buy_button, 2, 0)
+		row_5_6_Layout.addLayout(videoaudio_checkboxs_Layout, 1, 1, 2, 1)
+		row_5_6_Layout.addWidget(self.dl_cancel_button, 1, 2, 2, 1)
+		row_5_6_Layout.addWidget(self.prg_bar, 1, 3, 2, 2)
 
 		row7_Layout = QtGui.QHBoxLayout()
 		row7_Layout.addWidget(self.status_txt)
@@ -698,7 +704,7 @@ class MainWindow(QtGui.QMainWindow):
 													config.youtube_listen_quality_priority,
 													config.youtube_listen_formats_priority)
 			if not ans:
-				QtGui.QMessageBox.critical(self, tr("Error"), tr('Sorry, a preview is not available for this video. You can watch it on <a href="%s">youtube</a>.') % songObj.youtube_watchurl, QtGui.QMessageBox.Ok)
+				QtGui.QMessageBox.critical(self, tr("Error"), tr('Sorry, a preview is not available for this video. You can watch it on <a href="%s">youtube</a>.') % songObj.source_url, QtGui.QMessageBox.Ok)
 				return
 				
 			url = ans.url
@@ -864,6 +870,24 @@ class MainWindow(QtGui.QMainWindow):
 			# run the dl_thread finished slot so the data will be appended and the file will be run.
 			self.dl_thread_and_id3_window_finished() # mimics a FINISHED signal emit.
 			
+	def slot_buy(self):
+		if self.table.selectedIndexes():
+			index = self.table.selectedIndexes()[0]
+			url = str(index.data(QtCore.Qt.UserRole).toString())
+		elif len(self.songsObjs) == 1:
+			url = self.songsObjs[0].url
+		else:
+			w = SupportArtistsWindow.MainWin()
+			w.exec_()
+			return
+			
+		# retriving url and deep-copying songobj
+		self.songObj = [x for x in self.songsObjs if x.url == url][0]
+		self.songObj = copy.deepcopy(self.songObj)
+		
+		w = SupportArtistsWindow.MainWin(self.songObj)
+		w.exec_()
+			
 	def table_doubleClicked_slot(self, index):
 		if config.table_doubleClick_action == 'listen':
 			self.listen_slot(index)
@@ -881,10 +905,9 @@ class MainWindow(QtGui.QMainWindow):
 			elif not all(config.search_sources.values()):
 				disabled_search_sources = [k for k, v in config.search_sources.items() if not v]
 				log.debug('some media sources are disabled (%s). asking user if he wants to enable them...' % ", ".join(disabled_search_sources))
-				ans = QtGui.QMessageBox.critical(self, tr("Error"), tr('No songs were found. Also, some media sources are disabled (%s). Enable them and search again?') % ", ".join(disabled_search_sources), QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+				ans = QtGui.QMessageBox.warning(self, tr("Warning"), tr('No songs were found. However, the following media sources are currently disabled: <br /><br /><b>%s</b><br /><br />Enable them and search again?') % "<br />".join(disabled_search_sources), QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
 				if ans == QtGui.QMessageBox.Yes:
 					log.debug("Enabling all media sources...")
-					# from PyQt4 import QtCore; import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
 					for k in config.search_sources.keys():
 						config.search_sources[k] = True
 					Config.config.saveToIni() # IMPROVE: Understand why it is needed here.
@@ -1202,6 +1225,12 @@ class MainWindow(QtGui.QMainWindow):
 			QtGui.QMessageBox.critical(self, tr("Error"), tr("An error occured: %s. Running default post-download window.") % unicode(e), QtGui.QMessageBox.Ok)
 			w = PostDownloadWindow.MainWin(self.songObj)
 			w.exec_()
+		
+		if config.show_supportArtists_notice:
+			if time.time() > config.last_supportArtists_notice_timestamp + config.interval_between_supportArtists_notices:
+				w = SupportArtistsWindow.MainWin()
+				w.exec_()
+				config.last_supportArtists_notice_timestamp = time.time()
 
 	def updatePlayerLength(self, t):
 		t = t/1000
@@ -1222,8 +1251,8 @@ class MainWindow(QtGui.QMainWindow):
 		act_dl = menu.addAction(tr("Download"))
 		act_copyurl = menu.addAction(tr("Copy Url"))
 		act_copyname = menu.addAction(tr("Copy Song Name"))
-		if songObj.source == "youtube":
-			act_copywatchurl = menu.addAction(tr("Copy WatchUrl"))
+		if songObj.source_url:
+			act_copywatchurl = menu.addAction(tr("Copy Watch Url"))
 		act_copyall = menu.addAction(tr("Copy All Data"))
 		
 		clipboard = QtGui.QApplication.clipboard()
@@ -1251,12 +1280,13 @@ class MainWindow(QtGui.QMainWindow):
 			s += "Score: %s\n" % songObj.score
 			s += "Url: %s\n" % songObj.url
 			s += "Search String: %s" % songObj.searchString
-			if songObj.source == "youtube":
-				s += "\nYotube WatchUrl: %s" % songObj.youtube_watchurl
+			if songObj.source_url:
+				s += "\nWatch Url: %s" % songObj.source_url
+			if songObj.youtube_views_count:
 				s += "\nYotube View Counter: %s" % "{:,}".format(songObj.youtube_views_count)
 			clipboard.setText(s)
-		if songObj.source == "youtube" and action == act_copywatchurl:
-			clipboard.setText(songObj.youtube_watchurl)
+		if songObj.source_url and action == act_copywatchurl:
+			clipboard.setText(songObj.source_url)
 	
 	def closeEvent(self, event=None):
 		"Runs when the widget is closed"
@@ -1373,6 +1403,10 @@ if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
 	app.setStyle(config.appStyle)
 	while True:
+		# movie = QtGui.QMovie(r"pics\loading.gif")
+		# splash = utils.qt.MovieSplashScreen(movie)
+		# splash.show()
+		 
 		if not config.lang:
 			trans = QtCore.QTranslator()
 			qt_trans = QtCore.QTranslator()
@@ -1449,6 +1483,7 @@ if __name__ == '__main__':
 		
 		main_win = MainWindow()
 		main_win.show()
+		# splash.finish(main_win)
 		
 		exitcode = app.exec_()
 		if exitcode != 1000: # 1000 is the RESTART code.

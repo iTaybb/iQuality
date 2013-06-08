@@ -19,7 +19,8 @@ def get_hints():
 				tr('Did you know? iQuality downloads album arts for you.'),
 				tr('Did you know? iQuality can download the top charts songs.'),
 				tr('Did you know? iQuality can handle Youtube playlists.'),
-				tr('Did you know? iQuality can trim silence from the audio edges.')
+				tr('Did you know? iQuality can trim silence from the audio edges.'),
+				tr('Did you know? You can buy music with iQuality.')
 				]
 				
 	i = random.randint(0, len(hints)-1)

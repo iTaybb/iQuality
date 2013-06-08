@@ -14,9 +14,8 @@ import itertools
 import re
 from bs4 import BeautifulSoup
 
-from threadpool import ThreadPool
-
 sys.path.append('..') # for project top-level modules
+from threadpool import ThreadPool
 import Config; config = Config.config
 from logger import log
 from CustomExceptions import YoutubeException
@@ -39,10 +38,12 @@ def parse(title, source, n = None):
 		gen = parse_Mp3skull(title)
 	elif source == "soundcloud":
 		gen = parse_soundcloud_api2(title)
+	elif source == 'bandcamp':
+		gen = parse_bandcamp(title)
 	elif source == "youtube":
 		gen = parse_Youtube(title)
 	else:
-		log.error('no source "%s". (from parse function in WebParser)')
+		log.error('no source "%s". (from parse function in WebParser)' % source)
 		gen = (x for x in []) # empty generator
 	if n:
 		gen = itertools.islice(gen, n)
@@ -180,26 +181,106 @@ def search_soundcloud(title):
 
 @utils.decorators.memoize(config.memoize_timeout)
 def get_soundcloud_dl_link(url):
-	'''
-	Function returns the highest quality link for a specific youtube clip.
-	@param video_id: Youtube Video ID.
-	@param priority: A list represents the qualities priority.
-	
-	@return MetaUrlObj: MetaUrl Object.
-	'''
 	obj = urllib2.urlopen(url)
 	response = obj.read()
 	
 	soup = BeautifulSoup(response)
-	json_data = soup.find('script', text=re.compile('^[\r\n]*?window\.SC\.bufferTracks\.push')).text
+	json_tag = soup.find('script', text=re.compile('^[\r\n]*?window\.SC\.bufferTracks\.push'))
+	if not json_tag:
+		log.error("No soundcloud link has been found in get_soundcloud_dl_link.")
+		return
+	json_data = json_tag.text
 	match = re.search(r"\{(.+)\}", json_data)
 	if not match:
 		log.error("No soundcloud link has been found in get_soundcloud_dl_link.")
 		return
 		
 	data = json.loads(match.group())
-	url = "http://media.soundcloud.com/stream/%s?stream_token=%s" % (data['uid'], data['token'])
-	return utils.classes.MetaUrl(url, 'SoundCloud', data['title'])
+	dl_url = "http://media.soundcloud.com/stream/%s?stream_token=%s" % (data['uid'], data['token'])
+	return utils.classes.MetaUrl(dl_url, 'SoundCloud', data['title'], source_url=url)
+
+@utils.decorators.memoize(config.memoize_timeout)
+# @profile
+def parse_bandcamp(title):
+	links = search_bandcamp(title)
+	max_result_parsing = 3
+	i = 0
+	
+	pool = ThreadPool(max_threads=5, catch_returns=True, logger=log)
+	for link in links:
+		if '/album/' in link:
+			pool(get_bandcamp_album_dl_links)(link)
+			i += 1
+			
+		elif '/track/' in link:
+			pool(get_bandcamp_dl_link)(link)
+			i += 1
+		
+		if i >= max_result_parsing:
+			break
+			
+	return pool.iter()
+	
+@utils.decorators.memoize(config.memoize_timeout)
+# @profile
+def search_bandcamp(title):
+	title = urllib2.quote(title.encode("utf8")).replace('-','').replace(' ','_').replace('__','_').lower()
+	
+	url = "http://bandcamp.com/search?q=%s" % title
+	log.debug("[Dilandau] Parsing %s... " % url)
+	obj = urllib2.urlopen(url)
+	response = obj.read()
+	
+	links = []
+	soup = BeautifulSoup(response)
+
+	for tag in soup.find_all('a', class_='artcont'):
+		links.append(tag['href'])
+	log.debug("[Bandcamp] found %d links" % len(links))
+		
+	return links
+	
+@utils.decorators.memoize(config.memoize_timeout)
+# @profile
+def get_bandcamp_dl_link(url):
+	obj = urllib2.urlopen(url)
+	response = obj.read()
+	
+	soup = BeautifulSoup(response)
+	
+	js_data = [x for x in soup.find_all('script') if x.text.strip().startswith('Control.registerController')][0].text
+	json_data = [x for x in js_data.split('\n') if x.strip().startswith('trackinfo')][0].split('trackinfo', 1)[1].strip(' : ,\'')
+	for song in json.loads(json_data):
+		# print "%s: %s" % (song['title'], song['file'].values()[0])
+		dl_link = song['file'].values()[0]
+		title = song['title']
+		
+		return utils.classes.MetaUrl(dl_link, 'bandcamp', title, source_url=url)
+	
+@utils.decorators.memoize(config.memoize_timeout)
+# @profile
+def get_bandcamp_album_dl_links(url):
+	obj = urllib2.urlopen(url)
+	response = obj.read()
+	
+	links = []
+	soup = BeautifulSoup(response)
+	
+	js_data = [x for x in soup.find_all('script') if x.text.strip().startswith('Control.registerController')][0].text
+	artist_name = [x for x in js_data.split('\n') if x.strip().startswith('artist')][0].split('artist', 1)[1].strip(' : ",\"')
+	
+	json_data = [x for x in js_data.split('\n') if x.strip().startswith('trackinfo')][0].split('trackinfo', 1)[1].strip(' : ,\'')
+	for song in json.loads(json_data):
+		if not song['file']:
+			continue
+		# print "%s: %s" % (song['title'], song['file'].values()[0])
+		dl_link = song['file'].values()[0]
+		title = "%s - %s" % (artist_name, song['title'])
+		
+		link = utils.classes.MetaUrl(dl_link, 'bandcamp', title, source_url=url)
+		links.append(link)
+	
+	return links
 
 def parse_Youtube(song, amount=10):
 	'''
@@ -237,9 +318,6 @@ def parse_Youtube_playlist(playlist_id):
 		videoids.append(parse_qs(urlparse(tag['href']).query)['v'][0])
 	
 	return videoids
-	
-	# for videoid in videoids:
-		# yield get_youtube_dl_link(videoid)
 
 @utils.decorators.memoize(config.memoize_timeout)
 def search_Youtube(song, amount):
@@ -273,7 +351,9 @@ def get_youtube_dl_link(video_id, q_priority=config.youtube_quality_priority,
 			for stream in data['fmt_stream_map']:
 				itagData = utils.classes.ItagData(stream['itag'])
 				if itagData.quality == q_p and itagData.format == fmt_p:
-					return utils.classes.MetaUrl(stream['url'], 'youtube', data['title'], int(data['length_seconds']), itagData, video_id, int(data['view_count']))
+					source_url = "http://www.youtube.com/watch?v=%s" % video_id
+					return utils.classes.MetaUrl(stream['url'], 'youtube', data['title'], int(data['length_seconds']), \
+							itagData, video_id, source_url, int(data['view_count']))
 	log.error("No youtube link has been found in get_youtube_dl_link.")
 	return
 
@@ -360,7 +440,7 @@ def get_youtube_dl_links_api2(video_id):
 	data['fmt_stream_map'] = fmt_stream_map
 	
 	return data
-	
+
 def search(song, n, processes=config.search_processes, returnGen=False):
 	'''
 	Function searches song and returns n valid .mp3 links.
@@ -383,9 +463,22 @@ def search(song, n, processes=config.search_processes, returnGen=False):
 	
 	for args in args_list:
 		pool(parse)(*args)
-
+	
 	gen = pool.iter()
 
 	if returnGen:
 		return gen
 	return list(gen)
+	
+if __name__ == '__main__':
+	import time
+	t1 = time.time()
+	
+	o = search('naruto', 15, returnGen=True)
+	for i in range(15):
+		print i+1
+		print repr(o.next())
+		print "\n\n"
+	
+	t2 = time.time()
+	print "took %ss" % (t2-t1)

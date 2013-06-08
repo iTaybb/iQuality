@@ -83,6 +83,7 @@ class SearchThread(QtCore.QThread):
 		self.luckyDownload = luckyDownload
 		self.song = song
 		self.isDirectLink = False
+		self.songObj_emitted = False
 		self.pool = ThreadPool(max_threads=config.buildSongObjs_processes, catch_returns=True, logger=log)
 		
 		self.start()
@@ -124,6 +125,17 @@ class SearchThread(QtCore.QThread):
 						self.error.emit(e)
 						
 					links_gen = (x for x in [metaUrlObj])
+			elif domainName.endswith('bandcamp.com'):
+				if '/album/' in self.url:
+					log.debug("Url is a direct url (bandcamp album)")
+					metaUrlObjs = Main.WebParser.LinksGrabber.get_bandcamp_album_dl_links(self.url)
+					links_gen = (x for x in metaUrlObjs)
+				elif '/track/' in self.url:
+					log.debug("Url is a direct url (bandcamp)")
+					metaUrlObj = Main.WebParser.LinksGrabber.get_bandcamp_dl_link(self.url)
+					links_gen = (x for x in [metaUrlObj])
+				else:
+					links_gen = (x for x in [])
 			elif domainName.endswith('soundcloud.com'):
 				log.debug("Url is a direct url (Soundcloud)")
 				if self.url.startswith('https://'):
@@ -152,25 +164,30 @@ class SearchThread(QtCore.QThread):
 			links_gen = Main.WebParser.LinksGrabber.search(self.song, self.numOfSongs, returnGen=True)
 			
 		for link in links_gen:
-			self.pool(Main.HTTPQuery.get_file_details)(link)
+			self.pool(self.create_and_emit_SongObj)(link)
+			
+		while not self.pool.isFinished():
+			time.sleep(0.1)
 		
-		for urlObj in self.pool.iter():
-			try:
-				self.songObj = utils.classes.Song(*(urlObj+(self.song,)))
-			except:
-				log.exception(traceback.format_exc())
-			if self.songObj.filesize == 0:
-				log.error("self.songObj.bitrate is 0. skipping on %s..." % unicode(self.songObj))
-			else:
-				self.output.emit(self.songObj)
-		
-		if not hasattr(self, 'songObj'):
+		if not self.songObj_emitted:
 			log.error("Got NoResultsException.")
 			self.error.emit(NoResultsException(self.isDirectLink))
+		elif self.luckyDownload:
+			self.finished_lucky.emit()
+				
+	def create_and_emit_SongObj(self, link):
+		try:
+			urlObj = Main.HTTPQuery.get_file_details(link)
+			self.songObj = utils.classes.Song(*(urlObj+(self.song,)))
+		except:
+			log.exception(traceback.format_exc())
+		if self.songObj.filesize == 0:
+			log.error("self.songObj.bitrate is 0. skipping on %s..." % unicode(self.songObj))
 		else:
-			del self.songObj
-			if self.luckyDownload:
-				self.finished_lucky.emit()
+			self.output.emit(self.songObj)
+			
+			if not self.songObj_emitted:
+				self.songObj_emitted = True
 		
 	def terminate(self): # overload
 		"Setting _terminated to True"
@@ -346,6 +363,9 @@ class DownloadThread(QtCore.QThread):
 			
 			t2 = time.time()
 			self.encode_time += t2-t1
+			
+			if not os.path.exists(dest_audio_path):
+				log.error('SoX failed: %s' % out)
 			
 		log.debug("Copying Files...")
 		self.status.emit(tr("Copying Files..."))
@@ -739,3 +759,19 @@ class LyricsFulltextSearchThread(QtCore.QThread):
 		"Setting _terminated to True"
 		self._terminated = True
 		super(LyricsFulltextSearchThread, self).terminate()
+		
+if __name__ == '__main__':
+	import time
+	t1 = time.time()
+	
+	def f(): print x
+	
+	t = SearchThread()
+	t.output.connect(f)
+	t.search('naruto', 15, False)
+	
+	while t.isRunning():
+		time.sleep(0.1)
+	
+	t2 = time.time()
+	print "took %ss" % (t2-t1)

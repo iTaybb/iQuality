@@ -4,7 +4,7 @@
 A Rewritten version of SmartDownload as a class.
 
 Usage:
->>> obj = SmartDL(url, dest=None, max_threads=5,show_output=False ,logger=None)
+>>> obj = SmartDL(url, dest=None, max_threads=5, show_output=False, logger=None)
 >>> obj.start(blocking=False)
 >>> print "Eta is %d" % obj.get_eta()
 >>> print "speed is %d" % obj.get_speed()
@@ -56,6 +56,7 @@ import logging
 import threading
 import time
 import math
+import hashlib
 from urlparse import urlparse
 import multiprocessing.dummy as multiprocessing
 from ctypes import c_int
@@ -90,11 +91,12 @@ class SmartDL:
 		self.headers = config.generic_http_headers
 		self.timeout = 4
 		self.current_attemp = 1 
-		self.attemps_limit = 3
+		self.attemps_limit = 4
 		self.minChunkFile = 1024**2 # 1MB
 		self.filesize = 0
 		self.shared_var = multiprocessing.Value(c_int, 0) # a ctypes var that counts the bytes already downloaded
 		self.status = "ready"
+		self.verify_hash = False
 		self._killed = False
 		self._failed = False
 		
@@ -106,6 +108,7 @@ class SmartDL:
 			self.max_threads = 1
 		if os.path.exists(self.dest):
 			self.logger.warning("Destination '%s' already exists. Existing file will be removed." % self.dest)
+			
 		if not os.path.exists(os.path.dirname(self.dest)):
 			self.logger.warning("Directory '%s' does not exist. Creating it..." % os.path.dirname(self.dest))
 			os.makedirs(os.path.dirname(self.dest))
@@ -117,10 +120,24 @@ class SmartDL:
 	def __repr__(self):
 		return "<SmartDL %s>" % (self.url)
 		
+	def add_hash_verification(self, algorithm, hash):
+		self.verify_hash = True
+		self.hash_algorithm = algorithm
+		self.hash_code = hash
+		
 	def start(self, blocking=True):
 		"Starts the download task"
 		if not self.status == "ready":
 			raise RuntimeError("cannot start (current status is %s)" % self.status)
+			
+		if self.verify_hash and os.path.exists(self.dest):
+			with open(self.dest, 'rb') as f:
+				hash = hashlib.new(self.hash_algorithm, f.read()).hexdigest()
+				if hash == self.hash_code:
+					self.logger.debug("Destination '%s' already exists, and the hash matches. No need to download." % self.dest)
+					self.status = 'finished'
+					return
+		
 		self.logger.debug("Downloading '%s' to '%s'..." % (self.url, self.dest))
 		req = urllib2.Request(self.url, headers=self.headers)
 		try:
@@ -171,6 +188,16 @@ class SmartDL:
 		else:
 			self._failed = True
 			raise DownloadFailedException()
+			
+	def try_next_mirror(self):
+		if self.mirrors:
+			self.status = "ready"
+			self.shared_var.value = 0
+			self.url = self.mirrors.pop(0)
+			self.start()
+		else:
+			self._failed = True
+			raise DownloadFailedException()
 	
 	def get_eta(self):
 		return self.control_thread.get_eta()
@@ -183,7 +210,9 @@ class SmartDL:
 	def get_progress(self):
 		if not self.filesize:
 			return 0
-		return 1.0*self.control_thread.get_downloaded_size()/self.filesize
+		if self.control_thread.get_downloaded_size() <= self.filesize:
+			return 1.0*self.control_thread.get_downloaded_size()/self.filesize
+		return 1.0
 	def isFinished(self):
 		if self.status == "ready":
 			return False
@@ -271,10 +300,14 @@ class ControlThread(threading.Thread):
 		self.logger.debug("File downloaded within %.2f seconds." % self.dl_time)
 			
 	def get_eta(self):
+		if self.eta <= 0:
+			return 0
 		return self.eta
 	def get_speed(self):
 		return self.dl_speed
 	def get_downloaded_size(self):
+		if self.shared_var.value > self.obj.filesize:
+			return self.obj.filesize
 		return self.shared_var.value
 	def get_final_filesize(self):
 		return self.obj.filesize
@@ -340,6 +373,18 @@ def post_threadpool_actions(pool, args, expected_filesize, SmartDL_obj):
 	
 	SmartDL_obj.status = "combining"
 	combine_files(*args)
+	
+	if SmartDL_obj.verify_hash:
+		dest_path = args[-1]
+		with open(dest_path, 'rb') as f:
+			hash = hashlib.new(SmartDL_obj.hash_algorithm, f.read()).hexdigest()
+			
+		if hash == SmartDL_obj.hash_code:
+			log.debug('Hash verification succeeded.')
+		else:
+			log.warning('Hash verification failed (got %s, expected %s). Trying next mirror...' % (hash, SmartDL_obj.hash_code))
+			SmartDL_obj.try_next_mirror()
+			return
 	
 def calc_args(filesize, max_threads, minChunkFile):
 	if not filesize:
@@ -432,11 +477,12 @@ if __name__ == "__main__":
 	import logger, pdb
 	log = logger.create_debugging_logger()
 
-	url = r"http://a.tumblr.com/tumblr_mayhwb20BD1rgwlgjo1_r2.mp3"
-	url = r"http://soundcloud.com/johnnyconcept/winter-mainroom-sessions-2012/download"
-	url = r"http://api.ning.com/files/ircV2rFsD-WS5YkvKlBudV18aLi24lZHD6w7dqA81zp4f9KtPYPTGiQK20Og9lAm/MakeHerSay.mp3"
+	url = ["http://iquality.itayb.net/deps/sox.zip", r"http://mirror.ufs.ac.za/7zip/9.20/7za920.zip"]
+	url = "http://iquality.itayb.net/deps/sox.zip"
+	url = r"http://mirror.ufs.ac.za/7zip/9.20/7za920.zip"
 
 	obj = SmartDL(url, show_output=True, logger=log)
+	obj.add_hash_verification('sha256' ,'2a3afe19c180f8373fa02ff00254d5394fec0349f5804e0ad2f6067854ff28ac')
 	print obj.isFinished()
 	obj.start()
 	pdb.set_trace()

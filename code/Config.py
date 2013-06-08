@@ -37,9 +37,9 @@ import threading
 
 from win32com.shell import shell, shellcon
 
-__version__ = "0.18"
-__rev__ = 176 # auto-generated
-__date__ = '11/05/13'
+__version__ = "0.19"
+__rev__ = 182 # auto-generated
+__date__ = '08/06/13'
 __author__ = 'Itay Brandes (Brandes.Itay@gmail.com)'
 
 class ConfigInterface(object):
@@ -158,11 +158,12 @@ except NameError: # if not already initialized
 		'newest_version_API_webpage': "http://iquality.itayb.net/vars.php?show=newest_version",
 		'components_json_url': 'http://iquality.itayb.net/components.json',
 		'packages_json_url': 'http://iquality.itayb.net/packages.json',
-		'local_json_files': r'C:\Scripts\iquality-misc\json', # for dev only
+		'use_local_json_files': False, # for dev only
+		'local_json_files_path': r'C:\Scripts\iquality-misc\json', # for dev only
 
 		### Script ###
 		'temp_dir': r"%s\iQuality" % os.environ["Temp"],
-		'id3tags_whitemark': 'Downloaded by iQuality v%s (grab at http://iquality.itayb.net)' % __version__,
+		'id3tags_whitemark': "Downloaded by iQuality v%s (grab at http://iquality.itayb.net). If you've liked this track, please consider purchasing it and support the artists." % __version__,
 		'logfile_enable': True,
 		'logfile_path': r"%s\debug.log" % utils.module_path(__file__),
 		'logfile_maxsize': 100*1024, # 100KB
@@ -190,7 +191,8 @@ except NameError: # if not already initialized
 		'get_id3info_timeout': 4,
 		'memoize_timeout': 30*60, # 30 mins
 		'id3_noask_wait_interval': 4,
-		'interval_between_network_sanity_checks': 30, # IMPROVE: make the interval.
+		'interval_between_network_sanity_checks': 5*60, # IMPROVE: make the interval.
+		'interval_between_supportArtists_notices': ((60**2)*24)*10, # 10 days
 		
 		### ETC ###
 		'lang': '',
@@ -204,14 +206,16 @@ except NameError: # if not already initialized
 		'youtube_listen_formats_priority': ['flv'],
 		'youtube_audio_bitrates': {'hd1080': 192000, 'hd720': 192000, 'large': 128000, 'medium': 128000, 'small': 96000},
 		# call keys() to get the available sources list. query each value for it's state. True means Enabled, False means Disabled.
-		'search_sources': defaultdict(itertools.repeat(True).next, {'Dilandau': True, 'Mp3skull': True, 'soundcloud': True, 'youtube': True}),
-		'search_sources_const': ['Dilandau', 'Mp3skull', 'soundcloud', 'youtube'],
+		'search_sources': defaultdict(itertools.repeat(True).next, {'Dilandau': True, 'Mp3skull': True, 'soundcloud': True,
+																		'bandcamp': True, 'youtube': True}),
+		'search_sources_const': ['Dilandau', 'Mp3skull', 'soundcloud', 'bandcamp', 'youtube'],
 		
 		'songs_count_spinBox': 15,
 		'relevance_minimum': 2.0,
 		'listen_volumeSlider_volume': 1.0,
 		
-		'generic_http_headers': {'User-Agent' :'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.13) Gecko/2009073022 Firefox/3.0.13'},
+		'generic_http_headers': {'User-Agent' :'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'},
+		
 		'allowd_web_protocols': ['http', 'https', 'ftp'],
 
 		### Etc ###
@@ -257,6 +261,8 @@ except NameError: # if not already initialized
 		# Statistics
 		'count_application_runs': 1,
 		'count_download': 0,
+		'show_supportArtists_notice': True,
+		'last_supportArtists_notice_timestamp': 0,
 		'last_sanity_check_timestamp': 0, # timestamp of the last successful full sanity check
 		
 	### Credits ###
@@ -317,13 +323,15 @@ iQuality Copyright© 2012-2013 by Itay Brandes (iTayb). All rights reserved.
 					'id3_action', 'count_application_runs', 'count_download', 'listen_volumeSlider_volume',
 					'post_download_custom_wait_checkbox', 'prefetch_charts',
 					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup',
-					'id3editor_in_context_menu', 'last_sanity_check_timestamp', 'trimSilence']
+					'id3editor_in_context_menu', 'last_sanity_check_timestamp', 'trimSilence',
+					'show_supportArtists_notice', 'last_supportArtists_notice_timestamp']
 	vars_to_eval = ['relevance_minimum', 'downloadAudio', 'downloadVideo', 'ver', 'youtube_quality_priority',
 					'youtube_formats_priority', 'enableSpellCheck', 'songs_count_spinBox', 'search_sources',
 					'editID3', 'count_application_runs', 'count_download', 'listen_volumeSlider_volume',
 					'post_download_custom_wait_checkbox', 'prefetch_charts',
 					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup',
-					'id3editor_in_context_menu', 'last_sanity_check_timestamp', 'trimSilence']
+					'id3editor_in_context_menu', 'last_sanity_check_timestamp', 'trimSilence',
+					'show_supportArtists_notice', 'last_supportArtists_notice_timestamp']
 	vars_to_override = ['ver']
 
 	config = ConfigInterface(d, ini_path, vars_to_save, vars_to_eval)

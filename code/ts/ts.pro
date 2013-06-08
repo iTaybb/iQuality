@@ -8,5 +8,6 @@
 				   ..\GuiSubWindows\ChartsExplorerWindow.py \
 				   ..\GuiSubWindows\SettingsWindow.py \
 				   ..\GuiSubWindows\HelpSearchWindow.py \
-				   ..\GuiSubWindows\ComponentFetcherWindow.py
+				   ..\GuiSubWindows\ComponentFetcherWindow.py \
+				   ..\GuiSubWindows\SupportArtistsWindow.py
  TRANSLATIONS    = he_IL.ts

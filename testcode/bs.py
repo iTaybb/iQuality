@@ -18,15 +18,28 @@ sys.path.append(r'C:\Scripts\iQuality\code')
 import utils
 import WebParser
 
-s = "soko kara nani ga mieru"
+# s = "soko kara nani ga mieru"
 
-url = 'http://www.animelyrics.com/search.php?q=%s&t=romaji&searchcat=anime' % s.replace(' ', '+')
+# url = 'http://www.animelyrics.com/search.php?q=%s&t=romaji&searchcat=anime' % s.replace(' ', '+')
+url = "http://bandcamp.com/search?q=naruto"
 obj = urllib2.urlopen(url)
 response = obj.read()
 
-DOMAIN = "www.animelyrics.com"
-CREDITS = "Lyrics from Animelyrics.com"
+links = []
 soup = BeautifulSoup(response)
+
+for tag in soup.find_all('a', class_='artcont'):
+	links.append(tag['href'])
+	
+
+pdb.set_trace()
+
+js_data = [x for x in soup.find_all('script') if x.text.strip().startswith('Control.registerController')][0].text
+json_data = [x for x in js_data.split('\n') if x.strip().startswith('trackinfo')][0].split('trackinfo', 1)[1].strip(' : ,\'')
+for song in json.loads(json_data):
+	print "%s: %s" % (song['title'], song['file'].values()[0])
+
+pdb.set_trace()
 
 for tag in soup.find_all(text=re.compile('RESULT ITEM START')):
 	url = "http://%s%s" % (DOMAIN, tag.next_element['href'])
@@ -41,7 +54,7 @@ for tag in soup.find_all(text=re.compile('RESULT ITEM START')):
 	lyrics += "\n\n [ Lyrics from %s ] " % url
 	lyricsObj = utils.classes.LyricsData(lyrics, artist, title)
 	
-	yield lyricsObj
+	print lyricsObj
 
 pdb.set_trace()
 	

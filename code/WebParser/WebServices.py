@@ -20,7 +20,9 @@ import Config; config = Config.config
 from logger import log
 import utils
 
-__all__ = ['spell_fix', 'googleImageSearch']
+__all__ = ['spell_fix', 'googleImageSearch', 'google_autocomplete', 'parse_billboard', 'parse_uktop40',
+			'parse_glgltz', 'parse_chartscoil', 'get_currentusers', 'get_newestversion', 'get_components_data',
+			'get_packages_data']
 
 @utils.decorators.retry(Exception, logger=log)
 @utils.decorators.memoize(config.memoize_timeout)
@@ -114,13 +116,7 @@ def parse_billboard():
 	songs = [x.split(': ', 1)[1] for x in songs]
 	songs = ["%s - %s" % (x.split(', ', 1)[1].split('Feat', 1)[0], x.split(', ', 1)[0]) for x in songs]
 	songs = [x.replace('  ', ' ') for x in songs]
-	
-	# dom = xml.dom.minidom.parseString(response)
-	# items = dom.getElementsByTagName('rss')[0].getElementsByTagName('channel')[0].getElementsByTagName('item')
-	# songs = [x.getElementsByTagName('title')[0].childNodes[0].data for x in items]
-	# songs = [x.split(':', 1)[1].strip() for x in songs]
-	# songs = ["%s - %s" % (x.split(', ', 1)[1].split('Feat', 1)[0], x.split(', ', 1)[0]) for x in songs]
-	
+
 	return songs
 	
 @utils.decorators.retry(Exception, logger=log)
@@ -212,10 +208,10 @@ def get_newestversion():
 	
 @utils.decorators.retry(Exception, logger=log)
 @utils.decorators.memoize(config.memoize_timeout)
-def get_components_data(local=False):
+def get_components_data():
 	"Function queries the iQuality website for components json data"
-	if local:
-		with open(r"%s\components.json" % config.local_json_files, 'r') as f:
+	if config.use_local_json_files:
+		with open(r"%s\components.json" % config.local_json_files_path, 'r') as f:
 			data = f.read()
 		return json.loads(data, object_pairs_hook=OrderedDict)
 		
@@ -237,10 +233,10 @@ def get_components_data(local=False):
 	
 @utils.decorators.retry(Exception, logger=log)
 @utils.decorators.memoize(config.memoize_timeout)
-def get_packages_data(local=False):
+def get_packages_data():
 	"Function queries the iQuality website for packages json data"
-	if local:
-		with open(r"%s\packages.json" % config.local_json_files, 'r') as f:
+	if config.use_local_json_files:
+		with open(r"%s\packages.json" % config.local_json_files_path, 'r') as f:
 			data = f.read()
 		return json.loads(data, object_pairs_hook=OrderedDict)
 		

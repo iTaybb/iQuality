@@ -5,6 +5,17 @@ Below you find a list with the added features, changes and fixes for
 each version.
 
 ======================
+(Version 0.19 beta; 08/06/13)
+- NEW: New feature: "Support the artists". Buy the tracks and fund the artists you like.
+- IMPROVE: Added Bandcamp as a media source.
+- IMPROVE: Now can get the source link by right clicking on items in the table (supported for Youtube, Soundcloud and Bandcamp).
+- IMPROVE: Core python was updates from 2.7.3 to 2.7.5.
+- IMPROVE: File hashing and checking functions were rewritten.
+- IMPROVE: Improved relevance algorithm accuracy.
+- FIX: LyricsMode's parser has been fixed.
+- FIX: ID3 unicode tags were parsed badly sometimes.
+- FIX: Minor bug fixes.
+
 (Version 0.18 beta; 11/05/13)
 - NEW: Trimming silence - will trim silence from the edges of a downloaded song.
 - IMPROVE: Compomnent updater now works smoothly.

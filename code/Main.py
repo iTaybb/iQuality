@@ -123,24 +123,9 @@ def sanity_check():
 					raise
 	except:
 		log.error(traceback.format_exc())
-			
-	# Configuration sanity checks
-	if config.post_download_action == 'customLaunch':
-		cmd = config.post_download_custom_cmd
-		if not cmd or cmd.count('"')%2 != 0:
-			log.warning("config.post_download_custom_cmd is empty, malformed. changing to config.post_download_action to 'ask'.")
-			config.post_download_action = 'ask'
-			
-		exe_path = cmd.split('"')[1] if cmd[0] == '"' else cmd.split()[0]
-		if not os.path.exists(exe_path):
-			log.warning("config.post_download_custom_cmd's \"%s\" does not exist. changing to config.post_download_action to 'ask'." % exe_path)
-			config.post_download_action = 'ask'
-			
-	if config.post_download_action == 'addPlaylist':
-		pl_path = config.post_download_playlist_path
-		if not pl_path or pl_path.count('"')%2 != 0 or not os.path.exists(pl_path):
-			log.warning("config.post_download_playlist_path is empty, malformed or does not exist. changing to config.post_download_action to 'ask'.")
-			config.post_download_action = 'ask'
+		
+	if config.use_local_json_files:
+		log.warning('use_local_json_files is set to True, fetching json files from local directory (%s) instead from the web.' % config.local_json_files_path)
 			
 	### ONLINE CHECKS ###
 	timestamp = math.fabs(time.time() - config.last_sanity_check_timestamp)

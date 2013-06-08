@@ -23,6 +23,7 @@ import regobj
 from win32com.shell import shell, shellcon
 from mutagen.compatid3 import CompatID3 # hack for IDv2.3 tags writing with mutagen
 from mutagen.id3 import ID3NoHeaderError
+import chardet
 
 __all__ = ['makeDummyMP3', 'appendDummyID3', 'setID3Tags', 'append_bold_changes', 'get_free_space',
 			'module_path', 'launch_without_console', 'get_rand_string', 'get_rand_filename',
@@ -194,22 +195,23 @@ def isAscii(s):
 
 def isJibrish(s):
 	"Function checks is the string is Jibrish."
-	if not isinstance(s, unicode):
+	if not isinstance(s, unicode): #String is not unicode
 		return False
 	jibrish_letters_count = len(filter(lambda c: 128 <= ord(c) <= 256, s))
 	return 1.0*jibrish_letters_count/len(s) > 0.5
 
-def fix_faulty_unicode(s, encoding='cp1255'):
+def fix_faulty_unicode(s):
 	'''
 	Function fixes faulty strings, if any
 	
 	u'\xf9\xec\xe5\xed' --> u'\u05e9\u05dc\u05d5\u05dd'
 	'''
-	if not isinstance(s, unicode): #String is not unicode
+
+	if not isJibrish(s):
 		return s
-	if s and isJibrish(s):
-		return s.encode('latin-1').decode(encoding)
-	return s
+		
+	encoding = chardet.detect(s)['encoding']
+	return s.encode('latin-1').decode(encoding)
 	
 def url_fix(s, charset='utf-8'):
     '''

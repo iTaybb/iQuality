@@ -1,14 +1,20 @@
-iQuality User License Agreement
-=====================
+iQuality User License Agreement (Last updated on 04/06/13)
+=============================
 
 IMPORTANT NOTICE:
 
-The Software aims at providing a search engine system which leads users to
-MP3 resources legally available to everyone on the Internet. The Software has no
-control or ownership over the content of these songs. All the content searched
-in The Software is provided by other servers which we have no relationship with.
-Users should delete the download from computer after listening, after not less than
-48 hours. Otherwise, users will be solely responsible for the possible consequences.
+This software aims at providing a search engine system which leads users to MP3
+resources legally available to everyone on the Internet. The use of this software
+is restricted to audio files available in the public domain. This application does
+no host any audio, it merely is an interface to search engines and the developer is
+not liable in case of misuse. The Software has no control or ownership over the
+content of these songs. All the content searched in The Software is provided by
+other servers which we have no relationship with. You agree to only use this software
+under the terms and conditions as specified by the laws of your country of residence.
+
+You are solely responsible for your actions, illegal use of this application is strictly
+forbidden.Users should delete the download from computer after listening, after not less
+than 48 hours. Otherwise, users will be solely responsible for the possible consequences.
 
 This software is provided "as-is", without any express or implied warranty.
 In no event shall the author be held liable for any damages arising from the

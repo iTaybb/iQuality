@@ -26,7 +26,7 @@ class MovieSplashScreen(QtGui.QSplashScreen):
 		movie.jumpToFrame(0)
 		pixmap = QtGui.QPixmap(movie.frameRect().size())
 		
-		QtGui.QSplashScreen.__init__(self, parent, pixmap, flags)
+		QtGui.QSplashScreen.__init__(self, parent, pixmap)
 		self.movie = movie
 		self.movie.frameChanged.connect(self.repaint)
 

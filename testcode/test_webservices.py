@@ -166,6 +166,18 @@ def test_parse_soundcloud_api2():
 		assert x.startswith('http://')
 		urllib2.urlopen(utils.url_fix(x))
 		
+def test_parse_bandcamp():
+	ans = Main.WebParser.LinksGrabber.parse_bandcamp(u'יוני בלוך')
+	ans = list(ans)
+	
+	for i in range(3):
+		x = ans[i].url
+		assert x.startswith('http://')
+		urllib2.urlopen(utils.url_fix(x))
+	
+	assert u'יוני בלוך - הרגלים רעים' in [x.title for x in ans]
+	assert u'יוני בלוך - אחריות' in [x.title for x in ans]
+		
 def test_parse_youtube_search():
 	ans = Main.WebParser.LinksGrabber.search_Youtube('Psy - Gangnam Style', 10)
 	
@@ -233,7 +245,7 @@ def test_get_newest_version():
 	ans = Main.WebParser.WebServices.get_newestversion()
 	assert isinstance(ans, float)
 	
-def atest_get_components_data():
+def test_get_components_data():
 	d = Main.WebParser.WebServices.get_components_data()
 	assert d
 	for name, t in d.items():
@@ -241,37 +253,23 @@ def atest_get_components_data():
 		
 		for url in urls:
 			obj = Main.SmartDL(url)
+			obj.add_hash_verification('sha256', archive_hash)
 			obj.start()
 			obj.wait()
-			assert archive_hash == utils.calc_sha256(obj.get_dest())
-		
-		ext = os.path.splitext(obj.get_dest())[1].lower()
-		assert ext in ['.zip', '.7z']
-		
-		tmpfile = utils.get_rand_filename(config.temp_dir)
-		
-		if ext == '.zip':
-			zip = zipfile.ZipFile(obj.get_dest())
-			zip.extract(file_to_extract, config.temp_dir)
-		if ext == '.7z':
-			cmd = r'7za.exe e "%s" -ir!%s -y -o"%s"' % (obj.get_dest(), file_to_extract, config.temp_dir)
-			subprocess.check_call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-
-		assert file_hash == utils.calc_sha256(r"%s\%s" % (config.temp_dir, file_to_extract))
-	
-def test_get_components_data_fast():
-	d = Main.WebParser.WebServices.get_components_data()
-	assert d
-	for name, t in d.items():
-		urls, archive_hash, file_to_extract, file_hash = t
-		
-		for url in urls:
-			urllib2.urlopen(url)
-def test_get_packages_data_fast():
+			
+			assert not obj._failed
+			os.unlink(obj.get_dest())
+def test_get_packages_data():
 	d = Main.WebParser.WebServices.get_packages_data()
 	assert d
 	for name, t in d.items():
 		urls, file_hash, install_param = t
 		
 		for url in urls:
-			urllib2.urlopen(url)
+			obj = Main.SmartDL(url)
+			obj.add_hash_verification('sha256', file_hash)
+			obj.start()
+			obj.wait()
+			
+			assert not obj._failed
+			os.unlink(obj.get_dest())

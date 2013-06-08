@@ -28,7 +28,7 @@ def get_file_details(urlObj):
 	if urlObj.source.lower() == "youtube":
 		SupportsHTTPRange = True
 		
-		title, artist = utils.parse_title_from_filename(urlObj.videoName)
+		title, artist = utils.parse_title_from_filename(urlObj.title)
 		
 		ID3TagsToEdit = {}
 		ID3TagsToEdit['TIT2'] = TIT2(encoding=3, text=title)
@@ -37,12 +37,12 @@ def get_file_details(urlObj):
 		utils.setID3Tags(ID3TagsToEdit, dummyMP3)
 			
 		ID3Info = [config.youtube_audio_bitrates[urlObj.itag.quality], title, artist, dummyMP3]
-	elif urlObj.source.lower() == "soundcloud":
+	elif urlObj.source.lower() in ["soundcloud", 'bandcamp']:
 		SupportsHTTPRange = True
 		
 		ID3Info = get_id3info(urlObj.url)
 		if not ID3Info[1] and not ID3Info[2]: # if there is no title and artist data in ID3
-			title, artist = utils.parse_title_from_filename(urlObj.videoName)
+			title, artist = utils.parse_title_from_filename(urlObj.title)
 			
 			ID3TagsToEdit = {}
 			ID3TagsToEdit['TIT2'] = TIT2(encoding=3, text=title)
@@ -70,7 +70,7 @@ def get_file_details(urlObj):
 		
 	return urlObj.url, filesize, SupportsHTTPRange, bitrate, title, artist, ID3File, \
 			urlObj.source, urlObj.length_seconds, urlObj.itag, urlObj.youtube_videoid, \
-			urlObj.view_count
+			urlObj.source_url, urlObj.view_count
 
 @utils.decorators.memoize(config.memoize_timeout)
 def get_id3info(url):

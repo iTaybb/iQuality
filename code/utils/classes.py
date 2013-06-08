@@ -87,13 +87,14 @@ class ItagData(object):
 
 class MetaUrl(object):
 	"a url structure data with extra metadata"
-	def __init__(self, url, source="", trackName="", length_seconds=0, itag="", youtube_videoid="", view_count=0):
+	def __init__(self, url, source="", trackName="", length_seconds=0, itag="", youtube_videoid="", source_url="", view_count=0):
 		self.url = str(url) if core.isAscii(url) else core.url_fix(url)
 		self.source = source
-		self.videoName = trackName # Youtube&SoundCloud Links Only
+		self.title = trackName # Youtube&SoundCloud&Bandcamp Links Only
 		self.length_seconds = length_seconds # Youtube Links Only
 		self.itag = itag # Youtube Links Onlys
 		self.youtube_videoid = youtube_videoid # Youtube Links Onlys
+		self.source_url = source_url
 		self.view_count = view_count # Youtube Links Onlys
 	
 	def __repr__(self):
@@ -157,7 +158,7 @@ class Song(object):
 	"A class defining a song."
 	def __init__(self, url, filesize, SupportsHTTPRange, bitrate=-1, title="",
 					artist="", id3tags_file="", source="", length_seconds="", video_itag="",
-					youtube_videoid="", youtube_views_count=0, searchString="", constantFileName=None):
+					youtube_videoid="", source_url="", youtube_views_count=0, searchString="", constantFileName=None):
 		self.url = url
 		self.filename = url.split('/')[-1].split('?')[0]
 		self.filesize = filesize
@@ -169,8 +170,8 @@ class Song(object):
 		self.source = source.lower()
 		self.length_seconds = length_seconds # youtube only
 		self.video_itag = video_itag # youtube only
+		self.source_url = source_url
 		self.youtube_videoid = youtube_videoid # youtube only
-		self.youtube_watchurl = "http://www.youtube.com/watch?v=%s" % youtube_videoid # youtube only
 		self.youtube_views_count = youtube_views_count # youtube only
 		self.searchString = searchString.lower()
 		self.constantFileName = constantFileName # If set, this will be the name of the file.

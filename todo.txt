@@ -1,8 +1,7 @@
+for v0.20:
+* move to urllib3
 * check if it's possible to reset config (remove config.ini) under windows 8 while app running
-* loading image
 * check benchmarking (maybe adding time.sleep() sometimes will help!)
-* Bandcamp intergration:
-	- http://hadagnahash.bandcamp.com/album/time-to-wake-up-zman-lehitorer
 * faster response when website is down
 * make spell checking not blocking
 * making songs amount spinbox accurate
@@ -12,7 +11,6 @@
 * better exceptions handeling
 
 * מסך הפעלה ראשוני?
-* מצב Basic/Advanced?
 * explorer select mode: use SHParseDisplayName for windows7/8. (waiting for pywin build 219)
 * work with EXCEPTIONS and WARNINGS all over.
 
@@ -23,7 +21,6 @@
 
 For the long run:
 * str(e) --> unicode(e)
-* fix phonon
 * Custom Launch: support for videos
 * add more images sources
 * apply all IMPROVE tags
