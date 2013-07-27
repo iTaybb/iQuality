@@ -3,7 +3,7 @@
 
 iQuality, a revolutionary new program, provides you a free, easy and efficient method to search and download high quality (iQuality) songs. 
 
-iQuality Copyright© 2012-2013 by Itay Brandes (iTayb). All rights reserved.
+iQuality Copyright© 2012-2013 by Itay Brandes (iTayb). All rights reserved.  
 See also the license, agreement and changelog files.
 
 Features
@@ -23,17 +23,17 @@ Features
 
 FAQ
 ===
-Q: How do I make a feature request?
-A: Mail me your ideas and also don't forget to tell me the benefits.
+Q: How do I make a feature request?  
+A: Mail me your ideas and also don't forget to tell me the benefits.  
 
-Q: I found a bug. How should I report it?
-A: Mail me the details.
-   Try to give as many details as possible, especially describe the necessary
-   steps to reproduce the bug.
+Q: I found a bug. How should I report it?  
+A: Mail me the details.  
+   Try to give as many details as possible, especially describe the necessary  
+   steps to reproduce the bug.  
    
-Q: How can I access the source code?
+Q: How can I access the source code?  
 A: You're more than welcome to visit our github repository: https://github.com/iTaybb/iQuality
 
-Itay Brandes
-Brandes.Itay@gmail.com
+Itay Brandes  
+Brandes.Itay@gmail.com  
 http://iquality.iTayb.net
