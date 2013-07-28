@@ -19,6 +19,7 @@ import random
 import warnings
 from socket import error as SocketError
 from urllib2 import URLError
+import multiprocessing.dummy as multiprocessing
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -623,6 +624,19 @@ class MainWindow(QtGui.QMainWindow):
 			isUrl = True
 		
 		elif spellCheck:
+			self.updateStatusBar(tr("Checking spell check..."))
+			self.status_gif.setVisible(True)
+			
+			pool = multiprocessing.Pool(processes=1)
+			result = pool.apply_async(Main.WebParser.WebServices.spell_fix, [song])
+			while True:
+				try:
+					self.search_suggestion = result.get(timeout=0.2)
+					break
+				except multiprocessing.TimeoutError:
+					QtGui.QApplication.processEvents()
+					time.sleep(0.2)
+			
 			self.search_suggestion = Main.WebParser.WebServices.spell_fix(song)
 			if self.search_suggestion.lower() != song.lower():
 				if luckyMode:
@@ -921,7 +935,11 @@ class MainWindow(QtGui.QMainWindow):
 			QtGui.QMessageBox.critical(self, tr("Error"), tr("The process cannot access the file %s because it is being used by another process.") % e.f, QtGui.QMessageBox.Ok)
 			
 		elif isinstance(e, YoutubeException):
-			QtGui.QMessageBox.critical(self, tr("Error"), tr("The application was unable to fetch the Youtube video. (Error %d: %s)") % (e.errorcode, e.reason), QtGui.QMessageBox.Ok)
+			if e.errorcode == -100:
+				s = tr("The application was unable to fetch the Youtube video: Could not decipher video's secret signature. On the new official youtube clips, a new cipher algorithm is introduced, and we still don't understand it too well. This will be fixed in future releases. For the midtime, you can try download a different clip.")
+			else:
+				s = tr("The application was unable to fetch the Youtube video. (Error %d: %s)") % (e.errorcode, e.reason)
+			QtGui.QMessageBox.critical(self, tr("Error"), s, QtGui.QMessageBox.Ok)
 			
 		elif isinstance(e, Main.SmartDL.DownloadFailedException):	
 			QtGui.QMessageBox.critical(self, tr("Error"), tr("The download has failed. It may be a network connection problem. Please try to rerun this application and try again."), QtGui.QMessageBox.Ok)

@@ -7,10 +7,14 @@ Module for project's Web Services that are not lyrics or links grabbing.
 
 import sys
 import traceback
+import urllib
 import urllib2
 import httplib, xml.dom.minidom
+import gzip
+from xml.parsers.expat import ExpatError
 import re
 import json
+from cStringIO import StringIO
 from collections import OrderedDict
 
 from bs4 import BeautifulSoup
@@ -23,10 +27,45 @@ import utils
 __all__ = ['spell_fix', 'googleImageSearch', 'google_autocomplete', 'parse_billboard', 'parse_uktop40',
 			'parse_glgltz', 'parse_chartscoil', 'get_currentusers', 'get_newestversion', 'get_components_data',
 			'get_packages_data']
-
+			
 @utils.decorators.retry(Exception, logger=log)
 @utils.decorators.memoize(config.memoize_timeout)
 def spell_fix(s):
+	"Uses google website to fix spelling"
+	if log:
+		log.debug("Checking spell suggestions for '%s'..." % s)
+		
+	q = s.lower().strip()
+	if isinstance(q, unicode):
+		q = q.encode('utf-8')
+	url = "http://www.google.com/search?q=" + urllib.quote(q)
+
+	request = urllib2.Request(url)
+	request.add_header('Accept-encoding', 'gzip')
+	request.add_header('User-Agent','Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.20 (KHTML, like Gecko) Chrome/19.0.1036.7 Safari/535.20')
+	response = urllib2.urlopen(request)
+	if response.info().get('Content-Encoding') == 'gzip':
+		buf = StringIO(response.read())
+		f = gzip.GzipFile(fileobj=buf)
+		data = f.read()
+	else:
+		data = response.read()
+
+	soup = BeautifulSoup(data)
+	ans = soup.find('a', attrs={'class' : 'spell'})
+	
+	if ans and ans.text != q:
+		if log:
+			log.debug("Suggestion was accepted: %s --> %s." % (s, ans.text))
+		return ans.text
+	else:
+		if log:
+			log.debug("No suggestions were accepted.")
+		return s
+
+@utils.decorators.retry(Exception, logger=log)
+@utils.decorators.memoize(config.memoize_timeout)
+def old_spell_fix(s):
 	"Uses google API to fix spelling"
 	data = u"""
 	<spellrequest textalreadyclipped="0" ignoredups="1" ignoredigits="1" ignoreallcaps="0">
@@ -51,8 +90,12 @@ def spell_fix(s):
 	if log:
 		log.debug("Response: %s" % response)
 	
-	dom = xml.dom.minidom.parseString(response)
-	dom_data = dom.getElementsByTagName('spellresult')[0]
+	try:
+		dom = xml.dom.minidom.parseString(response)
+		dom_data = dom.getElementsByTagName('spellresult')[0]
+	except ExpatError:
+		log.warning('spell_fix failed: ExpatError.')
+		return s
 
 	for node in dom_data.childNodes:
 		att_o = int(node.attributes.item(2).value) # The offset from the start of the text of the word

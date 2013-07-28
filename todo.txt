@@ -1,3 +1,9 @@
+* SmartDL
+יש אפשרות שתעשה שכשטוען תמונות מהרשת יהיה רשום מתחת לכל תמונה את הגודל שלה ?
+זה קריטי לי
+
+(ואם אפשר גם שיציג יותר מ-3 תוצאות  )
+
 for v0.20:
 * move to urllib3
 * check if it's possible to reset config (remove config.ini) under windows 8 while app running

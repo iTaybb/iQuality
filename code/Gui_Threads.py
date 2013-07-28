@@ -84,6 +84,7 @@ class SearchThread(QtCore.QThread):
 		self.song = song
 		self.isDirectLink = False
 		self.songObj_emitted = False
+		self.dont_emit_NoResultsException_error = False
 		self.pool = ThreadPool(max_threads=config.buildSongObjs_processes, catch_returns=True, logger=log)
 		
 		self.start()
@@ -121,10 +122,12 @@ class SearchThread(QtCore.QThread):
 						
 					try:
 						metaUrlObj = Main.WebParser.LinksGrabber.get_youtube_dl_link(video_id)
+						links_gen = (x for x in [metaUrlObj]) if metaUrlObj else (x for x in [])
 					except YoutubeException, e:
 						self.error.emit(e)
+						self.dont_emit_NoResultsException_error = True
+						links_gen = (x for x in [])
 						
-					links_gen = (x for x in [metaUrlObj])
 			elif domainName.endswith('bandcamp.com'):
 				if '/album/' in self.url:
 					log.debug("Url is a direct url (bandcamp album)")
@@ -133,7 +136,7 @@ class SearchThread(QtCore.QThread):
 				elif '/track/' in self.url:
 					log.debug("Url is a direct url (bandcamp)")
 					metaUrlObj = Main.WebParser.LinksGrabber.get_bandcamp_dl_link(self.url)
-					links_gen = (x for x in [metaUrlObj])
+					links_gen = (x for x in [metaUrlObj]) if metaUrlObj else (x for x in [])
 				else:
 					links_gen = (x for x in [])
 			elif domainName.endswith('soundcloud.com'):
@@ -141,7 +144,7 @@ class SearchThread(QtCore.QThread):
 				if self.url.startswith('https://'):
 					self.url = self.url.replace('https://', 'http://')
 				metaUrlObj = Main.WebParser.LinksGrabber.get_soundcloud_dl_link(self.url)	
-				links_gen = (x for x in [metaUrlObj])
+				links_gen = (x for x in [metaUrlObj]) if metaUrlObj else (x for x in [])
 			else:
 				ext = self.url.split('/')[-1].split('.')[-1]
 				if re.match(r"^http://.*soundcloud\.com/.+/.+/download$", self.url):
@@ -171,7 +174,8 @@ class SearchThread(QtCore.QThread):
 		
 		if not self.songObj_emitted:
 			log.error("Got NoResultsException.")
-			self.error.emit(NoResultsException(self.isDirectLink))
+			if not self.dont_emit_NoResultsException_error:
+				self.error.emit(NoResultsException(self.isDirectLink))
 		elif self.luckyDownload:
 			self.finished_lucky.emit()
 				

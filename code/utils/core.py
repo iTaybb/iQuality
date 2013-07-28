@@ -195,7 +195,7 @@ def isAscii(s):
 
 def isJibrish(s):
 	"Function checks is the string is Jibrish."
-	if not isinstance(s, unicode): #String is not unicode
+	if not isinstance(s, unicode) or not s: #String is not unicode
 		return False
 	jibrish_letters_count = len(filter(lambda c: 128 <= ord(c) <= 256, s))
 	return 1.0*jibrish_letters_count/len(s) > 0.5

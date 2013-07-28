@@ -5,10 +5,17 @@ Below you find a list with the added features, changes and fixes for
 each version.
 
 ======================
+(Version 0.191 beta; 19/07/13)
+- FIX: On the new official youtube clips, a new cipher algorithm is introduced. We try to hack it now, and it
+		works for 80% of the videos, but some are still unavilable.
+- FIX: Google spell checker got fixed.
+- FIX: Minor bug fixes.
+
 (Version 0.19 beta; 08/06/13)
 - NEW: New feature: "Support the artists". Buy the tracks and fund the artists you like.
 - IMPROVE: Added Bandcamp as a media source.
-- IMPROVE: Now can get the source link by right clicking on items in the table (supported for Youtube, Soundcloud and Bandcamp).
+- IMPROVE: Now can get the source link by right clicking on items in the table (supported for Youtube, Soundcloud
+			and Bandcamp).
 - IMPROVE: Core python was updates from 2.7.3 to 2.7.5.
 - IMPROVE: File hashing and checking functions were rewritten.
 - IMPROVE: Improved relevance algorithm accuracy.
@@ -102,7 +109,8 @@ each version.
 - FIX: Now doesn't crush when trying to rename a filename to the same name.
 - FIX: Now removes temporary files.
 - FIX: Now notifies user if a specific video is not available in his country (youtube errorcode 150)
-- FIX: Doesn't show a scary black window while running explorer with files selected on WinXP. (Windows Vista/7/8 patch will get fixed in a future release)
+- FIX: Doesn't show a scary black window while running explorer with files selected on WinXP. (Windows Vista/7/8
+		patch will get fixed in a future release)
 
 (Version 0.12 beta; 28/09/12)
 - IMPROVE: "I'm feeling lucky" feature works a little faster now.

@@ -37,9 +37,9 @@ import threading
 
 from win32com.shell import shell, shellcon
 
-__version__ = "0.19"
-__rev__ = 182 # auto-generated
-__date__ = '08/06/13'
+__version__ = "0.191"
+__rev__ = 185 # auto-generated
+__date__ = '09/07/13'
 __author__ = 'Itay Brandes (Brandes.Itay@gmail.com)'
 
 class ConfigInterface(object):

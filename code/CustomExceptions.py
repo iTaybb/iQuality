@@ -32,6 +32,13 @@ class YoutubeException(Exception):
 	def __init__(self, errorcode, reason):
 		self.errorcode = int(errorcode)
 		self.reason = reason
+		
+		'''
+		This is regular Youtube error codes. The following
+		are extras that the application adds:
+		
+		* Error -100: Could not decipher video's secret signature.
+		'''
 	def __str__(self):
 		return "Error %d: %s" % (self.errorcode, self.reason)
 

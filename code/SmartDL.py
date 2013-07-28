@@ -108,7 +108,6 @@ class SmartDL:
 			self.max_threads = 1
 		if os.path.exists(self.dest):
 			self.logger.warning("Destination '%s' already exists. Existing file will be removed." % self.dest)
-			
 		if not os.path.exists(os.path.dirname(self.dest)):
 			self.logger.warning("Directory '%s' does not exist. Creating it..." % os.path.dirname(self.dest))
 			os.makedirs(os.path.dirname(self.dest))
@@ -312,9 +311,10 @@ class ControlThread(threading.Thread):
 	def get_final_filesize(self):
 		return self.obj.filesize
 	def get_progress(self):
-		if self.obj.filesize:
-			return 1.0*self.shared_var.value/self.obj.filesize
-		return 0
+		if not self.obj.filesize:
+			return 0
+		return 1.0*self.shared_var.value/self.obj.filesize
+		
 	def get_dl_time(self):
 		return self.dl_time
 		
@@ -407,8 +407,7 @@ def calc_args(filesize, max_threads, minChunkFile):
 		
 	return args
 
-@utils.decorators.retry(Exception, logger=log)
-def download(url, dest, startByte=0, endByte=None, headers=None, timeout=4, shared_var=None, logger=None):
+def download(url, dest, startByte=0, endByte=None, headers=None, timeout=4, shared_var=None, logger=None, retries=3):
 	logger = logger or logging.getLogger('dummy')
 	if not headers:
 		headers = {}
@@ -420,16 +419,21 @@ def download(url, dest, startByte=0, endByte=None, headers=None, timeout=4, shar
 	try:
 		urlObj = urllib2.urlopen(req, timeout=timeout)
 	except urllib2.HTTPError, e:
-		if "HTTP Error 416" in str(e):
-			# HTTP 416 Error: Requested Range Not Satisfiable. Happens when we ask
-			# for a range that is not available on the server. It will happen when
-			# the server will try to send us a .html page that means something like
-			# "you opened too many connections to our server". If this happens, we
-			# will wait for the other threads to finish their connections and try again.
+		if e.code == 416:
+			'''
+			HTTP 416 Error: Requested Range Not Satisfiable. Happens when we ask
+			for a range that is not available on the server. It will happen when
+			the server will try to send us a .html page that means something like
+			"you opened too many connections to our server". If this happens, we
+			will wait for the other threads to finish their connections and try again.
+			'''
 			
-			logger.warning("Thread didn't got the file it was expecting. Retrying...")
-			time.sleep(5)
-			download(url, dest, startByte, endByte, headers, timeout, shared_var, logger)
+			if retries > 0:
+				logger.warning("Thread didn't got the file it was expecting. Retrying (%d times left)..." % (retries-1))
+				time.sleep(5)
+				download(url, dest, startByte, endByte, headers, shared_var, logger, timeout, retries-1)
+			else:
+				raise
 		else:
 			raise
 	
@@ -450,7 +454,7 @@ def download(url, dest, startByte=0, endByte=None, headers=None, timeout=4, shar
 			try:
 				buff = urlObj.read(block_sz)
 			except Exception, e:
-				print str(e)
+				log.error(unicode(e))
 				if shared_var:
 					shared_var.value -= filesize_dl
 				raise
@@ -462,6 +466,8 @@ def download(url, dest, startByte=0, endByte=None, headers=None, timeout=4, shar
 			if shared_var:
 				shared_var.value += len(buff)
 			f.write(buff)
+			
+	urlObj.close()
 
 def combine_files(parts, path):
 	'''
@@ -480,6 +486,10 @@ if __name__ == "__main__":
 	url = ["http://iquality.itayb.net/deps/sox.zip", r"http://mirror.ufs.ac.za/7zip/9.20/7za920.zip"]
 	url = "http://iquality.itayb.net/deps/sox.zip"
 	url = r"http://mirror.ufs.ac.za/7zip/9.20/7za920.zip"
+	
+	download(url, r"C:\a.zip", 989897, 4000000, logger=log)
+	
+	import sys; sys.exit()
 
 	obj = SmartDL(url, show_output=True, logger=log)
 	obj.add_hash_verification('sha256' ,'2a3afe19c180f8373fa02ff00254d5394fec0349f5804e0ad2f6067854ff28ac')
