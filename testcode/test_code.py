@@ -44,6 +44,8 @@ def test_PyEnviron():
 		import rsa
 		import regobj
 		import chardet
+		import esky
+		import bsdiff4
 
 	except ImportError, e:
 		raise Exception("Depencency not found: %s" % str(e))

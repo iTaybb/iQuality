@@ -18,6 +18,32 @@ sys.path.append(r'C:\Scripts\iQuality\code')
 import utils
 import WebParser
 
+"Parses the top 100 songs from billboard.com rss feed"
+url = 'http://www.billboard.com/rss/charts/hot-100'
+obj = urllib2.urlopen(url)
+response = obj.read()
+obj.close()
+
+songs = []
+soup = BeautifulSoup(response)
+for item in soup.find_all('item'):
+	artist = item.artist.text.split('Featuring')[0]
+	title = item.chart_item_title.text
+	
+	song = "%s - %s" % (artist, title)
+	song = song.replace('  ', ' ')
+	
+	songs.append(song)
+	
+
+pdb.set_trace()
+songs = [x.text for x in soup.find_all('title')][1:]
+songs = [x.split(': ', 1)[1] for x in songs]
+songs = ["%s - %s" % (x.split(', ', 1)[1].split('Feat', 1)[0], x.split(', ', 1)[0]) for x in songs]
+songs = [x.replace('  ', ' ') for x in songs]
+
+sys.exit()
+
 # s = "soko kara nani ga mieru"
 
 # url = 'http://www.animelyrics.com/search.php?q=%s&t=romaji&searchcat=anime' % s.replace(' ', '+')

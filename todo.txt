@@ -1,20 +1,20 @@
-* SmartDL
-יש אפשרות שתעשה שכשטוען תמונות מהרשת יהיה רשום מתחת לכל תמונה את הגודל שלה ?
-זה קריטי לי
+* distro
+* github
 
-(ואם אפשר גם שיציג יותר מ-3 תוצאות  )
+for v0.21:
+* ads
+* use youtube-dl?
+* use configObj?
 
-for v0.20:
-* move to urllib3
-* check if it's possible to reset config (remove config.ini) under windows 8 while app running
-* check benchmarking (maybe adding time.sleep() sometimes will help!)
 * faster response when website is down
-* make spell checking not blocking
+* pySmartDL
+* move to urllib3
+* check benchmarking (maybe adding time.sleep() sometimes will help!)
 * making songs amount spinbox accurate
 * load many links in once, and download them all
 * add a download queue, so people can continue searching while downloading.
 * automated logs send: http://stackoverflow.com/questions/14439477/log-files-collecting-and-handling-system
-* better exceptions handeling
+* better exceptions handling
 
 * מסך הפעלה ראשוני?
 * explorer select mode: use SHParseDisplayName for windows7/8. (waiting for pywin build 219)
@@ -33,10 +33,10 @@ For the long run:
 	
 for the very long run:
 * add a window where users can custom the relevance scoring values.
+* make the GUI completely separated from the code.
+* Consider a QML GUI:
+	- http://blog.qt.digia.com/2011/03/10/qml-components-for-desktop/
+	- http://blog.qt.digia.com/2011/08/26/toplevel-windows-and-menus-with-qt-quick/
 * port to linux?
 * port to android?
 * port to python3?
-* make the GUI completely separated from the code.
-* Consider a QML GUI (basicly because it's cool)
-	- http://blog.qt.digia.com/2011/03/10/qml-components-for-desktop/
-	- http://blog.qt.digia.com/2011/08/26/toplevel-windows-and-menus-with-qt-quick/

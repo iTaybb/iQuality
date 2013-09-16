@@ -34,7 +34,8 @@ __all__ = ['makeDummyMP3', 'appendDummyID3', 'setID3Tags', 'append_bold_changes'
 			'open_with_notepad', 'url_fix', 'trim_between', 'guess_image_mime_type', 
 			'parse_artists_from_artist', 'calc_sha256', 'verify_signature', 'get_home_dir',
 			'terminate_thread', 'register_with_context_menu', 'unregister_with_context_menu',
-			'check_context_menu_status', 'attemp_to_fix_unicode_problems', 'set_term_color']
+			'check_context_menu_status', 'attemp_to_fix_unicode_problems', 'set_term_color',
+			'restart_app']
 
 def makeDummyMP3(dir_):
 	'''
@@ -518,8 +519,6 @@ def register_with_context_menu():
 		regobj.HKCR.get_subkey(progId).shell.iQuality.command = r'"%s" /id3 "%%1"' % unicode(sys.executable, sys.getfilesystemencoding())
 	else:
 		regobj.HKCR.get_subkey(progId).shell.iQuality.command = r'python "%s\Gui.py" /id3 "%%1"' % working_dir
-		
-	
 	
 def unregister_with_context_menu():
 	try:
@@ -570,3 +569,18 @@ def set_term_color(hex):
 	STD_OUTPUT_HANDLE = -11
 	stdout_handle = ctypes.windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
 	ctypes.windll.kernel32.SetConsoleTextAttribute(stdout_handle, hex)
+	
+def appexe_from_executable(exepath):
+	from esky.util import appdir_from_executable
+	
+	appdir = appdir_from_executable(exepath)
+	exename = os.path.basename(exepath)
+	#  On OSX we might be in a bundle
+	if sys.platform == "darwin":
+		if os.path.isdir(os.path.join(appdir,"Contents","MacOS")):
+			return os.path.join(appdir,"Contents","MacOS",exename)
+	return os.path.join(appdir,exename)
+	
+def restart_app():
+	appexe = appexe_from_executable(sys.executable)
+	os.execv(appexe, ['"%s"' % appexe]+sys.argv[1:])

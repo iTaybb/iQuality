@@ -37,10 +37,10 @@ import threading
 
 from win32com.shell import shell, shellcon
 
-__version__ = "0.191"
-__rev__ = 185 # auto-generated
-__date__ = '09/07/13'
-__author__ = 'Itay Brandes (Brandes.Itay@gmail.com)'
+__version__ = "0.20" # auto-generated
+__rev__ = 229 # auto-generated
+__date__ = '17/09/13' # auto-generated
+__author__ = 'Itay Brandes (brandes.itay@gmail.com)'
 
 class ConfigInterface(object):
 	'Look Above'
@@ -97,6 +97,9 @@ class ConfigInterface(object):
 				else:
 					v = re.sub("<(.+)>", def_factory_name, unicode(v))
 			obj.set('Settings', k, v)
+			
+		if not os.path.exists(os.path.dirname(self.ini_path)):
+			os.makedirs(os.path.dirname(self.ini_path))
 		
 		with codecs.open(self.ini_path, 'wb', 'utf-8') as f:
 			obj.write(f)
@@ -137,7 +140,7 @@ except NameError: # if not already initialized
 		'windowTitle': "iQuality v%s beta" % __version__,
 		'bottomLabel': u"iQuality© v%s beta by Itay Brandes (r%d, released on %s)" % (__version__, __rev__, __date__), # used only on credits_text
 		'appStyle': "plastique", # "windows", "motif", "cde", "plastique", "windowsxp", or "macintosh".
-		'mainWindow_resolution': (1000, 475),
+		'mainWindow_resolution': (1000, 550),
 		'table_DefaultSectionSize': 19,
 		'table_font': ("Segoe UI", 10), # QtGui.QFont
 		'mainWindow_styleSheet': "",
@@ -155,6 +158,8 @@ except NameError: # if not already initialized
 		'facebook_page': 'http://www.facebook.com/iQualitySoftware',
 		'browser_website': "http://iquality.itayb.net/version-{0}.php?v=%s" % __version__,
 		'online_users_counter_webpage': "http://iquality.itayb.net/visitors.php?echo=1",
+		'inform_esky_update_webpage': 'http://www.itayb.net/click-tracker/click-tracker.php?url=%s&title=%s',
+		'esky_zipfiles_download_page': "http://iquality.itayb.net/downloads",
 		'newest_version_API_webpage': "http://iquality.itayb.net/vars.php?show=newest_version",
 		'components_json_url': 'http://iquality.itayb.net/components.json',
 		'packages_json_url': 'http://iquality.itayb.net/packages.json',
@@ -165,14 +170,15 @@ except NameError: # if not already initialized
 		'temp_dir': r"%s\iQuality" % os.environ["Temp"],
 		'id3tags_whitemark': "Downloaded by iQuality v%s (grab at http://iquality.itayb.net). If you've liked this track, please consider purchasing it and support the artists." % __version__,
 		'logfile_enable': True,
-		'logfile_path': r"%s\debug.log" % utils.module_path(__file__),
+		'logfile_path': os.path.join(os.getenv('APPDATA'), 'iQuality', 'debug.log'),
 		'logfile_maxsize': 100*1024, # 100KB
 		'logfile_backupCount': 0,
 		'logfile2_enable': True,
-		'logfile2_path': r"%s\debug.calcScore.log" % utils.module_path(__file__),
+		'logfile2_path': os.path.join(os.getenv('APPDATA'), 'iQuality', 'debug.calcScore.log'),
 		'logfile2_maxsize': 250*1024, # 250KB
 		'logfile2_backupCount': 0,
 		'pubkey_path': r"%s\public.key" % utils.module_path(__file__),
+		'ext_bin_path': r"%s\iQuality-binutils.win32" % utils.module_path(__file__),
 		
 		### Thread Counts ###
 		'buildSongObjs_processes': 7,
@@ -191,7 +197,7 @@ except NameError: # if not already initialized
 		'get_id3info_timeout': 4,
 		'memoize_timeout': 30*60, # 30 mins
 		'id3_noask_wait_interval': 4,
-		'interval_between_network_sanity_checks': 5*60, # IMPROVE: make the interval.
+		'interval_between_network_sanity_checks': 1, # IMPROVE: make the interval.
 		'interval_between_supportArtists_notices': ((60**2)*24)*10, # 10 days
 		
 		### ETC ###
@@ -215,7 +221,6 @@ except NameError: # if not already initialized
 		'listen_volumeSlider_volume': 1.0,
 		
 		'generic_http_headers': {'User-Agent' :'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'},
-		
 		'allowd_web_protocols': ['http', 'https', 'ftp'],
 
 		### Etc ###
@@ -230,12 +235,13 @@ except NameError: # if not already initialized
 		'artist_lookup': True,
 		'lyrics_lookup': True,
 		'id3editor_in_context_menu': True,
+		'auto_update': False,
 		
 		# Table DoubleClick Task
 		'table_doubleClick_action_dict': OrderedDict({'listen': tr('Listen'),
 													'download': tr('Download'), 
 													'nothing': tr('Nothing')}),
-		'table_doubleClick_action': "listen",
+		'table_doubleClick_action': "download",
 		
 		# Post Download Task
 		'post_download_action_dict': OrderedDict({'runMultimedia': tr('Run Multimedia File'),
@@ -257,6 +263,8 @@ except NameError: # if not already initialized
 		'post_download_playlist_path': "",
 		'post_download_custom_cmd': "",
 		'post_download_custom_wait_checkbox': True,
+		'last_url_download' : '',
+		'isDownloadInProgress': False,
 		
 		# Statistics
 		'count_application_runs': 1,
@@ -315,7 +323,7 @@ iQuality Copyright© 2012-2013 by Itay Brandes (iTayb). All rights reserved.
 		d['dl_dir'] = "C:\\"
 	d['ver'] = __version__
 
-	ini_path = r'%s\config.ini' % utils.module_path(__file__)
+	ini_path = os.path.join(os.getenv('APPDATA'), 'iQuality', 'config.ini')
 	vars_to_save = ['dl_dir', 'temp_dir', 'ver', 'youtube_formats_priority', 'post_download_custom_cmd',
 					'table_doubleClick_action', 'enableSpellCheck', 'downloadAudio', 'downloadVideo',
 					'songs_count_spinBox', 'relevance_minimum', 'editID3', 'post_download_playlist_path',
@@ -324,14 +332,16 @@ iQuality Copyright© 2012-2013 by Itay Brandes (iTayb). All rights reserved.
 					'post_download_custom_wait_checkbox', 'prefetch_charts',
 					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup',
 					'id3editor_in_context_menu', 'last_sanity_check_timestamp', 'trimSilence',
-					'show_supportArtists_notice', 'last_supportArtists_notice_timestamp']
+					'show_supportArtists_notice', 'last_supportArtists_notice_timestamp', 'last_url_download',
+					'isDownloadInProgress', 'auto_update']
 	vars_to_eval = ['relevance_minimum', 'downloadAudio', 'downloadVideo', 'ver', 'youtube_quality_priority',
 					'youtube_formats_priority', 'enableSpellCheck', 'songs_count_spinBox', 'search_sources',
 					'editID3', 'count_application_runs', 'count_download', 'listen_volumeSlider_volume',
 					'post_download_custom_wait_checkbox', 'prefetch_charts',
 					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup',
 					'id3editor_in_context_menu', 'last_sanity_check_timestamp', 'trimSilence',
-					'show_supportArtists_notice', 'last_supportArtists_notice_timestamp']
+					'show_supportArtists_notice', 'last_supportArtists_notice_timestamp', 'isDownloadInProgress', 'auto_update']
 	vars_to_override = ['ver']
 
 	config = ConfigInterface(d, ini_path, vars_to_save, vars_to_eval)
+	

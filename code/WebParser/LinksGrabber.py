@@ -5,6 +5,7 @@ Module for Mp3 links grabbing.
 '''
 
 import sys
+import urllib
 import urllib2
 import json
 import xml.dom.minidom
@@ -355,7 +356,7 @@ def get_youtube_dl_link(video_id, q_priority=config.youtube_quality_priority,
 					return utils.classes.MetaUrl(stream['url'], 'youtube', data['title'], int(data['length_seconds']), \
 							itagData, video_id, source_url, int(data['view_count']))
 	log.error("No youtube link has been found in get_youtube_dl_link.")
-	return
+	# return
 
 @utils.decorators.memoize(config.memoize_timeout)
 @utils.decorators.retry(urllib2.HTTPError, delay=0.3, tries=3, logger=log)
@@ -377,14 +378,26 @@ def get_youtube_dl_links_api1(video_id):
 	'''
 	
 	d = {}
-	url = r"http://www.youtube.com/get_video_info?video_id=%s&el=vevo" % video_id
+	# url = r"http://www.youtube.com/get_video_info?video_id=%s&el=vevo&ps=default&eurl=&gl=US&hl=en" % video_id
+	
+	data = urllib.urlencode({'video_id': video_id,
+										  'el': 'embedded',
+										  'gl': 'US',
+										  'hl': 'en',
+										  'eurl': 'https://youtube.googleapis.com/v/' + video_id,
+										  'asv': 3,
+										  'sts':'1588',
+										  })
+	url = 'http://www.youtube.com/get_video_info?' + data
 
 	# Fetching data
 	req = urllib2.Request(url, None, config.generic_http_headers)
 	urlObj = urllib2.urlopen(req, timeout=8)
 	_data = urlObj.read()
-	data = {x.split('=', 2)[0]: urllib2.unquote(x.split('=', 2)[1]) for x in _data.split('&')}
-	
+	data = parse_qs(_data)
+	for k,v in data.items():
+		data[k] = v[0]
+
 	if data['status'] == 'fail':
 		raise YoutubeException(data['errorcode'], data['reason'].replace('+', ' '))
 	
@@ -392,11 +405,33 @@ def get_youtube_dl_links_api1(video_id):
 	url_encoded_fmt_stream_map = data['url_encoded_fmt_stream_map'].split(',')
 	fmt_stream_map = []
 	for fmt in url_encoded_fmt_stream_map:
-		d = {x.split('=', 2)[0]: urllib2.unquote(x.split('=', 2)[1]) for x in fmt.split('&')}
+		d = parse_qs(fmt)
+		for k,v in d.items():
+			d[k] = v[0]
+		
+		if 'ratebypass' not in d['url']:
+			d['url'] += '&ratebypass=yes'
 		
 		# Inject signature code, in case it doesn't exist in the url
 		if not 'signature=' in d['url']:
-			d['url'] += "&signature=%s" % d['sig']
+			if d.has_key('sig'): # unencrypted signature
+				sig = d['sig']
+			elif d.has_key('s'): # encrypted signature
+				sig = youtube_signature_decrypt(d['s'])
+			else:
+				log.warning("Could not find 's' or 'sig' values.")
+				raise YoutubeException(0, "Could not find 's' or 'sig' values")
+				continue
+			d['url'] += "&signature=" + sig
+		try:
+			urllib2.urlopen(d['url'])
+		except:
+			secret = d.has_key('s')
+			if secret:
+				log.warning("Couldn't parse vid %s, itag %s, secret_length: %s, decryp_length: %s" % (video_id, d['itag'], len(d['s']), len(sig)))
+				# raise YoutubeException(-100, "Could not decipher video's secret signature")
+			continue
+			# import pdb; pdb.set_trace()
 			
 		fmt_stream_map.append(d)
 	data['fmt_stream_map'] = fmt_stream_map
@@ -405,6 +440,37 @@ def get_youtube_dl_links_api1(video_id):
 	data['title'] = unicode(data['title'], 'utf-8').replace('+',' ').replace('--','-')
 	
 	return data
+	
+def youtube_signature_decrypt(s):
+	'''
+	Turn the encrypted s field into a working signature.
+	
+	Taken from youtube_dl (https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/youtube.py)
+	updated up to youtube-dl version 2013.07.25.2
+	'''
+
+	if len(s) == 92:
+		return s[25] + s[3:25] + s[0] + s[26:42] + s[79] + s[43:79] + s[91] + s[80:83]
+	elif len(s) == 90:
+		return s[25] + s[3:25] + s[2] + s[26:40] + s[77] + s[41:77] + s[89] + s[78:81]
+	elif len(s) == 88:
+		return s[48] + s[81:67:-1] + s[82] + s[66:62:-1] + s[85] + s[61:48:-1] + s[67] + s[47:12:-1] + s[3] + s[11:3:-1] + s[2] + s[12]
+	elif len(s) == 87:
+		return s[4:23] + s[86] + s[24:85]
+	elif len(s) == 86:
+		return s[2:63] + s[82] + s[64:82] + s[63]
+	elif len(s) == 85:
+		return s[2:8] + s[0] + s[9:21] + s[65] + s[22:65] + s[84] + s[66:82] + s[21]
+	elif len(s) == 84:
+		return s[83:36:-1] + s[2] + s[35:26:-1] + s[3] + s[25:3:-1] + s[26]
+	elif len(s) == 83:
+		return s[6] + s[3:6] + s[33] + s[7:24] + s[0] + s[25:33] + s[53] + s[34:53] + s[24] + s[54:]
+	elif len(s) == 82:
+		return s[36] + s[79:67:-1] + s[81] + s[66:40:-1] + s[33] + s[39:36:-1] + s[40] + s[35] + s[0] + s[67] + s[32:0:-1] + s[34]
+	elif len(s) == 81:
+		return s[56] + s[79:56:-1] + s[41] + s[55:41:-1] + s[80] + s[40:34:-1] + s[0] + s[33:29:-1] + s[34] + s[28:9:-1] + s[29] + s[8:0:-1] + s[9]
+	elif len(s) == 79:
+		return s[54] + s[77:54:-1] + s[39] + s[53:39:-1] + s[78] + s[38:34:-1] + s[0] + s[33:29:-1] + s[34] + s[28:9:-1] + s[29] + s[8:0:-1] + s[9]
 
 @utils.decorators.memoize(config.memoize_timeout)
 @utils.decorators.retry(urllib2.HTTPError, delay=0.3, tries=3, logger=log)

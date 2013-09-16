@@ -25,8 +25,8 @@ from logger import log
 import utils
 
 __all__ = ['spell_fix', 'googleImageSearch', 'google_autocomplete', 'parse_billboard', 'parse_uktop40',
-			'parse_glgltz', 'parse_chartscoil', 'get_currentusers', 'get_newestversion', 'get_components_data',
-			'get_packages_data']
+			'parse_glgltz', 'parse_chartscoil', 'get_currentusers', 'get_newestversion', 'inform_esky_update',
+			'get_components_data', 'get_packages_data']
 			
 @utils.decorators.retry(Exception, logger=log)
 @utils.decorators.memoize(config.memoize_timeout)
@@ -154,11 +154,16 @@ def parse_billboard():
 	response = obj.read()
 	obj.close()
 	
+	songs = []
 	soup = BeautifulSoup(response)
-	songs = [x.text for x in soup.find_all('title')][1:]
-	songs = [x.split(': ', 1)[1] for x in songs]
-	songs = ["%s - %s" % (x.split(', ', 1)[1].split('Feat', 1)[0], x.split(', ', 1)[0]) for x in songs]
-	songs = [x.replace('  ', ' ') for x in songs]
+	for item in soup.find_all('item'):
+		artist = item.artist.text.split('Featuring')[0]
+		title = item.chart_item_title.text
+		
+		song = "%s - %s" % (artist, title)
+		song = song.replace('  ', ' ')
+		
+		songs.append(song)
 
 	return songs
 	
@@ -247,7 +252,14 @@ def get_newestversion():
 	try:
 		return float(x)
 	except ValueError:
-		return 0.0
+		return 0
+		
+@utils.decorators.retry(Exception, logger=log)
+@utils.decorators.memoize(config.memoize_timeout)
+def inform_esky_update(fn, v):
+	obj = urllib2.urlopen(config.inform_esky_update_webpage % (fn, v), timeout=config.webservices_timeout)
+	x = obj.read(1024)
+	obj.close()
 	
 @utils.decorators.retry(Exception, logger=log)
 @utils.decorators.memoize(config.memoize_timeout)
@@ -272,7 +284,7 @@ def get_components_data():
 	except:
 		log.error('components_json_url signature check FAILED:')
 		log.error(traceback.format_exc())
-	return {}
+		return {}
 	
 @utils.decorators.retry(Exception, logger=log)
 @utils.decorators.memoize(config.memoize_timeout)

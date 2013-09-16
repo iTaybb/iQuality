@@ -17,9 +17,6 @@ import math
 import copy
 import random
 import warnings
-from socket import error as SocketError
-from urllib2 import URLError
-import multiprocessing.dummy as multiprocessing
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -30,8 +27,8 @@ import Main
 import Config; config = Config.config
 import logger
 from logger import log
-from Gui_Threads import GenericThread, SearchThread, DownloadThread, ArtistSearchThread, ArtistLookupThread, LyricsFulltextSearchThread
-from GuiSubWindows import ID3Window, PostDownloadWindow, TracksExplorerWindow, ChartsExplorerWindow, SettingsWindow, HelpSearchWindow, ComponentFetcherWindow, SupportArtistsWindow
+from Gui_Threads import GenericThread, SearchThread, DownloadThread, ArtistSearchThread, ArtistLookupThread, LyricsFulltextSearchThread, SpellCheckThread
+from GuiSubWindows import ID3Window, PostDownloadWindow, TracksExplorerWindow, ChartsExplorerWindow, SettingsWindow, HelpSearchWindow, UpdaterWindow, SupportArtistsWindow
 from CustomExceptions import NoSpaceWarning, NoResultsException, NewerVersionWarning, NoInternetConnectionException, NoDnsServerException, NotSupportedFiletypeException, FileInUseException, YoutubeException, ComponentsFaultyWarning
 import Hints
 import utils
@@ -44,6 +41,8 @@ __author__ = 'Itay Brandes (Brandes.Itay@gmail.com)'
 # from PyQt4 import QtCore; import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
 
 class MainWindow(QtGui.QMainWindow):
+	"Main Gui Window"
+	
 	def __init__(self, parent=None):
 		super(MainWindow, self).__init__(parent)
 		
@@ -55,6 +54,7 @@ class MainWindow(QtGui.QMainWindow):
 		             
 		self.artistsObjs = []
 		self.songsObjs = []
+		self._threads = []
 			
 		self.init_threads()
 		self.init_menubar()
@@ -65,16 +65,27 @@ class MainWindow(QtGui.QMainWindow):
 			if isinstance(w, NoSpaceWarning):
 				QtGui.QMessageBox.warning(self, tr("Warning"), tr("There are less than 200MB available in drive %s (%.2fMB left). Application may not function properly.") % (w.drive, w.space/1024.0**2), QtGui.QMessageBox.Ok)
 			if isinstance(w, NewerVersionWarning):
-				QtGui.QMessageBox.information(self, tr("Information"), tr("A new version of iQuality is available (%s). Updates includes performance enhancements, bug fixes, new features and fixed parsers.<br /><br />The application is not guaranteed to work if it's not updated, and will probably fail.<br />For the complete changes list, you can visit our <a href=\"%s\">facebook page</a>.<br /><br />You can grab it from the bottom box of the main window, or from the <a href=\"%s\">iQuality website</a>.") % (w.newest, config.facebook_page, config.website), QtGui.QMessageBox.Ok)
+				if w.esky:
+					if config.auto_update:
+						win = UpdaterWindow.MainWin('update_app', w.esky, w.newest)
+						win.exec_()
+					else:
+						ans = QtGui.QMessageBox.question(self, tr("Update Available"), tr("A new version of iQuality is available (%s). Updates includes performance enhancements, bug fixes, new features and fixed parsers.<br /><br />For the complete changes list, you can visit our <a href=\"%s\">facebook page</a>.<br /><br />Do you want to install the update?") % (w.newest, config.facebook_page), QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+						if ans == QtGui.QMessageBox.Yes:
+							win = UpdaterWindow.MainWin('update_app', w.esky, w.newest)
+							win.exec_()
+				else:
+					QtGui.QMessageBox.information(self, tr("Information"), tr("A new version of iQuality is available (%s). Updates includes performance enhancements, bug fixes, new features and fixed parsers.<br /><br />The application is not guaranteed to work if it's not updated, and will probably fail.<br />For the complete changes list, you can visit our <a href=\"%s\">facebook page</a>.<br /><br />You can grab it from the bottom box of the main window, or from the <a href=\"%s\">iQuality website</a>.") % (w.newest, config.facebook_page, config.website), QtGui.QMessageBox.Ok)
 			if isinstance(w, ComponentsFaultyWarning):
-				win = ComponentFetcherWindow.MainWin('update', w.components)
+				win = UpdaterWindow.MainWin('update_component', w.components)
 				win.exec_()
 		
 		### Caching
 		if config.prefetch_charts:
-			self.thread1.init(Main.WebParser.WebServices.parse_billboard)
-			self.thread2.init(Main.WebParser.WebServices.parse_glgltz)
-			self.thread4.init(Main.WebParser.WebServices.parse_chartscoil)
+			self.run_in_new_thread(Main.WebParser.WebServices.parse_billboard)
+			self.run_in_new_thread(Main.WebParser.WebServices.parse_uktop40)
+			self.run_in_new_thread(Main.WebParser.WebServices.parse_glgltz)
+			self.run_in_new_thread(Main.WebParser.WebServices.parse_chartscoil)
 		
 		if len(sys.argv) > 1 and sys.argv[1]:
 			if sys.argv[1] in ['-c', '--conf', '--config', '/conf', '/config']:
@@ -93,7 +104,7 @@ class MainWindow(QtGui.QMainWindow):
 				
 				sys.exit()
 			elif sys.argv[1] in ['/test']: #TEMP
-				w = SupportArtistsWindow.MainWin()
+				w = UpdaterWindow.SetAutoUpdate('0.74')
 				w.exec_()
 				sys.exit()
 			else:
@@ -111,19 +122,27 @@ class MainWindow(QtGui.QMainWindow):
 				self.search_lineEdit.setText(x)
 				self.search_slot()
 				
+		if config.isDownloadInProgress:
+			ans = QtGui.QMessageBox.question(self, tr("Download Interrupted"), tr('A previous download has been interrupted. Do you want to do resume it?<br /><br />(url: <i>%s</i>)') % config.last_url_download, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+			if ans == QtGui.QMessageBox.Yes:
+				self.search_lineEdit.setText(config.last_url_download)
+				self.search_slot(luckyMode=True)
+						
+			config.isDownloadInProgress = False
+				
 	def dragEnterEvent(self, event):
 		if event.mimeData().hasUrls:
 			event.accept()
 		else:
 			event.ignore()
-
+			
 	def dragMoveEvent(self, event):
 		if event.mimeData().hasUrls:
 			event.setDropAction(QtCore.Qt.CopyAction)
 			event.accept()
 		else:
 			event.ignore()
-
+			
 	def dropEvent(self, event):
 		if event.mimeData().hasUrls:
 			event.setDropAction(QtCore.Qt.CopyAction)
@@ -139,34 +158,47 @@ class MainWindow(QtGui.QMainWindow):
 		paramter "thread" must be a string.
 		'''
 		if do_log:
-			log.debug("Terminating and restarting thread \"%s\"..." % thread)
+			log.debug('Terminating and restarting thread "%s"...' % thread)
 		eval("self." + thread).terminate()
 		self.init_threads([thread])
+		
+	def run_in_new_thread(self, func, args=""):
+		t = GenericThread()
+		t.init(func, args)
+		
+		'''
+		if no reference exists in the object itself, GC will collect and delete the thread even if it's still running.
+		Fixes error: QThread: Destroyed while thread is still running
+		'''
+		self._threads.append(t)
+		
+		return t
 	
 	def init_threads(self, threads=None):
 		"initialize application threads"
 		if not threads:
-			threads = ['thread1', 'thread2', 'thread3', 'thread4', 'search_thread', 'dl_thread',
-						'artist_search_thread', 'artist_album_thread', 'lyrics_fulltext_thread',
-						'autocomplete_thread']
+			threads = ['thread3', 'search_thread', 'dl_thread', 'artist_search_thread', 'artist_album_thread', 
+						'lyrics_fulltext_thread', 'autocomplete_thread', 'spellcheck_thread', 'usersonline_thread']
 		
-		if 'thread1' in threads:
-			self.thread1 = GenericThread()
-			
-		if 'thread2' in threads:
-			self.thread2 = GenericThread()
 			
 		if 'thread3' in threads:
 			self.thread3 = GenericThread()
 			self.thread3.error.connect(self.error_slot)
 			self.thread3.finished.connect(self.disableStatusGif)
 			
-		if 'thread4' in threads:
-			self.thread4 = GenericThread()
-			
 		if 'autocomplete_thread' in threads:
 			self.autocomplete_thread = GenericThread(log_succ=False)
 			self.autocomplete_thread.output.connect(self.slot_autocomplete_done)
+			
+		if 'spellcheck_thread' in threads:
+			self.spellcheck_thread = SpellCheckThread()
+			self.spellcheck_thread.output.connect(self.slot_spellcheck_done)
+			self.spellcheck_thread.error.connect(self.error_slot)
+			
+		if 'usersonline_thread' in threads:
+			self.usersonline_thread = GenericThread()
+			self.usersonline_thread.output.connect(self.slot_usersonline_done)
+			self.usersonline_thread.error.connect(self.error_slot)	
 			
 		if 'search_thread' in threads:
 			self.search_thread = SearchThread()
@@ -462,7 +494,7 @@ class MainWindow(QtGui.QMainWindow):
 		if not config.downloadAudio:
 			self.trimSilence_checkbox.setEnabled(False)
 		
-		self.status_txt = QtGui.QLabel(Hints.get_hints())
+		self.status_txt = QtGui.QLabel(Hints.get_hint())
 		self.status_txt.setFont(QtGui.QFont(*config.status_txt_font))
 		self.status_gif = QtGui.QLabel()
 		self.movie = QtGui.QMovie(r"pics\loading.gif")
@@ -474,18 +506,11 @@ class MainWindow(QtGui.QMainWindow):
 			url = config.browser_website.format(config.lang[:2])
 			self.browser = QAxContainer.QAxWidget()
 			self.browser.setControl("{8856F961-340A-11D0-A96B-00C04FD705A2}")
-			self.browser.dynamicCall('Navigate(const QString&)', url)
+			self.browser.dynamicCall('Navigate(QString&)', QtCore.QVariant(url))
 			self.browser.setFixedHeight(config.browser_height)
 		
-		try:
-			users_online_count = Main.WebParser.WebServices.get_currentusers()
-		except (SocketError, URLError):
-			log.error("Failed to get current users number (WebParser.WebServices.get_currentusers)")
-			users_online_count = 0
-		if users_online_count:
-			self.label5 = QtGui.QLabel(tr(u"iQuality© v%s beta by Itay Brandes (%s). The software has been launched %s times, and downloaded %s songs. %s user(s) are currently using the software.") % (__version__, __date__, format(config.count_application_runs, ',d'), format(config.count_download, ',d'), format(users_online_count, ',d')))
-		else:
-			self.label5 = QtGui.QLabel(tr(u"iQuality© v%s beta by Itay Brandes (%s). The software has been launched %s times, and downloaded %s songs.") % (__version__, __date__, format(config.count_application_runs, ',d'), format(config.count_download, ',d')))
+		self.label5 = QtGui.QLabel(tr(u"iQuality v%s beta by Itay Brandes (%s). The software has been launched %s times, and downloaded %s songs.") % (__version__, __date__, format(config.count_application_runs, ',d'), format(config.count_download, ',d')))
+		self.usersonline_thread.init(Main.WebParser.WebServices.get_currentusers)
 		
 		# QGridLayout.addWidget (self, QWidget, int row, int column, int rowSpan, int columnSpan, Qt.Alignment alignment = 0)
 		row1_Layout = QtGui.QHBoxLayout()
@@ -540,6 +565,21 @@ class MainWindow(QtGui.QMainWindow):
 		completer = QtGui.QCompleter(words, self)
 		completer.setCompletionMode(QtGui.QCompleter.InlineCompletion)
 		self.search_lineEdit.setCompleter(completer)
+		
+	def slot_spellcheck_done(self, fixed_s, old_s, luckyMode):
+		if luckyMode:
+			self.search_lineEdit.setText(fixed_s)
+			self.search_slot(spellCheck=False, luckyMode=luckyMode)
+		else:
+			ans = QtGui.QMessageBox.question(self, tr("Spelling Suggestion"), tr('Did you mean %s?') % utils.append_bold_changes(old_s, fixed_s), QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+			if ans == QtGui.QMessageBox.Yes:
+				self.search_lineEdit.setText(fixed_s)
+				self.search_slot(spellCheck=False, luckyMode=luckyMode)
+				
+	def slot_usersonline_done(self, users_online_count):
+		if users_online_count:
+			s = unicode(self.label5.text())
+			self.label5.setText(s + tr(" %s user(s) are currently using the software.") % format(users_online_count, ',d'))
 		
 	def slot_opendir(self):
 		log.debug('Running explorer "%s"...' % config.dl_dir)
@@ -624,29 +664,7 @@ class MainWindow(QtGui.QMainWindow):
 			isUrl = True
 		
 		elif spellCheck:
-			self.updateStatusBar(tr("Checking spell check..."))
-			self.status_gif.setVisible(True)
-			
-			pool = multiprocessing.Pool(processes=1)
-			result = pool.apply_async(Main.WebParser.WebServices.spell_fix, [song])
-			while True:
-				try:
-					self.search_suggestion = result.get(timeout=0.2)
-					break
-				except multiprocessing.TimeoutError:
-					QtGui.QApplication.processEvents()
-					time.sleep(0.2)
-			
-			self.search_suggestion = Main.WebParser.WebServices.spell_fix(song)
-			if self.search_suggestion.lower() != song.lower():
-				if luckyMode:
-					song = self.search_suggestion
-					self.search_lineEdit.setText(song)
-				else:
-					ans = QtGui.QMessageBox.question(self, tr("Spelling Suggestion"), tr('Did you mean %s?') % utils.append_bold_changes(song, self.search_suggestion), QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-					if ans == QtGui.QMessageBox.Yes:
-						song = self.search_suggestion
-						self.search_lineEdit.setText(song)
+			self.spellcheck_thread.init(song, luckyMode)
 		
 		if luckyMode:
 			self.updateStatusBar(tr("Searching for %s in LuckyMode...") % song)
@@ -668,6 +686,7 @@ class MainWindow(QtGui.QMainWindow):
 			
 	def cancel_search_slot(self):
 		self.reload_thread('search_thread')
+		self.reload_thread('spellcheck_thread')
 		log.debug("Search task was canceled.")
 		self.status_txt.setText(tr("Task was canceled."))
 		self.enableSearchUi()
@@ -685,13 +704,13 @@ class MainWindow(QtGui.QMainWindow):
 			if ans == QtGui.QMessageBox.No:
 				return
 			if ans == QtGui.QMessageBox.Yes:
-				win = ComponentFetcherWindow.MainWin('install', ['Combined Community Codec Pack'])
+				win = UpdaterWindow.MainWin('install_package', ['Combined Community Codec Pack'])
 				win.exec_()
 				
 				if Phonon.BackendCapabilities.isMimeTypeAvailable('video/x-flv'):
 					QtGui.QMessageBox.information(self, tr("Successful Installation"), tr("Installation completed successfully."), QtGui.QMessageBox.Ok)
 				else:
-					QtGui.QMessageBox.critical(self, tr("Error"), tr("The installation failed. Please download and install the package maunaly from <b><a href=\"http://www.cccp-project.net\">http://www.cccp-project.net</a></b>."), QtGui.QMessageBox.Ok)
+					QtGui.QMessageBox.critical(self, tr("Error"), tr("The installation failed. Please download and install the package manually from <b><a href=\"http://www.cccp-project.net\">http://www.cccp-project.net</a></b>."), QtGui.QMessageBox.Ok)
 					return
 			
 		if self.table.selectedIndexes():
@@ -775,10 +794,8 @@ class MainWindow(QtGui.QMainWindow):
 				return
 			
 			# retriving url and deep-copying songobj
-			self.songObj = [x for x in self.songsObjs if x.url == url][0]
-			self.songObj = copy.deepcopy(self.songObj)
-		else:
-			self.songObj = copy.deepcopy(songObj)
+			songObj = [x for x in self.songsObjs if x.url == url][0]
+		self.songObj = copy.deepcopy(songObj)
 		
 		# if downloading audio but not video from youtube, we should always prefer the 720p version, as the audio stream bitrates are equal between 720p and 1080p.
 		if self.songObj.source == "youtube" and config.downloadAudio and not config.downloadVideo:
@@ -850,9 +867,10 @@ class MainWindow(QtGui.QMainWindow):
 						log.debug('dl_dir is now %s' % config.dl_dir)
 						self.songObj.constantFileName = dl_filename
 						break
-					
 		
 		self.updateStatusBar(tr("Starting Download..."))
+		config.last_url_download = self.songObj.url
+		config.isDownloadInProgress = True
 
 		# Disable Ui
 		self.downloadAudio_checkbox.setEnabled(False)
@@ -910,6 +928,8 @@ class MainWindow(QtGui.QMainWindow):
 		
 	def error_slot(self, e):
 		"Error slot for the error signal"
+		config.isDownloadInProgress = False
+		
 		if isinstance(e, NotSupportedFiletypeException):
 			QtGui.QMessageBox.critical(self, tr("Error"), tr('The application does not support the %s filetype.') % e.ext, QtGui.QMessageBox.Ok)
 			
@@ -1005,6 +1025,8 @@ class MainWindow(QtGui.QMainWindow):
 				log.debug('finished_signals_count is 1. dl_thread OR id3_window are done. Waiting for the other to continue...')
 				return
 				
+		config.isDownloadInProgress = False
+				
 		self.enableDownloadUi()
 		self.runPostDownloadTasks()
 		
@@ -1064,8 +1086,8 @@ class MainWindow(QtGui.QMainWindow):
 	def update_dl_progress_bar(self, i, dlRate, eta, currentBytes, filesize):
 		"updates download progress bar"
 		
-		eta_s = eta%60
-		eta_m = eta/60
+		eta_s = eta % 60
+		eta_m = eta / 60
 		
 		if filesize < 0:
 			filesize += 2 * (sys.maxint + 1) # fix int overflow. will work with files up to 4GB.
@@ -1161,7 +1183,7 @@ class MainWindow(QtGui.QMainWindow):
 					os.unlink(new_video_path)
 				try:
 					shutil.move(old_video_path, new_video_path)
-				except shutil.Error, e:
+				except shutil.Error:
 					log.error(traceback.format_exc())
 					log.debug("Got shutil.Error, Not Changing filenames...")
 				log.debug("Renaming %s to %s..." % (old_video_path, new_video_path))
@@ -1411,10 +1433,9 @@ if __name__ == '__main__':
 		os.chdir(utils.module_path(__file__))
 	else:
 		os.chdir(utils.module_path())
-		log.debug(utils.module_path())
+	logger.start(config)
 	sys.excepthook = Main.my_excepthook
 	warnings.simplefilter('ignore')
-	logger.start(config)
 	
 	# QApp Launch, wrapped in a while loop to allow restarting of the QApp.
 	# The config and logger does NOT restart or reloaded.
@@ -1467,11 +1488,11 @@ if __name__ == '__main__':
 			# Remove translators, if exist
 			try:
 				app.removeTranslator(trans)
-			except Exception:
+			except:
 				pass
 			try:
 				app.removeTranslator(qt_trans)
-			except Exception:
+			except:
 				pass
 
 		elif config.lang != 'en_US':

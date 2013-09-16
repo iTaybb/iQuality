@@ -1,8 +1,7 @@
 # Copyright (C) 2012-2013 Itay Brandes
 
-'''Main Gui Threads'''
+'''Main Gui Threads
 
-'''
 Some notes:
 1. the FINISHED signal is emitted even if the thread got terminated. There is no way
 in Qt to get a FINISHED signal and know if it was launched by a terminating thread.
@@ -61,12 +60,40 @@ class GenericThread(QtCore.QThread):
 				log.debug("GenericThread has completed %s successfully." % self.func.func_name)
 		except Exception, e:
 			self.error.emit("Exception: %s" % str(e))
-			log.debug("GenericThread has completed %s with errors (%s)." % (self.func.func_name, str(e)))
+			log.error("GenericThread has completed %s with errors (%s)." % (self.func.func_name, str(e)))
 
 	def terminate(self):
 		"Setting _terminated to True"
 		self._terminated = True
 		super(GenericThread, self).terminate()
+		
+class SpellCheckThread(QtCore.QThread):
+	output = QtCore.pyqtSignal(str, str, bool)
+	error = QtCore.pyqtSignal(str)
+	
+	def __init__(self, parent=None):
+		QtCore.QThread.__init__(self, parent)
+		self._terminated = False
+		
+	def init(self, s, luckyMode):
+		self._terminated = False
+		
+		self.s = s
+		self.luckyMode = luckyMode
+		self.start()
+	
+	def run(self): # Called by Qt once the thread environment has been set up.
+		try:
+			ans = Main.WebParser.WebServices.spell_fix(self.s)
+			if ans != self.s:
+				self.output.emit(ans, self.s, self.luckyMode)
+		except Exception, e:
+			self.error.emit("Exception: %s" % str(e))
+
+	def terminate(self):
+		"Setting _terminated to True"
+		self._terminated = True
+		super(SpellCheckThread, self).terminate()
 
 class SearchThread(QtCore.QThread):
 	output = QtCore.pyqtSignal(utils.classes.Song)
@@ -98,7 +125,7 @@ class SearchThread(QtCore.QThread):
 			self.song = ""
 			domainName = urlparse(self.url).netloc.lower()
 			
-			if domainName.endswith('youtube.com') or domainName.endswith('youtu.be'):
+			if (domainName.endswith('youtube.com') or domainName.endswith('youtu.be')) and not 'videoplayback' in self.url:
 				queries = parse_qs(urlparse(self.url).query)
 				if 'p' in queries or 'list' in queries:
 					log.debug("Url is a direct url (Youtube playlist)")
@@ -109,8 +136,8 @@ class SearchThread(QtCore.QThread):
 					videos_ids = Main.WebParser.LinksGrabber.parse_Youtube_playlist(playlist_id)	
 					
 					t_pool = ThreadPool(max_threads=config.buildSongObjs_processes, catch_returns=True, logger=log)
-					for id in videos_ids:
-						t_pool(Main.WebParser.LinksGrabber.get_youtube_dl_link)(id)
+					for v_id in videos_ids:
+						t_pool(Main.WebParser.LinksGrabber.get_youtube_dl_link)(v_id)
 					links_gen = t_pool.iter()
 					
 				else:
@@ -265,7 +292,7 @@ class DownloadThread(QtCore.QThread):
 				log.debug("Encoding Audio...")
 				self.status.emit(tr("Encoding Audio..."))
 				
-				cmd = r'bin\ffmpeg -y -i "%s" -vn -ac 2 -b:a %d -f mp3 "%s"' % (dest_video_path,
+				cmd = r'%s\ffmpeg -y -i "%s" -vn -ac 2 -b:a %d -f mp3 "%s"' % (config.ext_bin_path, dest_video_path,
 						config.youtube_audio_bitrates[self.songObj.video_itag.quality], dest_audio_path)
 				log.debug("Running '%s'" % cmd)
 				est_final_filesize = self.songObj.final_filesize
@@ -312,7 +339,9 @@ class DownloadThread(QtCore.QThread):
 				os.unlink(temp_audio_trimmed_path)
 			os.rename(dest_audio_path, temp_audio_trimmed_path)
 			
-			cmd = r'bin\sox -S "%s" "%s" silence 1 0.1 1%% reverse silence 1 0.1 1%% reverse' % (temp_audio_trimmed_path, dest_audio_path)
+			cmd = r'%s\sox -S "%s" "%s" silence 1 0.1 1%% reverse silence 1 0.1 1%% reverse' % (config.ext_bin_path,
+																								temp_audio_trimmed_path,
+																								dest_audio_path)
 			log.debug("Running '%s'" % cmd)
 			est_final_filesize = self.songObj.final_filesize
 			
@@ -765,7 +794,6 @@ class LyricsFulltextSearchThread(QtCore.QThread):
 		super(LyricsFulltextSearchThread, self).terminate()
 		
 if __name__ == '__main__':
-	import time
 	t1 = time.time()
 	
 	def f(): print x

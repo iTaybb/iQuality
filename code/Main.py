@@ -8,6 +8,8 @@ import traceback
 import time
 import math
 
+import esky
+
 import HTTPQuery
 from SmartDL import SmartDL
 import WebParser
@@ -40,6 +42,15 @@ def init():
 			os.makedirs(config.temp_dir)
 		except (IOError, WindowsError):
 			config.temp_dir = r"%s\iQuality" % os.environ["Temp"] # if temp folder cannot be created, we should set it to default.
+			
+	# setting ext_bin directory
+	if hasattr(sys, "frozen"):
+		# the ext_bin folder will be one level upper
+		splitted_dirs = config.ext_bin_path.split('\\')
+		config.ext_bin_path = "\\".join(splitted_dirs[:-2]+[splitted_dirs[-1]])
+		
+	if not os.path.exists(config.ext_bin_path):
+		os.makedirs(config.ext_bin_path)
 			
 	# Checking internet connection
 	returncode = utils.launch_without_console('ping 8.8.8.8 -n 1').wait()
@@ -131,19 +142,28 @@ def sanity_check():
 	timestamp = math.fabs(time.time() - config.last_sanity_check_timestamp)
 	if timestamp > config.interval_between_network_sanity_checks:
 	# if the last check was before more than interval_between_network_sanity_checks
-		# Newest version check
-		try:
-			newest_version = WebParser.WebServices.get_newestversion()
-			if newest_version > float(__version__):
-				log.warning("A new version of iQuality is available (%s)." % newest_version)
-				_warnings.append(NewerVersionWarning(newest_version))
-		except IOError as e:
-			log.error("Could not check for the newest version (%s)" % unicode(e))
+		# Newest version check - old
+		# try:
+			# newest_version = WebParser.WebServices.get_newestversion()
+			# if newest_version > float(__version__):
+				# log.warning("A new version of iQuality is available (%s)." % newest_version)
+				# _warnings.append(NewerVersionWarning(newest_version))
+		# except IOError as e:
+			# log.error("Could not check for the newest version (%s)" % unicode(e))
+		
+		# Newest version check - esky
+		if hasattr(sys, "frozen"):
+			try:
+				eskyObj = esky.Esky(sys.executable, config.esky_zipfiles_download_page)
+				v = eskyObj.find_update()
+				if v:
+					log.warning("A new version of iQuality is available (%s, via esky)." % v)
+					_warnings.append(NewerVersionWarning(v, eskyObj.version, eskyObj))
+					# print "Found %s --> %s (%s)!" % (app.version, v, app.version_finder.version_graph.get_best_path(app.version,v))
+			except IOError as e:
+				log.error("Could not check for the newest version (%s)" % unicode(e))
 		
 		# External Components Check
-		if not os.path.exists('bin/'):
-			os.makedirs('bin/')
-			
 		hash_failed = []
 		not_exists = []
 		
@@ -151,12 +171,12 @@ def sanity_check():
 		for name, t in d.items():
 			urls, archive_hash, file_to_extract, file_hash = t
 			
-			if not os.path.exists(r'bin\%s' % file_to_extract):
+			if not os.path.exists(os.path.join(config.ext_bin_path, file_to_extract)):
 				log.warning('External component was not found: %s' % name)
 				not_exists.append(name)
 				continue
 			
-			computed_hash = utils.calc_sha256(r'bin\%s' % file_to_extract)
+			computed_hash = utils.calc_sha256(os.path.join(config.ext_bin_path, file_to_extract))
 			if file_hash != computed_hash:
 				log.warning('External components hash check failed for %s' % name)
 				hash_failed.append(name)

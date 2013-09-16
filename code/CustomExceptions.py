@@ -55,8 +55,9 @@ class ComponentsFaultyWarning(Warning):
 		self.components = components
 
 class NewerVersionWarning(Warning):
-	def __init__(self, newest, current=__version__):
+	def __init__(self, newest, current=__version__, eskyObj=None):
 		self.newest = newest
 		self.current = current
+		self.esky = eskyObj
 	def __str__(self):
 		return "Version v%s is the latest version. You have v%s." % (self.newest, self.current)

@@ -8,14 +8,17 @@ Dependencies:
 	* BeautifulSoup >= 4.1.3
 	* lxml >= 2.3.3
 	* chardet >= 2.1.1
+	* esky >= 0.9.8
+		- patch with commit a0bb99fe6ab57cc5e80f68fff84474d96445023b from orng's GitHub repository (optional, without this esky patches will fail)
+		- bsdiff4 >= 1.1.4 (optional, without this esky patches will grow quite large)
 	* mutagen >= 1.12
-	* mutagen IDv2.3 tags fix:
+		- patch with IDv2.3 tags fix:
 			grab fix from http://bazaar.launchpad.net/~musicbrainz-developers/picard/trunk/annotate/head%3A/picard/formats/mutagenext/compatid3.py
 			or https://groups.google.com/forum/?fromgroups#!topic/quod-libet-development/krPCx4hhM_Q
 			save as compatid3.py and put in mutagen's directory
-	* configparser python2 port >= 3.2.0
+	* configparser (python2 port) >= 3.2.0
 	* pytest >= 2.3.4
-	* python-rsa >= 3.1.1
+	* rsa >= 3.1.1
 	* regobj >= 0.2.2
 * Inno Setup >= 5.5.1
 * 7za.exe == 9.20 (will be downloaded if not exists)
@@ -26,7 +29,6 @@ Dependencies:
 	cd C:\Scripts\iQuality\testcode
 	py.test -v --pdb -k test_PyEnviron
 2. For now, path must be C:\Scripts\iQuality.
-3. ffmpeg must be found in env var PATH.
-4. inno setup installed in 'C:\Program Files\Inno Setup 5\iscc.exe'
-5. winrar file installed in 'C:\Program Files\WinRAR\WinRar.exe'
-6. Run compile.bat at script's root dir.
+3. inno setup installed in 'C:\Program Files\Inno Setup 5\iscc.exe' or 'C:\Program Files (x86)\Inno Setup 5\iscc.exe'
+4. winrar file installed in 'C:\Program Files\WinRAR\WinRar.exe' or 'C:\Program Files (x86)\WinRAR\WinRar.exe'
+5. Run compile.bat at script's root dir.

@@ -1,5 +1,5 @@
 #define MyAppName "iQuality"
-#define MyAppVersion "0.191"
+#define MyAppVersion "0.20"  ; auto-generated
 #define MyAppPublisher "Itay Brandes"
 #define MyAppURL "http://iQuality.iTayb.net"
 #define MyAppExeName "iQuality.exe"
@@ -18,10 +18,10 @@ AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={pf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
-LicenseFile=C:\Scripts\iQuality\build\agreement.txt
-InfoAfterFile=C:\Scripts\iQuality\build\readme.txt
+LicenseFile=C:\Scripts\iQuality\agreement.txt
+InfoAfterFile=C:\Scripts\iQuality\README.md
 OutputDir=C:\scripts\iQuality\dist
-OutputBaseFilename={#MyAppName}_v{#MyAppVersion}
+OutputBaseFilename={#MyAppName}-{#MyAppVersion}-installer
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma
 SolidCompression=yes
@@ -35,10 +35,13 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1
 
 [Dirs]  
-Name: "{app}"; Permissions: users-modify;  
+Name: "{app}"; Permissions: users-modify;
 
 [Files]
-Source: "C:\Scripts\iQuality\build\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+Source: "C:\Scripts\iQuality\dist\iQuality-{#MyAppVersion}.win32\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+Source: "C:\Scripts\iQuality\agreement.txt"; DestDir: "{app}";
+Source: "C:\Scripts\iQuality\ChangeLog.txt"; DestDir: "{app}";
+Source: "C:\Scripts\iQuality\README.md"; DestDir: "{app}"; DestName: README.txt;
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -50,3 +53,28 @@ Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}"; Fil
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall runascurrentuser skipifsilent
 
+; Up to version v0.191, the program folder structer was kinda different.
+; If we already have an older version installed, we need to move and remove
+; some files to make it work with the new struct.
+[Code]
+function IsOldVersion: Boolean;
+begin
+  Result := FileExists(ExpandConstant('{app}\PyQt4.QtCore.pyd'));
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+	NeedsRestart := False;
+	
+	if IsOldVersion then begin
+		if not DirExists(ExpandConstant('{userappdata}\iQuality')) then begin
+			CreateDir(ExpandConstant('{userappdata}\iQuality'))
+		end;
+		
+		FileCopy(ExpandConstant('{app}\config.ini'),ExpandConstant('{userappdata}\iQuality\config.ini'), True);
+		FileCopy(ExpandConstant('{app}\debug.log'),ExpandConstant('{userappdata}\iQuality\debug.log'), True);
+		FileCopy(ExpandConstant('{app}\debug.calcScore.log'),ExpandConstant('{userappdata}\iQuality\debug.calcScore.log'), True);
+	end;
+	
+	DelTree(ExpandConstant('{app}'), False, True, True);
+end;

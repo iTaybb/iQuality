@@ -5,15 +5,18 @@ Logger class for the project.
 Must call logger.start() to start logging, and logger.stop() to terminate the logger.
 '''
 
-import logging, logging.handlers
+import os
 import sys
-from utils.core import set_term_color
+import logging, logging.handlers
 
 log = logging.getLogger('mainLog')
 log2 = logging.getLogger('minorLog')
 
 def start(config):
 	"Function sets up the logging environment."
+	
+	if not os.path.exists(os.path.dirname(config.logfile_path)):
+		os.makedirs(os.path.dirname(config.logfile_path))
 	logging.raiseExceptions = False # suppresses "No handlers could be found for logger X.Y.Z". Note that in python3 this behavior is changed, so we need to change this line if we ever port the project to python3.
 	logging.StreamHandler.emit = add_coloring_to_emit_windows(logging.StreamHandler.emit)
 	log.setLevel(logging.DEBUG)

@@ -8,7 +8,7 @@ import utils
 tr = utils.qt.tr
 
 ### FUNCTIONS ###
-def get_hints():
+def get_hint():
 	"hints for the project"
 	hints = [
 				tr('Did you know? iQuality can downloads clips from Youtube.'),

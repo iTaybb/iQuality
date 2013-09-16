@@ -5,9 +5,20 @@ Below you find a list with the added features, changes and fixes for
 each version.
 
 ======================
+(Version 0.20 beta; 17/09/13)
+- NEW: Auto-updating is added.
+- NEW: If the software was closed while downloading, user will be asked whether he wants to resume the download.
+- IMPROVE: Now shows dimensions and file sizes for album arts in the ID3 tags editor.
+- IMPROVE: Many functions now run in background. Therefore, searches and startup are faster.
+- IMPROVE: Configuration and debug logs moved from Program Files folder to AppData folder.
+- IMPROVE: Updates CCCP (Audio Codec Pack) to the latest version (2013-08-01).
+- FIX: LyricsMode's parser has been fixed.
+- FIX: Billboard's parser has been fixed.
+- FIX: Minor bug fixes.
+
 (Version 0.191 beta; 19/07/13)
 - FIX: On the new official youtube clips, a new cipher algorithm is introduced. We try to hack it now, and it
-		works for 80% of the videos, but some are still unavilable.
+		works for 80% of the videos, but some are still unavailable.
 - FIX: Google spell checker got fixed.
 - FIX: Minor bug fixes.
 

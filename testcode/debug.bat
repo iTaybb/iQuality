@@ -6,5 +6,6 @@ import Main
 from Main import utils
 import WebParser
 
-w = WebParser.WebServices
-o = w.spell_fix('britney spirs')
+w = WebParser.LyricsGrabber
+o = w.parse_LyricsMode('naruto', "shippuden")
+o.next()

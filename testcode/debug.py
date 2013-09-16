@@ -5,9 +5,9 @@ import Main
 from Main import utils
 import WebParser
 
-@profile
+# @profile
 def main():
-	w = WebParser.LinksGrabber
+	w = WebParser.LyricsGrabber
 	o = w.search('nicki minaj', 15)
 	
 main()

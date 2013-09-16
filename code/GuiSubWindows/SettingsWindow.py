@@ -25,10 +25,10 @@ class MainWin(QtGui.QDialog):
 		
 	def init_widgets(self):
 		self.dl_dir = QtGui.QLineEdit(config.dl_dir)
-		self.folder_button = QtGui.QPushButton(tr("Choose Folder"))
+		self.folder_button = QtGui.QPushButton("...")
 		self.folder_button.clicked.connect(self.slot_choose_dl_dir)
 		self.temp_dir = QtGui.QLineEdit(config.temp_dir)
-		self.temp_folder_button = QtGui.QPushButton(tr("Choose Folder"))
+		self.temp_folder_button = QtGui.QPushButton("...")
 		self.temp_folder_button.clicked.connect(self.slot_choose_temp_dir)
 		self.post_download_action = QtGui.QComboBox()
 		self.post_download_action.addItems(map(tr, config.post_download_action_dict.values()))
@@ -46,7 +46,10 @@ class MainWin(QtGui.QDialog):
 		self.table_doubleClick_action = QtGui.QComboBox()
 		self.table_doubleClick_action.addItems(map(tr, config.table_doubleClick_action_dict.values()))
 		self.table_doubleClick_action.setCurrentIndex(config.table_doubleClick_action_dict.keys().index(config.table_doubleClick_action))
-		
+
+		self.auto_update = QtGui.QCheckBox(tr("Update automatically when a new version is available"))
+		self.auto_update.setCheckState(config.auto_update)
+		self.auto_update.setTristate(False)
 		self.enableSpellCheck = QtGui.QCheckBox(tr("Enable Spell Check"))
 		self.enableSpellCheck.setCheckState(config.enableSpellCheck)
 		self.enableSpellCheck.setTristate(False)
@@ -150,6 +153,7 @@ class MainWin(QtGui.QDialog):
 		generalLayout.addLayout(layout0)
 		generalLayout.addLayout(layout1)
 		generalLayout.addLayout(layout15)
+		generalLayout.addWidget(self.auto_update)
 		generalLayout.addWidget(self.post_download_custom_label)
 		generalLayout.addSpacerItem(QtGui.QSpacerItem(100, 100))
 		generalTab.setLayout(generalLayout)
@@ -266,9 +270,9 @@ class MainWin(QtGui.QDialog):
 	def slot_changed_checkbox(self, state=None):
 		if config.post_download_action == 'customLaunch':
 			self.post_download_custom_label2.setText(tr("Command:"))
-			self.post_download_custom_cmd.setEnabled(True)
-			self.post_download_custom_label2.setEnabled(True)
-			self.post_download_custom_wait_checkbox.setEnabled(True)
+			self.post_download_custom_cmd.setVisible(True)
+			self.post_download_custom_label2.setVisible(True)
+			self.post_download_custom_wait_checkbox.setVisible(True)
 			
 			if config.post_download_custom_cmd:
 				self.post_download_custom_cmd.setText(config.post_download_custom_cmd)
@@ -286,23 +290,24 @@ class MainWin(QtGui.QDialog):
 				log.error("in config.post_download_action after sanity check, however playlist path is not valid")
 			
 			
-			self.post_download_custom_cmd.setEnabled(True)
-			self.post_download_custom_label2.setEnabled(True)
-			self.post_download_custom_label.setText(tr("Supported Playlist Files are .m3u and .wpl."))
-			self.post_download_custom_wait_checkbox.setEnabled(False)
+			self.post_download_custom_cmd.setVisible(True)
+			self.post_download_custom_label2.setVisible(True)
+			self.post_download_custom_label.setText(tr("Supported Playlist Formats: m3u, wpl."))
+			self.post_download_custom_wait_checkbox.setVisible(False)
 			
 		else:
 			self.post_download_custom_label2.setText(tr("Command:"))
-			self.post_download_custom_cmd.setEnabled(False)
-			self.post_download_custom_label2.setEnabled(False)
-			self.post_download_custom_wait_checkbox.setEnabled(False)
+			self.post_download_custom_cmd.setVisible(False)
+			self.post_download_custom_label2.setVisible(False)
+			
+			self.post_download_custom_wait_checkbox.setVisible(False)
 			
 			if config.post_download_custom_cmd:
 				self.post_download_custom_cmd.setText(config.post_download_custom_cmd)
 			else:
 				self.post_download_custom_cmd.setText(r'"C:\Program Files\AnyApp\encoder.exe" -i "%AUDIO%" -o C:\Encoded\song.mp3')
 				
-			self.post_download_custom_label.setText(tr("<i>The command line is disabled because it is not set as the post-download action.</i>"))
+			self.post_download_custom_label.setText("")
 			
 		if not self.useYoutube.isChecked():
 			self.prefered_youtube_format.setEnabled(False)
@@ -443,6 +448,7 @@ class MainWin(QtGui.QDialog):
 		else:
 			config.id3_action = 'ask_albumart'
 		config.search_autocomplete = self.search_autocomplete.isChecked()
+		config.auto_update = self.auto_update.isChecked()
 		config.enableSpellCheck = self.enableSpellCheck.isChecked()
 		config.search_sources['Dilandau'] = self.useDilandau.isChecked()
 		config.search_sources['Mp3skull'] = self.useMp3Skull.isChecked()

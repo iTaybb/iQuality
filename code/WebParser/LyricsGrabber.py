@@ -144,14 +144,13 @@ def parse_LyricsMode(title, artist):
 			
 		soup = BeautifulSoup(response)
 
-		div = soup.find('div', id='songlyrics_h')
+		div = soup.find('p', id='lyrics_text')
 		if not div:
 			return
 			
 		lyrics = div.text
-		if div.span: # credits block
-			credits = div.span.text
-			lyrics = lyrics.replace(credits, '')
+		if soup.find('p', id='lyrics_signature'): # credits block
+			credits = soup.find('p', id='lyrics_signature').text
 			lyrics += "\n\n%s" % credits
 			
 		artist = string.capwords(url.split('/')[-2].replace('_',' '))

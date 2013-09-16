@@ -137,12 +137,27 @@ class MainWin(QtGui.QDialog):
 		self.original_date = unicode(self.date.displayText())
 		
 		pixmap = QtGui.QPixmap(self.pix_path) if self.pix_path else QtGui.QPixmap(self.empty_cdbox_path)
+		
+		if self.pix_path:
+			fs = os.path.getsize(self.pix_path)
+			s = tr("(%sx%s, %sKB)") % (pixmap.width(), pixmap.height(), fs/1024)
+			if fs > 250*1024: # 250KB
+				s = '<b>%s</b>' % s
+			if fs > 500*1024: # 250KB
+				s = '<font color="green">%s</font>' % s
+			self.albumArtData = QtGui.QLabel(s)
+		else:
+			self.albumArtData = QtGui.QLabel('')
+		
 		if max(pixmap.width(), pixmap.height()) > 200:
 			pixmap = pixmap.scaled(200, 200, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
-			
+
+		self.albumArtLayout = QtGui.QVBoxLayout()
 		self.albumArt = QtGui.QLabel()
 		self.albumArt.setPixmap(pixmap)
 		self.albumArt.setStyleSheet("border-style:solid; border-color:#999792; border-width:1px;")
+		self.albumArtLayout.addWidget(self.albumArt, alignment=QtCore.Qt.AlignCenter)
+		self.albumArtLayout.addWidget(self.albumArtData, alignment=QtCore.Qt.AlignCenter)
 		
 		self.remove_albumart_button = QtGui.QPushButton(QtGui.QIcon(r'pics\cancel.png'), "")
 		self.remove_albumart_button.clicked.connect(self.remove_albumart_slot)
@@ -191,7 +206,7 @@ class MainWin(QtGui.QDialog):
 		
 		albumArtGroup = QtGui.QGroupBox(tr("Album Art"))
 		layout = QtGui.QGridLayout()
-		layout.addWidget(self.albumArt, 0, 0, 1, 3, QtCore.Qt.AlignCenter)
+		layout.addLayout(self.albumArtLayout, 0, 0, 1, 3, QtCore.Qt.AlignCenter)
 		layout.addWidget(self.changeImageButton, 1, 0)
 		layout.addWidget(self.loadLocalImageButton, 1, 1)
 		layout.addWidget(self.remove_albumart_button, 1, 2)
@@ -360,6 +375,15 @@ class MainWin(QtGui.QDialog):
 		if f:
 			self.pix_path = f
 			pixmap = QtGui.QPixmap(self.pix_path)
+			
+			fs = os.path.getsize(self.pix_path)
+			s = tr("(%sx%s, %sKB)") % (pixmap.width(), pixmap.height(), fs/1024)
+			if fs > 250*1024: # 250KB
+				s = '<b>%s</b>' % s
+			if fs > 500*1024: # 250KB
+				s = '<font color="green">%s</font>' % s
+			self.albumArtData.setText(s)
+			
 			if max(pixmap.width(), pixmap.height()) > 200:
 				pixmap = pixmap.scaled(200, 200, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
 			self.albumArt.setPixmap(pixmap)
@@ -397,6 +421,15 @@ class MainWin(QtGui.QDialog):
 
 		if self.pix_path:
 			pixmap = QtGui.QPixmap(self.pix_path)
+			
+			fs = os.path.getsize(self.pix_path)
+			s = tr("(%sx%s, %sKB)") % (pixmap.width(), pixmap.height(), fs/1024)
+			if fs > 250*1024: # 250KB
+				s = '<b>%s</b>' % s
+			if fs > 500*1024: # 250KB
+				s = '<font color="green">%s</font>' % s
+			self.albumArtData.setText(s)
+		
 			if max(pixmap.width(), pixmap.height()) > 200:
 				pixmap = pixmap.scaled(200, 200, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
 			self.albumArt.setPixmap(pixmap)
@@ -428,6 +461,8 @@ class MainWin(QtGui.QDialog):
 	
 	def remove_albumart_slot(self):
 		self.albumArt_task = 'delete'
+		fs = os.path.getsize(self.pix_path)
+		self.albumArtData.setText("")
 		self.pix_path = ""
 		self.albumArt.setPixmap(QtGui.QPixmap(self.empty_cdbox_path))
 		self.remove_albumart_button.setEnabled(False)
@@ -567,14 +602,26 @@ class AlbumArtWin(QtGui.QDialog):
 		for pix_path in self.fn_list:
 			pixmap = QtGui.QPixmap(pix_path)
 			
+			fs = os.path.getsize(pix_path)
+			s = tr("(%sx%s, %sKB)") % (pixmap.width(), pixmap.height(), fs/1024)
+			if fs > 250*1024: # 250KB
+				s = '<b>%s</b>' % s
+			if fs > 500*1024: # 250KB
+				s = '<font color="green">%s</font>' % s
+			dataLabel = QtGui.QLabel(s)
+			
 			if max(pixmap.width(), pixmap.height()) > 200:
 				pixmap = pixmap.scaled(200, 200, aspectRatioMode=QtCore.Qt.KeepAspectRatio, transformMode=QtCore.Qt.SmoothTransformation)
 			
+			buttonLayout = QtGui.QVBoxLayout()
 			button = QtGui.QPushButton(QtGui.QIcon(pixmap), '')
 			button.setIconSize(pixmap.size())
 			button.clicked.connect(self.slot_select)
 			button.pix_path = pix_path
-			self.albumArts.append(button)
+			buttonLayout.addWidget(button, alignment=QtCore.Qt.AlignCenter)
+			buttonLayout.addWidget(dataLabel, alignment=QtCore.Qt.AlignCenter)
+			
+			self.albumArts.append(buttonLayout)
 			
 		self.saveSelection_CheckBox = QtGui.QCheckBox(tr("Choose album art automatically next time"))
 		self.saveSelection_CheckBox.setTristate(False)
@@ -591,7 +638,7 @@ class AlbumArtWin(QtGui.QDialog):
 
 		pixLayout = QtGui.QHBoxLayout()
 		for art in self.albumArts:
-			pixLayout.addWidget(art)
+			pixLayout.addLayout(art)
 		
 		searchLabel = QtGui.QLabel(tr("Look for:"))
 		self.search_lineEdit = QtGui.QLineEdit(self.last_search_string)
@@ -606,7 +653,7 @@ class AlbumArtWin(QtGui.QDialog):
 		
 		mainLayout.addWidget(QtGui.QLabel(tr("<h2>Choose a new album art:</h2>")), alignment = QtCore.Qt.AlignCenter)
 		mainLayout.addLayout(pixLayout)
-		mainLayout.addWidget(QtGui.QLabel(tr("<h2>Or search for other images:</h2>")), alignment = QtCore.Qt.AlignCenter)
+		mainLayout.addWidget(QtGui.QLabel(tr("<h3>Or search for other images:</h3>")), alignment = QtCore.Qt.AlignCenter)
 		mainLayout.addLayout(textboxLayout)
 		
 		if config.id3_action != 'noask':
