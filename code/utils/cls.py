@@ -9,6 +9,7 @@ import os.path
 from difflib import SequenceMatcher
 import urllib
 import urlparse
+import re
 
 # sys.path.append('..') # for project top-level modules
 from logger import log2 as log
@@ -19,20 +20,29 @@ class ItagData(object):
 	An itag structure data.
 	'itag' is the parameter used by YouTube to differentiate between quality profiles.
 	
+	In our software, is it used to specify video metadatas, not just youtube's.
+	
 	Data members are itag, format, quality, bitrate.
-	Updates up to 26/07/12.
+	Updates up to 17/11/13.
 	'''
-	def __init__(self, itag):
-		self.itag = int(itag)
-		self.res = self.getResolution() # res is for the video resolution (480p, 720p, etc)
-		self.format = self.getFormat()
-		self.quality = self.getQuality() # must be called somewhere AFTER self.res is initialized
+	def __init__(self, itag=0, format="", res="", quality=""):
+		self.itag = int(itag) # itag 0 is a custom itag
+		self.format = format or self.getFormat()
+		self.res = res or self.getResolution() # res is for the video resolution (480p, 720p, etc)
+		if isinstance(self.res, basestring):
+			match = re.search(r"(\d+)[PpIi]", self.res)
+			self.res = match.group(1) if match else 0
+		self.quality = quality or self.getQuality() # must be called somewhere AFTER self.res is initialized
 	
 	def __int__(self):
 		return self.itag
 		
 	def __repr__(self):
-		return "<ItagData %s (%sp) | %s @ %s>" % (self.itag, self.res, self.format, self.quality)
+		if self.format == 'm4a':
+			return "<ItagData %s | %s @ %s>" % (self.itag if self.itag else "Custom", self.format, self.quality)
+		if self.format == 'm4v':
+			return "<ItagData %s (%sp) | %s @ %s>" % (self.itag if self.itag else "Custom", self.res, self.format, self.quality)
+		return "<ItagData %s (%sp) | %s @ %s>" % (self.itag if self.itag else "Custom", self.res, self.format, self.quality)
 		
 	def getFormat(self):
 		if self.itag in [5, 6, 34, 35]:
@@ -41,11 +51,26 @@ class ItagData(object):
 			return '3gp'
 		if self.itag in [18, 22, 37, 38, 82, 83, 84, 85]:
 			return 'mp4'
+		if self.itag in [133, 134, 135, 136, 137, 160]:
+			return 'm4v'
+		if self.itag in [139, 140, 141]:
+			return 'm4a'
 		if self.itag in [43, 44, 45, 46, 100, 101, 102]:
 			return 'webm'
 		return 'unknown'
 	
 	def getQuality(self):
+		if self.format == 'm4a':
+			if self.itag == 139:
+				return 'low'
+			elif self.itag == 140:
+				return 'medium'
+			elif self.itag == 141:
+				return 'high'
+			return 'unknown'
+			
+		if self.res <= 0:
+			return 'unknown'
 		if self.res < 240:
 			return 'x-small'
 		if self.res < 360:
@@ -65,37 +90,42 @@ class ItagData(object):
 	def getResolution(self):
 		if self.itag in [13]:
 			return 0
-		if self.itag in [45, 22, 84, 102]:
+		if self.itag in [22, 45, 84, 102, 136]:
 			return 720
 		if self.itag in [85]:
 			return 85
-		if self.itag in [44, 35]:
+		if self.itag in [35, 44, 135]:
 			return 480
-		if self.itag in [82, 18, 34, 101, 43, 100]:
+		if self.itag in [18, 34, 43, 82, 100, 101, 134]:
 			return 360
 		if self.itag in [38]:
 			return 3072
 		if self.itag in [6]:
 			return 270
-		if self.itag in [83, 36, 5]:
+		if self.itag in [5, 36, 83, 133]:
 			return 240
-		if self.itag in [17]:
+		if self.itag in [17, 160]:
 			return 144
-		if self.itag in [46, 37]:
+		if self.itag in [37, 46, 137]:
 			return 1080
 		return 'unknown'
 
 class MetaUrl(object):
-	"a url structure data with extra metadata"
-	def __init__(self, url, source="", trackName="", length_seconds=0, itag="", youtube_videoid="", source_url="", view_count=0):
+	'''
+	A url structure data with extra metadata. Only url and source are guaranteed to exist.
+	'''
+	def __init__(self, url, source='', title='', duration=0, itag='', videoid='', webpage_url='', view_count=0, description='', thumbnail=''):
 		self.url = str(url) if core.isAscii(url) else core.url_fix(url)
 		self.source = source
-		self.title = trackName # Youtube&SoundCloud&Bandcamp Links Only
-		self.length_seconds = length_seconds # Youtube Links Only
-		self.itag = itag # Youtube Links Onlys
-		self.youtube_videoid = youtube_videoid # Youtube Links Onlys
-		self.source_url = source_url
-		self.view_count = view_count # Youtube Links Onlys
+		self.title = title
+		self.duration = duration
+		self.itag = itag # Youtube only
+		self.isVideo = bool(itag)
+		self.videoid = videoid
+		self.webpage_url = webpage_url
+		self.view_count = view_count
+		self.description = description
+		self.thumbnail = thumbnail
 	
 	def __repr__(self):
 		return "<MetaUrl '%s' | %s>" % (self.url, self.source)
@@ -157,36 +187,44 @@ class MetadataRelease(object):
 class Song(object):
 	"A class defining a song."
 	def __init__(self, url, filesize, SupportsHTTPRange, bitrate=-1, title="",
-					artist="", id3tags_file="", source="", length_seconds="", video_itag="",
-					youtube_videoid="", source_url="", youtube_views_count=0, searchString="", constantFileName=None):
+					artist="", id3tags_file="", source="", duration="", itag="",
+					videoid="", webpage_url="", views_count=0, description="", searchString="", constantFileName=None):
 		self.url = url
 		self.filename = url.split('/')[-1].split('?')[0]
 		self.filesize = filesize
 		self.SupportsHTTPRange = SupportsHTTPRange
 		self.bitrate = bitrate
-		self.title = title.strip()
-		self.artist = artist.strip()
+		self.title = self._normalize_str(title)
+		self.artist = self._normalize_str(artist)
 		self.id3tags_file = id3tags_file # empty mp3 file with an id3 header
 		self.source = source.lower()
-		self.length_seconds = length_seconds # youtube only
-		self.video_itag = video_itag # youtube only
-		self.source_url = source_url
-		self.youtube_videoid = youtube_videoid # youtube only
-		self.youtube_views_count = youtube_views_count # youtube only
+		self.itag = itag # not always applicable
+		self.webpage_url = webpage_url
+		self.videoid = videoid # not always applicable
+		self.views_count = views_count # not always applicable
+		self.description = description # not always applicable
 		self.searchString = searchString.lower()
 		self.constantFileName = constantFileName # If set, this will be the name of the file.
 
 		# self.ext saves the video format. if not a video, saved as a .mp3 file.
-		if self.source == "youtube":
-			self.ext = self.video_itag.format
+		if self.itag:
+			self.ext = self.itag.format
 		elif 'non-multimedia' in self.source:
 			self.ext = ""
 			self.constantFileName = self.filename
 		else:
 			self.ext = "mp3"
 			
-		# Handles url's unicode.
-		s = self.url
+		self.duration = duration if duration else self.calcLength()
+		self.url = self._fix_unicode_url(self.url)
+		self.score = self.calcScore() if self.searchString else 5.00
+		self.final_filesize = self.calcFinalFilesize()
+		
+	def __repr__(self):
+		return "<Song '%.60s'>" % self.url
+	
+	@staticmethod
+	def _fix_unicode_url(s):
 		try:
 			s.decode('ascii')
 		except (UnicodeEncodeError, UnicodeDecodeError):
@@ -196,14 +234,14 @@ class Song(object):
 			path = urllib.quote(path, '/%')
 			qs = urllib.quote_plus(qs, ':&=')
 			s = urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
-		self.url = s
-
-		self.mediaLength = self.calcLength()
-		self.score = self.calcScore() if self.searchString else 5.00
-		self.final_filesize = self.calcFinalFilesize()
-		
-	def __repr__(self):
-		return "<Song '%.60s'>" % self.url
+		return s
+	
+	@staticmethod
+	def _normalize_str(s):
+		while '  ' in s:
+			s = s.replace('  ', ' ')
+		s = s.strip()
+		return s
 	
 	def GetProperFilename(self, ext=None):
 		if not ext:
@@ -232,8 +270,8 @@ class Song(object):
 		return fn
 		
 	def calcFinalFilesize(self):
-		if self.source == "youtube":
-			return self.bitrate/8.0 * self.mediaLength
+		if self.itag:
+			return self.bitrate/8.0 * self.duration
 		return self.filesize
 		
 	def calcLength(self):
@@ -253,10 +291,8 @@ class Song(object):
 		#	 224		3:22	3:20	1.1%
 		#	 256		4:58	4:55	1.0%
 		#	 320		7:24	7:23	0.1%
-			
-		if self.source == "youtube":
-			sec = self.length_seconds
-		elif self.filesize and self.bitrate > 8000:
+		
+		if self.ext == 'mp3' and self.filesize and self.bitrate > 8000:
 			sec = ((self.filesize-os.path.getsize(self.id3tags_file))/1024) / (self.bitrate/1024/8)
 			
 			if self.bitrate <= 48000:
@@ -296,27 +332,42 @@ class Song(object):
 		log.debug("self.title: %s" % self.title)
 		
 		# If it's a radio edit, +0.5
-		good_words = ['radio edit']
+		good_words = [	
+						'radio edit', 'cdq', 'official video', 'official clip',
+						u'קליפ רשמי', u'קליפ רישמי'
+						]
 		for word in good_words:
-			if word in self.searchString:
-				log.debug('a good word (%s) is in search string: +0.5' % word)
-				score += 0.5
+			if word in self.artist.lower() or word in self.title.lower() or word in self.description.lower():
+				log.debug('a good word (%s) is in artist/title/description: +1.0' % word)
+				score += 1.0
 		
 		# If we weren't searching for 'dj', 'mix', 'live' and the song do include these strings: -1.5
-		forbidden_words_in_artist = ['dj', 'rmx', 'instrumental', 'piano', 'live', 'cover', 'karaoke', 'acapella', 'playback', 'parody', 'acoustic', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע', u'פסנתר', u'פרודיה', u'פארודיה', u'אקוסטי']
-		forbidden_words_in_title = ['mix', 'rmx', 'instrumental', 'piano', 'live', 'cover', 'karaoke', 'acapella', 'playback', 'parody', 'acoustic', u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע', u'פסנתר', u'פרודיה', u'פארודיה', u'אקוסטי']
+		forbidden_words = [
+							'rmx', 'instrumental', 'piano', 'live', 'cover', 'karaoke', 'acapella', 'playback', 'parody', 'acoustic',
+							u'קאבר', u'לייב', u'הופעה', u'רמיקס', u'קריוקי', u'פליבק', u'פלייבק', u'מעריצים', u'זאפה', u'מופע', u'פסנתר',
+							u'פרודיה', u'פארודיה', u'אקוסטי', u'קיסריה'
+							]
+		forbidden_words_in_artist = forbidden_words + ['dj']
+		forbidden_words_in_title = forbidden_words + ['mix']
+		forbidden_words_in_description = forbidden_words
 				
 		if self.artist:
 			for word in forbidden_words_in_artist:
 				if word in self.artist.lower() and not word in self.searchString:
-					log.debug('%s is in artist, not in search string: -1' % word)
+					log.debug('%s is in artist, not in search string: -1.5' % word)
 					score -= 1.5
 					break		
 		if self.title:
 			for word in forbidden_words_in_title:
 				if word in self.title.lower() and not word in self.searchString:
-					log.debug('%s is in title, not in search string: -1' % word)
+					log.debug('%s is in title, not in search string: -1.5' % word)
 					score -= 1.5
+					break
+		if self.description:
+			for word in forbidden_words_in_description:
+				if word in self.description.lower() and not word in self.searchString:
+					log.debug('%s is in description, not in search string: -1' % word)
+					score -= 1.0
 					break
 		
 		# If the title OR the artist contains the whole search string: +1.5
@@ -374,14 +425,14 @@ class Song(object):
 		# Else, if the views counter are less then 2,500, but more than 1000: -0.5
 		# Else, -1.0
 		if self.source == "youtube":
-			if self.youtube_views_count > 50000:
-				log.debug('Views counter (%s) is over 50,000: +0.5' % "{:,}".format(self.youtube_views_count))
+			if self.views_count > 50000:
+				log.debug('Views counter (%s) is over 50,000: +0.5' % "{:,}".format(self.views_count))
 				score += 0.5
-			elif 100 <= self.youtube_views_count < 2500:
-				log.debug('Views counter (%s) is between 2,500 and 750: -0.5' % "{:,}".format(self.youtube_views_count))
+			elif 100 <= self.views_count < 2500:
+				log.debug('Views counter (%s) is between 2,500 and 750: -0.5' % "{:,}".format(self.views_count))
 				score -= 0.5
-			elif self.youtube_views_count < 1000:
-				log.debug('Views counter (%s) is below 1000: -1.0' % "{:,}".format(self.youtube_views_count))
+			elif self.views_count < 1000:
+				log.debug('Views counter (%s) is below 1000: -1.0' % "{:,}".format(self.views_count))
 				score -= 1.0
 				
 		if self.artist and not given_score_for_artist_match:
@@ -469,11 +520,11 @@ class Song(object):
 		
 		# if media length is valid, but less than one minute, -1.5
 		# if media length is over 20 mins, -0.5
-		if 0 < self.mediaLength < 60:
-			log.debug("media length (%ds) is between 0 and 60: -1.5" % self.mediaLength)
+		if 0 < self.duration < 60:
+			log.debug("media length (%ds) is between 0 and 60: -1.5" % self.duration)
 			score -= 1.5
-		if self.mediaLength > 20*60:
-			log.debug("media length (%ds) is longer than 20min: -0.5" % self.mediaLength)
+		if self.duration > 20*60:
+			log.debug("media length (%ds) is longer than 20min: -0.5" % self.duration)
 			score -= 0.5
 		
 		# score has to be in range of 0.0 and 5.0

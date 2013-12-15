@@ -23,9 +23,9 @@ def get_file_details(urlObj):
 	The output may be used as init parameters for a Main.Song object.
 	
 	@param urlObj: A metaUrl Object.
-	@return url, filesize, SupportsHTTPRange, bitrate, title, artist, source, quality, youtube_videoid
+	@return url, filesize, SupportsHTTPRange, bitrate, title, artist, source, quality, videoid
 	'''
-	if urlObj.source.lower() == "youtube":
+	if urlObj.isVideo:
 		SupportsHTTPRange = True
 		
 		title, artist = utils.parse_title_from_filename(urlObj.title)
@@ -36,7 +36,7 @@ def get_file_details(urlObj):
 		dummyMP3 = utils.makeDummyMP3(config.temp_dir)
 		utils.setID3Tags(ID3TagsToEdit, dummyMP3)
 			
-		ID3Info = [config.youtube_audio_bitrates[urlObj.itag.quality], title, artist, dummyMP3]
+		ID3Info = [config.itag_audio_bitrates[urlObj.itag.quality], title, artist, dummyMP3]
 	elif urlObj.source.lower() in ["soundcloud", 'bandcamp']:
 		SupportsHTTPRange = True
 		
@@ -69,8 +69,8 @@ def get_file_details(urlObj):
 		utils.setID3Tags(ID3TagsToEdit, ID3File)
 		
 	return urlObj.url, filesize, SupportsHTTPRange, bitrate, title, artist, ID3File, \
-			urlObj.source, urlObj.length_seconds, urlObj.itag, urlObj.youtube_videoid, \
-			urlObj.source_url, urlObj.view_count
+			urlObj.source, urlObj.duration, urlObj.itag, urlObj.videoid, \
+			urlObj.webpage_url, urlObj.view_count, urlObj.description
 
 @utils.decorators.memoize(config.memoize_timeout)
 def get_id3info(url):
@@ -157,7 +157,7 @@ def get_filesize(url, timeout=config.get_filesize_timeout):
 	
 	@return bool: Size in bytes.
 	'''
-	if isinstance(url, utils.classes.MetaUrl):
+	if isinstance(url, utils.cls.MetaUrl):
 		url = url.url
 		
 	url = url.replace(' ', '%20')

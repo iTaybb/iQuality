@@ -65,8 +65,8 @@ bump_rev = True
 make_installer = True
 update_iss_version = True
 GUI_ONLY = True
-override_app_version = "0.20" # None for no overriding, a new version number for overriding (string)
-override_app_date = '17/09/13' # None for no overriding, a new date for overriding (string)
+override_app_version = "0.21" # None for no overriding, a new version number for overriding (string)
+override_app_date = '15/12/13' # None for no overriding, a new date for overriding (string)
 
 # Sanity checks
 if not os.path.exists(code_dir):
@@ -122,7 +122,7 @@ py2exe_data_files = [
 							]
 
 freeze_includes = ["mutagen.id3", "mutagen.easyid3", 'sip', 'win32api', 'lxml.etree', 'lxml._elementpath', 'gzip']
-freeze_excludes = ['doctest', 'unittest', 'pdb', '_ssl', 'pyreadline', 'locale', 'calender']
+freeze_excludes = ['doctest', 'unittest', 'pdb', 'pyreadline', 'calender']
 
 py2exe_options = {
 					"includes": freeze_includes, 
@@ -161,6 +161,13 @@ setup(
 	scripts = [iquality_exe],
 	options = {"py2exe": py2exe_options, "bdist_esky": bdist_esky_options_py2exe},
 	zipfile = None,
+	classifiers=[
+        "Topic :: Multimedia :: Video",
+        "Development Status :: 4 - Beta Development",
+        "Environment :: Win32 (MS Windows)",
+        "License :: Free for non-commercial use",
+        "Programming Language :: Python :: 2.7"
+    ],
 	)
 	
 if 'bdist_esky' in sys.argv:

@@ -1,9 +1,9 @@
-* distro
-* github
+* rtl qtableview fix
+* y-dl global:
+- Issue #1963
+- playlist iter: http://echospacedetroit.bandcamp.com/album/dimensional-space-album
+* soundcloud broken
 
-for v0.21:
-* ads
-* use youtube-dl?
 * use configObj?
 
 * faster response when website is down
@@ -21,13 +21,14 @@ for v0.21:
 * work with EXCEPTIONS and WARNINGS all over.
 
 * bugs
+* update youtube-dl
 * check all english & hebrew charts, try to improve score algorithm
+* translate everything and compile to .qm files
 * run pytest & pylint before release.
 * test with windows xp, 7, 8.
 
 For the long run:
 * str(e) --> unicode(e)
-* Custom Launch: support for videos
 * add more images sources
 * apply all IMPROVE tags
 	

@@ -204,7 +204,7 @@ def test_parse_youtube_downloadlinks():
 	# run AFTER test_parse_youtube_videoinfo
 	global youtube_download_links
 	for url in youtube_download_links:
-		assert 'youtube.com/videoplayback' in url
+		assert '/videoplayback' in url
 		assert 'signature=' in url
 		urllib2.urlopen(url).close()
 		

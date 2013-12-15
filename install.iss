@@ -1,5 +1,5 @@
 #define MyAppName "iQuality"
-#define MyAppVersion "0.20"  ; auto-generated
+#define MyAppVersion "0.21"  ; auto-generated
 #define MyAppPublisher "Itay Brandes"
 #define MyAppURL "http://iQuality.iTayb.net"
 #define MyAppExeName "iQuality.exe"
@@ -74,7 +74,8 @@ begin
 		FileCopy(ExpandConstant('{app}\config.ini'),ExpandConstant('{userappdata}\iQuality\config.ini'), True);
 		FileCopy(ExpandConstant('{app}\debug.log'),ExpandConstant('{userappdata}\iQuality\debug.log'), True);
 		FileCopy(ExpandConstant('{app}\debug.calcScore.log'),ExpandConstant('{userappdata}\iQuality\debug.calcScore.log'), True);
+		
+		DelTree(ExpandConstant('{app}'), False, True, True);
 	end;
 	
-	DelTree(ExpandConstant('{app}'), False, True, True);
 end;

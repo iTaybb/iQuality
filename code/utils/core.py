@@ -177,9 +177,9 @@ def get_rand_string(length=8):
 
 def get_rand_filename(dir_=os.getcwd()):
 	"Function returns a non-existent random filename."
-	tempfile = r"%s\%s.tmp" % (dir_, get_rand_string())
+	tempfile = os.path.join(dir_, "%s.tmp" % get_rand_string())
 	while os.path.exists(tempfile):
-		tempfile = r"%s\%s.tmp" % (dir_, get_rand_string())
+		tempfile = os.path.join(dir_, "%s.tmp" % get_rand_string())
 	return tempfile
 	
 def isHebrew(s):
@@ -307,6 +307,10 @@ def progress_bar(progress, length=20):
 	@param length: The length of the progress bar in chars. Default is 20.
 	'''
 	length -= 2 # The brackets are 2 chars long.
+	if progress > 1:
+		progress = 1
+	if progress < 0:
+		progress = 0
 	return "[" + "#"*int(progress*length) + "-"*(length-int(progress*length)) + "]"
 
 def delete_duplicates_ordered(seq):
@@ -449,7 +453,7 @@ def launch_file_explorer(path, files=None):
 			
 		shell.SHOpenFolderAndSelectItems(folder_pidl, to_show, 0)
 	else: # no SHILCreateFromPath in windows 7
-		f = r"%s\%s" % (path, files[0])
+		f = os.path.join(path, files[0])
 		f_mbcs = f.encode('mbcs')
 		if os.path.exists(f_mbcs):
 			os.system(r'explorer /select,"%s"' % f_mbcs)

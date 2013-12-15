@@ -9,6 +9,7 @@ import time
 import math
 
 import esky
+from PyQt4 import QtCore
 
 import HTTPQuery
 from SmartDL import SmartDL
@@ -41,7 +42,7 @@ def init():
 		try:
 			os.makedirs(config.temp_dir)
 		except (IOError, WindowsError):
-			config.temp_dir = r"%s\iQuality" % os.environ["Temp"] # if temp folder cannot be created, we should set it to default.
+			config.temp_dir = os.path.join(os.environ["Temp"], "iQuality") # if temp folder cannot be created, we should set it to default.
 			
 	# setting ext_bin directory
 	if hasattr(sys, "frozen"):
@@ -79,22 +80,26 @@ def sanity_check():
 		msg = "must use python 2.7"
 		log.critical(msg)
 		raise Exception(msg)
+	log.debug('CPython version is %d.%d.%d' % (sys.version_info.major, sys.version_info.minor, sys.version_info.micro))
+	log.debug('PyQt version is %s, Qt version is %s' % (QtCore.PYQT_VERSION_STR, QtCore.QT_VERSION_STR))
+		
+	# youtube-dl check
+	try:
+		import youtube_dl
+		log.debug("youtube-dl version is %s" % youtube_dl.__version__)
+	except ImportError:
+		log.warning("Could not load the youtube-dl module")
 		
 	# Phonon version check
 	try:
 		from PyQt4.phonon import Phonon
-		log.debug("Phonon version is %s" % Phonon.phononVersion())
+		if Phonon.BackendCapabilities.isMimeTypeAvailable('video/x-flv'):
+			log.debug('Phonon version is %s. video/x-flv is supported.' % Phonon.phononVersion())
+		else:
+			log.warning('Phonon version is %s. video/x-flv is not supported.' % Phonon.phononVersion())
 	except ImportError:
 		log.warning("Could not load the phonon module")
-	else:
-		# mimeTypes = [str(name) for name in Phonon.BackendCapabilities.availableMimeTypes()]
-		# log.debug("Available Mime Types are %s" % str(mimeTypes))
-		
-		if Phonon.BackendCapabilities.isMimeTypeAvailable('video/x-flv'):
-			log.debug('video/x-flv is supported.')
-		else:
-			log.warning('video/x-flv is not supported.')
-		
+	
 	# Free space check
 	freespace = utils.get_free_space(config.temp_dir)
 	if freespace < 200*1024**2: # 200 MB

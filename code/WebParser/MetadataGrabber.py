@@ -146,7 +146,7 @@ def parse_animelyrics_songs_by_lyrics(searchString):
 		# soup = BeautifulSoup(response)
 		# lyrics = '\n'.join([x.text.replace(CREDITS,'').replace(u'\xa0',' ').replace('\r','\n').replace('  ',' ') for x in soup.find_all('td', class_='romaji')])
 		# lyrics += "\n\n [ Lyrics from %s ] " % url
-		# lyricsObj = utils.classes.LyricsData(lyrics, artist, title)
+		# lyricsObj = utils.cls.LyricsData(lyrics, artist, title)
 		
 		# yield lyricsObj
 		
@@ -177,7 +177,7 @@ def musicbrainz_artist_search(s):
 			name = artist.find('name').text
 			score = artist.attrs['ext:score']
 			disambiguation = artist.find('disambiguation').text if artist.find('disambiguation') else ""
-			obj = utils.classes.MetadataArtist(id_, name, 'musicbrainz', type_, score, disambiguation=disambiguation)
+			obj = utils.cls.MetadataArtist(id_, name, 'musicbrainz', type_, score, disambiguation=disambiguation)
 			l.append(obj)
 	return l
 
@@ -224,7 +224,7 @@ def musicbrainz_release_search(arid):
 			sorted(list_of_rids, key=(lambda x:x[1]['count']))
 			reid, d2 = list_of_rids[0]
 			
-			obj = utils.classes.MetadataRelease(reid, d2['title'], 'musicbrainz', d['type'], d2['date'], d2['count'], arid, d2['artistname'])
+			obj = utils.cls.MetadataRelease(reid, d2['title'], 'musicbrainz', d['type'], d2['date'], d2['count'], arid, d2['artistname'])
 			final_releases.append(obj)
 	
 	final_releases = sorted(final_releases, key=lambda x:x.date)
@@ -298,7 +298,7 @@ def shironet_artist_search(s):
 	for link in soup.find_all('a', class_="search_link_name_big", href=True):
 		if SequenceMatcher(lambda x: x == " ", s, link.text).ratio() > 0.94:
 			artist_id = link['href'].split('prfid=')[-1].split('&')[0]
-			obj = utils.classes.MetadataArtist(artist_id, s, 'shironet', has_albums=False)
+			obj = utils.cls.MetadataArtist(artist_id, s, 'shironet', has_albums=False)
 			l.append(obj)
 		
 	for link in soup.find_all('a', href=re.compile('discography')):
@@ -334,7 +334,7 @@ def shironet_artist_songs(artist_id):
 	l = utils.delete_duplicates_ordered(l)
 	
 	for i, v in enumerate(l):
-		l[i] = utils.classes.MetadataRelease('0', v, 'shironet', arid=artist_id)
+		l[i] = utils.cls.MetadataRelease('0', v, 'shironet', arid=artist_id)
 	
 	return l
 	
@@ -361,7 +361,7 @@ def shironet_artist_albums(artist_id):
 		album_text = link.text
 		album_year = str(link.parent.span.text.strip(' ()'))
 		
-		obj = utils.classes.MetadataRelease(album_id, album_text, 'shironet', date=album_year, arid=artist_id)
+		obj = utils.cls.MetadataRelease(album_id, album_text, 'shironet', date=album_year, arid=artist_id)
 		l.append(obj)
 	
 	return l

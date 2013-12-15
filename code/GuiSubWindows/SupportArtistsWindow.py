@@ -42,8 +42,8 @@ class MainWin(QtGui.QDialog):
 		button_bandcamp_search.clicked.connect(self.slot_bandcamp_search)
 		
 		if self.songObj and self.songObj.source == 'bandcamp':
-			button_open_source_url = QtGui.QPushButton(QtGui.QIcon(r'pics\folder_heart.png'), tr('Open the track\'s landing page on %s') % self.songObj.source)
-			button_open_source_url.clicked.connect(self.slot_open_source_url)
+			button_open_webpage_url = QtGui.QPushButton(QtGui.QIcon(r'pics\folder_heart.png'), tr('Open the track\'s landing page on %s') % self.songObj.source)
+			button_open_webpage_url.clicked.connect(self.slot_open_webpage_url)
 			
 		button_search_apple = QtGui.QPushButton(QtGui.QIcon(r'pics\folder_heart.png'), "")
 		if self.songObj:
@@ -58,7 +58,7 @@ class MainWin(QtGui.QDialog):
 		else:
 			button_amazon_search.setText(tr('Open Amazon Music Store'))
 		button_amazon_search.clicked.connect(self.slot_amazon_search)
-		button_close = QtGui.QPushButton(tr('Okay'))
+		button_close = QtGui.QPushButton(tr('Close'))
 		button_close.clicked.connect(self.slot_close)
 		
 		self.saveSelection_CheckBox = QtGui.QCheckBox(tr("Do not show this message again"))
@@ -68,7 +68,7 @@ class MainWin(QtGui.QDialog):
 		# Decide which buttons we can show on the screen
 		buttons = []
 		if self.songObj and self.songObj.source == 'bandcamp':
-			buttons.append(button_open_source_url)
+			buttons.append(button_open_webpage_url)
 		else:
 			buttons.append(button_bandcamp_search)
 		buttons.append(button_amazon_search)
@@ -87,8 +87,8 @@ class MainWin(QtGui.QDialog):
 
 		self.setLayout(mainLayout)
 
-	def slot_open_source_url(self):
-		QtGui.QDesktopServices.openUrl(QtCore.QUrl(self.songObj.source_url))
+	def slot_open_webpage_url(self):
+		QtGui.QDesktopServices.openUrl(QtCore.QUrl(self.songObj.webpage_url))
 		
 	def slot_apple_search(self):
 		if not self.songObj:

@@ -6,6 +6,6 @@ It contains many useful functions for general useage.
 '''
 
 import decorators
-import classes
+import cls
 import qt
 from core import *

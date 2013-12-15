@@ -37,9 +37,9 @@ import threading
 
 from win32com.shell import shell, shellcon
 
-__version__ = "0.20" # auto-generated
-__rev__ = 229 # auto-generated
-__date__ = '17/09/13' # auto-generated
+__version__ = "0.21" # auto-generated
+__rev__ = 242 # auto-generated
+__date__ = '15/12/13' # auto-generated
 __author__ = 'Itay Brandes (brandes.itay@gmail.com)'
 
 class ConfigInterface(object):
@@ -144,7 +144,18 @@ except NameError: # if not already initialized
 		'table_DefaultSectionSize': 19,
 		'table_font': ("Segoe UI", 10), # QtGui.QFont
 		'mainWindow_styleSheet': "",
-		'table_styleSheet': "background: #C9C5BD;",
+		'table_styleSheet_rtl': '''
+								background-image:url('pics/iQUACK_bg');
+								background-repeat:no-repeat;
+								background-position: left bottom;
+								background-color: #C9C5BD;
+							''',
+		'table_styleSheet_ltr': '''
+								background-image:url('pics/iQUACK_bg');
+								background-repeat:no-repeat;
+								background-position: right bottom;
+								background-color: #C9C5BD;
+							''',
 		'table_odd_color': (206, 206 ,206), # QtGui.QColor
 		'table_even_color': (189, 189, 189), # QtGui.QColor
 		'table_foreground_color': (115, 115, 115), # QtGui.QColor
@@ -167,7 +178,7 @@ except NameError: # if not already initialized
 		'local_json_files_path': r'C:\Scripts\iquality-misc\json', # for dev only
 
 		### Script ###
-		'temp_dir': r"%s\iQuality" % os.environ["Temp"],
+		'temp_dir': os.path.join(os.environ["Temp"], "iQuality"),
 		'id3tags_whitemark': "Downloaded by iQuality v%s (grab at http://iquality.itayb.net). If you've liked this track, please consider purchasing it and support the artists." % __version__,
 		'logfile_enable': True,
 		'logfile_path': os.path.join(os.getenv('APPDATA'), 'iQuality', 'debug.log'),
@@ -197,6 +208,7 @@ except NameError: # if not already initialized
 		'get_id3info_timeout': 4,
 		'memoize_timeout': 30*60, # 30 mins
 		'id3_noask_wait_interval': 4,
+		'online_users_check_interval': 15*60, # 30 mins
 		'interval_between_network_sanity_checks': 1, # IMPROVE: make the interval.
 		'interval_between_supportArtists_notices': ((60**2)*24)*10, # 10 days
 		
@@ -208,9 +220,12 @@ except NameError: # if not already initialized
 		'WebParser_ignoredSites': ['4shared.com', 'soundcloud.com', 'free.fr', 'gendou.com', 'ringtonematcher.com', 'fileden.com'],
 		'youtube_quality_priority': ['hd1080', 'hd720', 'large', 'medium', 'small'],
 		'youtube_formats_priority': ['mp4', 'webm', 'flv'],
-		'youtube_listen_quality_priority': ['medium', 'large' 'small'],
+		'youtube_audioStream_quality_priority': ['high', 'medium', 'low'],
+		'youtube_audioStream_formats_priority': ['m4a'],
+		'youtube_listen_quality_priority': ['medium', 'large', 'small'],
 		'youtube_listen_formats_priority': ['flv'],
-		'youtube_audio_bitrates': {'hd1080': 192000, 'hd720': 192000, 'large': 128000, 'medium': 128000, 'small': 96000},
+		'itag_audio_bitrates': {'hd1080': 192000, 'hd720': 192000, 'high': 192000, 'large': 128000, 
+								'medium': 128000, 'low': 128000, 'small': 96000, 'unknown': 128000},
 		# call keys() to get the available sources list. query each value for it's state. True means Enabled, False means Disabled.
 		'search_sources': defaultdict(itertools.repeat(True).next, {'Dilandau': True, 'Mp3skull': True, 'soundcloud': True,
 																		'bandcamp': True, 'youtube': True}),
@@ -236,10 +251,12 @@ except NameError: # if not already initialized
 		'lyrics_lookup': True,
 		'id3editor_in_context_menu': True,
 		'auto_update': False,
+		'hide_url_column': True,
 		
 		# Table DoubleClick Task
 		'table_doubleClick_action_dict': OrderedDict({'listen': tr('Listen'),
-													'download': tr('Download'), 
+													'download': tr('Download'),
+													'developer_dump': tr('Show Developer Data'),
 													'nothing': tr('Nothing')}),
 		'table_doubleClick_action': "download",
 		
@@ -333,14 +350,15 @@ iQuality Copyright© 2012-2013 by Itay Brandes (iTayb). All rights reserved.
 					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup',
 					'id3editor_in_context_menu', 'last_sanity_check_timestamp', 'trimSilence',
 					'show_supportArtists_notice', 'last_supportArtists_notice_timestamp', 'last_url_download',
-					'isDownloadInProgress', 'auto_update']
+					'isDownloadInProgress', 'auto_update', 'hide_url_column']
 	vars_to_eval = ['relevance_minimum', 'downloadAudio', 'downloadVideo', 'ver', 'youtube_quality_priority',
 					'youtube_formats_priority', 'enableSpellCheck', 'songs_count_spinBox', 'search_sources',
 					'editID3', 'count_application_runs', 'count_download', 'listen_volumeSlider_volume',
 					'post_download_custom_wait_checkbox', 'prefetch_charts',
 					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup',
 					'id3editor_in_context_menu', 'last_sanity_check_timestamp', 'trimSilence',
-					'show_supportArtists_notice', 'last_supportArtists_notice_timestamp', 'isDownloadInProgress', 'auto_update']
+					'show_supportArtists_notice', 'last_supportArtists_notice_timestamp', 'isDownloadInProgress',
+					'auto_update', 'hide_url_column']
 	vars_to_override = ['ver']
 
 	config = ConfigInterface(d, ini_path, vars_to_save, vars_to_eval)

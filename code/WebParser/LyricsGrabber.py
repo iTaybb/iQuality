@@ -156,7 +156,7 @@ def parse_LyricsMode(title, artist):
 		artist = string.capwords(url.split('/')[-2].replace('_',' '))
 		title = string.capwords(url.split('/')[-1].split('.htm')[0].replace('_',' '))
 		
-		lyricsObj = utils.classes.LyricsData(lyrics, artist, title)
+		lyricsObj = utils.cls.LyricsData(lyrics, artist, title)
 		yield lyricsObj
 	return
 	
@@ -198,7 +198,7 @@ def parse_onlylyrics(title, artist):
 		lyrics += tag
 		
 	lyrics += "\n\n [ Lyrics from %s ] " % song_url
-	lyricsObj = utils.classes.LyricsData(lyrics, artist, title)
+	lyricsObj = utils.cls.LyricsData(lyrics, artist, title)
 	return (x for x in [lyricsObj])
 
 @utils.decorators.retry(socket.error, delay=1, tries=2, logger=log)
@@ -227,7 +227,7 @@ def parse_ChartLyrics(song, artist):
 		return (x for x in [])
 		
 	lyrics += "\n\n [ Lyrics from ChartLyrics ] "
-	lyricsObj = utils.classes.LyricsData(lyrics, artist, title)
+	lyricsObj = utils.cls.LyricsData(lyrics, artist, title)
 	return (x for x in [lyricsObj])
 	
 @utils.decorators.retry(socket.error, delay=1, tries=2, logger=log)
@@ -262,6 +262,6 @@ def parse_shironet(s):
 		except AttributeError:
 			return
 			
-		lyricsObj = utils.classes.LyricsData(lyrics, artist, title)
+		lyricsObj = utils.cls.LyricsData(lyrics, artist, title)
 		yield lyricsObj
 	return 

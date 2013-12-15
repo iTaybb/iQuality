@@ -20,6 +20,7 @@ Dependencies:
 	* pytest >= 2.3.4
 	* rsa >= 3.1.1
 	* regobj >= 0.2.2
+	* youtube-dl (latest version)
 * Inno Setup >= 5.5.1
 * 7za.exe == 9.20 (will be downloaded if not exists)
 * ffmpeg.exe == 1.1.1 (jointed build) (will be downloaded if not exists)
@@ -31,4 +32,4 @@ Dependencies:
 2. For now, path must be C:\Scripts\iQuality.
 3. inno setup installed in 'C:\Program Files\Inno Setup 5\iscc.exe' or 'C:\Program Files (x86)\Inno Setup 5\iscc.exe'
 4. winrar file installed in 'C:\Program Files\WinRAR\WinRar.exe' or 'C:\Program Files (x86)\WinRAR\WinRar.exe'
-5. Run compile.bat at script's root dir.
+5. Run setup.py (with py2exe, bdist_esky or bdist_esky_patch)

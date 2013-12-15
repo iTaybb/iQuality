@@ -8,11 +8,13 @@ import re
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
+from PyQt4.phonon import Phonon
 
 import Config; config = Config.config
 from logger import log
 import utils
 tr = utils.qt.tr
+import UpdaterWindow
 
 class MainWin(QtGui.QDialog):
 	def __init__(self, parent=None):
@@ -50,6 +52,11 @@ class MainWin(QtGui.QDialog):
 		self.auto_update = QtGui.QCheckBox(tr("Update automatically when a new version is available"))
 		self.auto_update.setCheckState(config.auto_update)
 		self.auto_update.setTristate(False)
+		self.hide_url_column = QtGui.QCheckBox(tr("* Hide URL Column"))
+		self.hide_url_column.setCheckState(config.hide_url_column)
+		self.hide_url_column.setTristate(False)
+		self.install_cccp = QtGui.QPushButton(tr("Trigger CCCP Installation"))
+		self.install_cccp.clicked.connect(self.slot_install_cccp)
 		self.enableSpellCheck = QtGui.QCheckBox(tr("Enable Spell Check"))
 		self.enableSpellCheck.setCheckState(config.enableSpellCheck)
 		self.enableSpellCheck.setTristate(False)
@@ -147,14 +154,24 @@ class MainWin(QtGui.QDialog):
 		layout15.addWidget(self.post_download_custom_cmd)
 		layout15.addWidget(self.post_download_custom_wait_checkbox)
 		
+		layout2 = QtGui.QHBoxLayout()
+		if Phonon.BackendCapabilities.isMimeTypeAvailable('video/x-flv'):
+			layout2.addWidget(QtGui.QLabel(tr('video/x-flv support: <b><font color="green">yes</font></b>')))
+		else:
+			layout2.addWidget(QtGui.QLabel(tr('video/x-flv support: <b><font color="red">no</font></b>')))
+		layout2.addWidget(self.install_cccp)
+		layout2.addSpacerItem(QtGui.QSpacerItem(550, 10))
+		
 		generalTab = QtGui.QWidget()
 		# QGridLayout.addWidget (self, QWidget, int row, int column, int rowSpan, int columnSpan, Qt.Alignment alignment = 0)
 		generalLayout = QtGui.QVBoxLayout()
 		generalLayout.addLayout(layout0)
 		generalLayout.addLayout(layout1)
 		generalLayout.addLayout(layout15)
-		generalLayout.addWidget(self.auto_update)
 		generalLayout.addWidget(self.post_download_custom_label)
+		generalLayout.addWidget(self.auto_update)
+		generalLayout.addWidget(self.hide_url_column)
+		generalLayout.addLayout(layout2)
 		generalLayout.addSpacerItem(QtGui.QSpacerItem(100, 100))
 		generalTab.setLayout(generalLayout)
 		
@@ -170,8 +187,8 @@ class MainWin(QtGui.QDialog):
 		layout3.addWidget(self.prefer720p)
 		layout3.addWidget(self.label_youtube_format)
 		layout3.addWidget(self.prefered_youtube_format)
-		mediaSourcesGroupBox.addLayout(layout2)
 		mediaSourcesGroupBox.addLayout(layout3)
+		mediaSourcesGroupBox.addLayout(layout2)
 		
 		id3GroupBox = QtGui.QGroupBox(tr("ID3 Tags"))
 		lay = QtGui.QGridLayout()
@@ -365,6 +382,10 @@ class MainWin(QtGui.QDialog):
 		config.post_download_action = val
 		self.slot_changed_checkbox()
 		
+	def slot_install_cccp(self):
+		win = UpdaterWindow.MainWin('install_package', ['Combined Community Codec Pack'])
+		win.exec_()
+		
 	def slot_register_id3editor_in_context_menu(self, val):
 		if val and not utils.check_context_menu_status():
 			log.debug("Registering Context Menu Object...")
@@ -380,7 +401,7 @@ class MainWin(QtGui.QDialog):
 					raise
 			else:
 				if sys.getwindowsversion().major == 6: # If Windows Vista/7/8
-					QtGui.QMessageBox.information(self, tr("Error"), tr("You need to restart your computer for the changes to take effect."), QtGui.QMessageBox.Ok)
+					QtGui.QMessageBox.information(self, tr("Information"), tr("You need to restart your computer for the changes to take effect."), QtGui.QMessageBox.Ok)
 		if not val and utils.check_context_menu_status():
 			log.debug("Unregistering Context Menu Object...")
 			try:
@@ -395,7 +416,7 @@ class MainWin(QtGui.QDialog):
 					raise
 			else:
 				if sys.getwindowsversion().major == 6: # If Windows Vista/7/8
-					QtGui.QMessageBox.information(self, tr("Error"), tr("You need to restart your computer for the changes to take effect."), QtGui.QMessageBox.Ok)
+					QtGui.QMessageBox.information(self, tr("Information"), tr("You need to restart your computer for the changes to take effect."), QtGui.QMessageBox.Ok)
 	
 	def slot_apply(self):
 		### SANITY CHECKS ###
@@ -449,6 +470,7 @@ class MainWin(QtGui.QDialog):
 			config.id3_action = 'ask_albumart'
 		config.search_autocomplete = self.search_autocomplete.isChecked()
 		config.auto_update = self.auto_update.isChecked()
+		config.hide_url_column = self.hide_url_column.isChecked()
 		config.enableSpellCheck = self.enableSpellCheck.isChecked()
 		config.search_sources['Dilandau'] = self.useDilandau.isChecked()
 		config.search_sources['Mp3skull'] = self.useMp3Skull.isChecked()

@@ -116,11 +116,11 @@ class MainWin(QtGui.QDialog):
 			
 			mime = self.ID3Obj[APIC_Tag].mime
 			if mime == u'image/jpeg':
-				self.pix_path = r"%s\album_art.jpg" % (config.temp_dir)
+				self.pix_path = os.path.join(config.temp_dir, 'album_art.jpg')
 			elif mime == u'image/png':
-				self.pix_path = r"%s\album_art.png" % (config.temp_dir)
+				self.pix_path = os.path.join(config.temp_dir, 'album_art.png')
 			else:
-				self.pix_path = r"%s\album_art.pic" % (config.temp_dir)
+				self.pix_path = os.path.join(config.temp_dir, 'album_art.pic')
 			
 			with open(self.pix_path, 'wb') as f:
 				f.write(self.ID3Obj[APIC_Tag].data)

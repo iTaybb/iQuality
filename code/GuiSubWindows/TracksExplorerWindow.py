@@ -118,9 +118,9 @@ class MainWin(QtGui.QDialog):
 		
 		# if there's a "loading" gif (which means that this entry was never fetched)
 		if item.child(0).data(0, QtCore.Qt.UserRole).toString() == 'special:loading':
-			if isinstance(obj, utils.classes.MetadataArtist):
+			if isinstance(obj, utils.cls.MetadataArtist):
 				self.spawn_thread('release').search(obj, item)
-			elif isinstance(obj, utils.classes.MetadataRelease):
+			elif isinstance(obj, utils.cls.MetadataRelease):
 				self.spawn_thread('recording').search(obj, item)
 
 	def slot_clicked(self, item, i):

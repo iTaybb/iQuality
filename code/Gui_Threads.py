@@ -16,7 +16,6 @@ import urllib2
 import datetime
 import traceback
 from urlparse import parse_qs, urlparse
-import re
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -25,20 +24,22 @@ from threadpool import ThreadPool
 import Main
 import Config; config = Config.config
 from logger import log
-from CustomExceptions import NoResultsException, NotSupportedFiletypeException, YoutubeException
+from CustomExceptions import NoResultsException, YoutubeException
 import utils
+import Wrappers
 tr = utils.qt.tr
 
 # import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
 
 class GenericThread(QtCore.QThread):
 	output = QtCore.pyqtSignal(object)
-	error = QtCore.pyqtSignal(str)
+	error = QtCore.pyqtSignal(object)
 	
-	def __init__(self, parent=None, log_succ=True):
+	def __init__(self, parent=None, log_succ=True, relaunch=0):
 		QtCore.QThread.__init__(self, parent)
 		self._terminated = False
 		self.log_succ = log_succ
+		self.relaunch = relaunch
 		
 	def init(self, func, args=""):
 		self._terminated = False
@@ -47,7 +48,13 @@ class GenericThread(QtCore.QThread):
 		self.args = args
 		self.start()
 	
-	def run(self): # Called by Qt once the thread environment has been set up.
+	def run(self):
+		self._real_run()
+		while self.relaunch:
+			time.sleep(self.relaunch)
+			self._real_run()
+	
+	def _real_run(self):
 		try:
 			if not self.args:
 				output = self.func()
@@ -59,8 +66,8 @@ class GenericThread(QtCore.QThread):
 			if self.log_succ:
 				log.debug("GenericThread has completed %s successfully." % self.func.func_name)
 		except Exception, e:
-			self.error.emit("Exception: %s" % str(e))
-			log.error("GenericThread has completed %s with errors (%s)." % (self.func.func_name, str(e)))
+			self.error.emit("Exception: %s" % unicode(e))
+			log.error("GenericThread has completed %s with errors (%s)." % (self.func.func_name, unicode(e)))
 
 	def terminate(self):
 		"Setting _terminated to True"
@@ -68,8 +75,8 @@ class GenericThread(QtCore.QThread):
 		super(GenericThread, self).terminate()
 		
 class SpellCheckThread(QtCore.QThread):
-	output = QtCore.pyqtSignal(str, str, bool)
-	error = QtCore.pyqtSignal(str)
+	output = QtCore.pyqtSignal(object, object, bool)
+	error = QtCore.pyqtSignal(object)
 	
 	def __init__(self, parent=None):
 		QtCore.QThread.__init__(self, parent)
@@ -88,7 +95,7 @@ class SpellCheckThread(QtCore.QThread):
 			if ans != self.s:
 				self.output.emit(ans, self.s, self.luckyMode)
 		except Exception, e:
-			self.error.emit("Exception: %s" % str(e))
+			self.error.emit("Exception (SpellCheckThread): %s" % unicode(e))
 
 	def terminate(self):
 		"Setting _terminated to True"
@@ -96,7 +103,7 @@ class SpellCheckThread(QtCore.QThread):
 		super(SpellCheckThread, self).terminate()
 
 class SearchThread(QtCore.QThread):
-	output = QtCore.pyqtSignal(utils.classes.Song)
+	output = QtCore.pyqtSignal(utils.cls.Song)
 	finished_lucky = QtCore.pyqtSignal()
 	error = QtCore.pyqtSignal(Exception)
 	
@@ -155,41 +162,52 @@ class SearchThread(QtCore.QThread):
 						self.dont_emit_NoResultsException_error = True
 						links_gen = (x for x in [])
 						
-			elif domainName.endswith('bandcamp.com'):
-				if '/album/' in self.url:
-					log.debug("Url is a direct url (bandcamp album)")
-					metaUrlObjs = Main.WebParser.LinksGrabber.get_bandcamp_album_dl_links(self.url)
-					links_gen = (x for x in metaUrlObjs)
-				elif '/track/' in self.url:
-					log.debug("Url is a direct url (bandcamp)")
-					metaUrlObj = Main.WebParser.LinksGrabber.get_bandcamp_dl_link(self.url)
-					links_gen = (x for x in [metaUrlObj]) if metaUrlObj else (x for x in [])
-				else:
-					links_gen = (x for x in [])
-			elif domainName.endswith('soundcloud.com'):
-				log.debug("Url is a direct url (Soundcloud)")
-				if self.url.startswith('https://'):
-					self.url = self.url.replace('https://', 'http://')
-				metaUrlObj = Main.WebParser.LinksGrabber.get_soundcloud_dl_link(self.url)	
-				links_gen = (x for x in [metaUrlObj]) if metaUrlObj else (x for x in [])
+			# elif domainName.endswith('bandcamp.com'):
+				# if '/album/' in self.url:
+					# log.debug("Url is a direct url (bandcamp album)")
+					# metaUrlObjs = Main.WebParser.LinksGrabber.get_bandcamp_album_dl_links(self.url)
+					# links_gen = (x for x in metaUrlObjs)
+				# elif '/track/' in self.url:
+					# log.debug("Url is a direct url (bandcamp)")
+					# metaUrlObj = Main.WebParser.LinksGrabber.get_bandcamp_dl_link(self.url)
+					# links_gen = (x for x in [metaUrlObj]) if metaUrlObj else (x for x in [])
+				# else:
+					# links_gen = (x for x in [])
+			# elif domainName.endswith('soundcloud.com'):
+				# log.debug("Url is a direct url (Soundcloud)")
+				# if self.url.startswith('https://'):
+					# self.url = self.url.replace('https://', 'http://')
+				# metaUrlObj = Main.WebParser.LinksGrabber.get_soundcloud_dl_link(self.url)	
+				# links_gen = (x for x in [metaUrlObj]) if metaUrlObj else (x for x in [])
 			else:
-				ext = self.url.split('/')[-1].split('.')[-1]
-				if re.match(r"^http://.*soundcloud\.com/.+/.+/download$", self.url):
-					log.debug("Url is a direct url (Soundcloud).")
-					metaUrlObj = utils.classes.MetaUrl(self.url, "Direct Link")
-				elif ext in ['mp3', 'mp4', 'flv', 'webm']:
-					log.debug("Url is a direct url (%s file)." % ext)
-					metaUrlObj = utils.classes.MetaUrl(self.url, "Direct Link")
-				elif ext:
-					log.debug("Url is a direct url (%s - Non-multimedia file)." % ext)
-					metaUrlObj = utils.classes.MetaUrl(self.url, "Direct Non-Multimedia Link")
+				metaUrlObjs = []
+				ydlResult = Main.WebParser.LinksGrabber.get_ydl_extract_info(self.url)
+				# from PyQt4 import QtCore; import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
+				
+				if ydlResult:
+					if not ydlResult.has_key('entries'):
+						ydlResult['entries'] = [ydlResult]
+					elif ydlResult.has_key('url'):
+						ydlResult['entries'] = [ydlResult]
+					for entry in ydlResult['entries']:
+						metaUrlObj = utils.cls.MetaUrl(	entry['url'],
+														entry['extractor'],
+														itag=utils.cls.ItagData(0, entry['ext'], entry.get('height', entry['format_id'])),
+														title=entry.get('title'),
+														videoid=entry.get('id'),
+														webpage_url=entry.get('webpage_url'),
+														view_count=entry.get('view_count', 0),
+														description=entry.get('description', ''),
+														thumbnail=entry.get('thumbnail')
+														)
+						metaUrlObjs.append(metaUrlObj)
+														
+					links_gen = (x for x in metaUrlObjs)
 				else:
-					log.debug("Url is a direct url, no extention provided.")
-					log.error("got NotSupportedFiletypeException() for the \"%s\" extention." % ext)
-					self.error.emit(NotSupportedFiletypeException(ext))
-					return
+					log.debug("Url is a direct url (%s file)." % os.path.splitext(self.url.split('/')[-1])[1].strip('.'))
 					
-				links_gen = (x for x in [metaUrlObj])
+					metaUrlObj = utils.cls.MetaUrl(self.url, "Direct Link")
+					links_gen = (x for x in [metaUrlObj])
 		else:
 			links_gen = Main.WebParser.LinksGrabber.search(self.song, self.numOfSongs, returnGen=True)
 			
@@ -209,7 +227,7 @@ class SearchThread(QtCore.QThread):
 	def create_and_emit_SongObj(self, link):
 		try:
 			urlObj = Main.HTTPQuery.get_file_details(link)
-			self.songObj = utils.classes.Song(*(urlObj+(self.song,)))
+			self.songObj = utils.cls.Song(*(urlObj+(self.song,)))
 		except:
 			log.exception(traceback.format_exc())
 		if self.songObj.filesize == 0:
@@ -229,7 +247,7 @@ class SearchThread(QtCore.QThread):
 class DownloadThread(QtCore.QThread):
 	downloadProgress = QtCore.pyqtSignal(int, float, int, int, int)
 	encProgress = QtCore.pyqtSignal(int)
-	status = QtCore.pyqtSignal(str)
+	status = QtCore.pyqtSignal(object)
 	error = QtCore.pyqtSignal(Exception)
 	
 	def __init__(self, parent = None):
@@ -240,9 +258,10 @@ class DownloadThread(QtCore.QThread):
 		self._terminated = False
 		self.songObj = songObj
 		self.dl_dir = dl_dir
-		self.isMultimediaFile = not "non-multimedia" in songObj.source.lower()
-		self.isVideo = self.isMultimediaFile and self.songObj.ext != "mp3"
-		self.isAudio = self.isMultimediaFile and self.songObj.ext == "mp3"
+		self.isVideo = self.songObj.ext in ['mp4', 'avi', 'flv', 'webm', 'mkv']
+		self.isAudio = self.songObj.ext in ['mp3', 'm4a', 'wav']
+		self.isMultimediaFile = any([self.isVideo, self.isAudio])
+		self.convertNeeded = self.isMultimediaFile and self.songObj.ext != 'mp3' and config.downloadAudio
 		self.encode_time = 0
 		self.start()
 		
@@ -251,16 +270,16 @@ class DownloadThread(QtCore.QThread):
 		url = self.songObj.url
 		filesize = self.songObj.filesize
 		
-		audio_path = r"%s\%s" % (self.dl_dir, self.songObj.GetProperFilename('mp3'))
-		video_path = r"%s\%s" % (self.dl_dir, self.songObj.GetProperFilename())
-		dest_audio_path = r"%s\%s" % (config.temp_dir, "%s.mp3" % utils.get_rand_string())
+		audio_path = os.path.join(self.dl_dir, self.songObj.GetProperFilename('mp3')) # final path
+		video_path = os.path.join(self.dl_dir, self.songObj.GetProperFilename()) # final path
+		dest_audio_path = os.path.join(config.temp_dir, "%s.mp3" % utils.get_rand_string())
 		
 		if not self.isMultimediaFile:
-			dest_path = r"%s\%s" % (config.temp_dir, utils.get_rand_string())
-		elif self.songObj.ext == "mp3":
+			dest_path = os.path.join(config.temp_dir, utils.get_rand_string())
+		elif self.songObj.ext == "mp3": # no convertion needed
 			dest_path = dest_audio_path
-		else: # video
-			dest_path = r"%s\%s" % (config.temp_dir, "%s.vid" % utils.get_rand_string())
+		else:
+			dest_path = os.path.join(config.temp_dir, "%s.%s" % (utils.get_rand_string(), self.songObj.ext))
 		
 		dl_obj = Main.SmartDL(url, dest_path, logger=log)
 		dl_obj.start()
@@ -283,50 +302,36 @@ class DownloadThread(QtCore.QThread):
 			self.terminate()
 			return
 		self.downloadProgress.emit(100, dl_obj.get_speed(), dl_obj.get_eta(), filesize, filesize)
-			
-		if self.isVideo:
-			dest_video_path = dest_path
-			
+		
+		if self.convertNeeded:
 			t1 = time.time()
-			if config.downloadAudio: # if we want an audio file
-				log.debug("Encoding Audio...")
-				self.status.emit(tr("Encoding Audio..."))
-				
-				cmd = r'%s\ffmpeg -y -i "%s" -vn -ac 2 -b:a %d -f mp3 "%s"' % (config.ext_bin_path, dest_video_path,
-						config.youtube_audio_bitrates[self.songObj.video_itag.quality], dest_audio_path)
-				log.debug("Running '%s'" % cmd)
-				est_final_filesize = self.songObj.final_filesize
-				
+			log.debug("Encoding Audio...")
+			self.status.emit(tr("Encoding Audio..."))
+			est_final_filesize = self.songObj.final_filesize
+			if est_final_filesize:
 				print "Encoding: %s (%.2f MB) to %s" % (dest_audio_path, est_final_filesize / 1024.0 / 1024.0, self.dl_dir)
-				self.encProgress.emit(0)
-				proc = utils.launch_without_console(cmd)
-				
-				old_encoded_fs_counter = 0
-				while True:
-					out = proc.stderr.read(54)
-					if not out:
-						break
-					# size=    2930kB time=00:03:07.49 bitrate= 128.0kbits/s
-					if 'size=' in out and 'time=' in out:
-						encoded_fs_counter = out.split('size=')[1].split('kB')[0].strip()
-						if encoded_fs_counter.isdigit():
-							encoded_fs_counter = int(encoded_fs_counter)
-							if encoded_fs_counter > old_encoded_fs_counter:
-								status = r"Encoding: %.2f MB / %.2f MB %s [%3.2f%%]" % (encoded_fs_counter / 1024.0, est_final_filesize / 1024.0**2, utils.progress_bar(1.0*encoded_fs_counter*1024/est_final_filesize) , encoded_fs_counter*1024 * 100.0 / est_final_filesize)
-								status = status + chr(8)*(len(status)+1)
-								print status,
-								self.encProgress.emit(int(encoded_fs_counter*1024 * 100.0 / est_final_filesize))
-								old_encoded_fs_counter = encoded_fs_counter
-					time.sleep(0.1)
-				self.encProgress.emit(100)
-				proc.wait()
-				
-				t2 = time.time()
-				self.encode_time += t2-t1
-				
-				if not config.downloadVideo:
-					log.debug("Removing %s..." % dest_path)
-					os.unlink(dest_path)
+			else:
+				print "Encoding: %s to %s" % (dest_audio_path, self.dl_dir)
+			
+			proc = Wrappers.FFMpeg(dest_path, dest_audio_path, config.itag_audio_bitrates[self.songObj.itag.quality])
+			self.encProgress.emit(0)
+			for fs_counter in proc:
+				if not est_final_filesize:
+					continue
+				status = r"Encoding: %.2f MB / %.2f MB %s [%3.2f%%]" % (fs_counter / 1024.0, est_final_filesize / 1024.0**2, utils.progress_bar(1.0*fs_counter*1024/est_final_filesize) , fs_counter*1024 * 100.0 / est_final_filesize)
+				status = status + chr(8)*(len(status)+1)
+				print status,
+				self.encProgress.emit(int(fs_counter*1024 * 100.0 / est_final_filesize))
+			self.encProgress.emit(100)
+			
+			t2 = time.time()
+			self.encode_time += t2-t1
+			
+			if not config.downloadVideo or not self.isVideo:
+				log.debug("Removing %s..." % dest_path)
+				os.unlink(dest_path)
+		else:
+			dest_audio_path = dest_path
 				
 		if config.downloadAudio and config.trimSilence:
 			t1 = time.time()
@@ -339,66 +344,23 @@ class DownloadThread(QtCore.QThread):
 				os.unlink(temp_audio_trimmed_path)
 			os.rename(dest_audio_path, temp_audio_trimmed_path)
 			
-			cmd = r'%s\sox -S "%s" "%s" silence 1 0.1 1%% reverse silence 1 0.1 1%% reverse' % (config.ext_bin_path,
-																								temp_audio_trimmed_path,
-																								dest_audio_path)
-			log.debug("Running '%s'" % cmd)
 			est_final_filesize = self.songObj.final_filesize
-			
 			print "Trimming Silence: %s (%.2f MB) to %s" % (dest_audio_path, est_final_filesize / 1024.0**2, self.dl_dir)
 			self.encProgress.emit(0)
-			proc = utils.launch_without_console(cmd)
 			
-			samples = 1
-			in_value = 0
-			out_value = 0
-			while True:
-				# print out
-				out = proc.stderr.read(70)
-				if not out:
-					break
-				
-				# Duration       : 00:04:24.06 = 11644870 samples = 19804.2 CDDA sectors
-				if 'samples =' in out:
-					samples = out.split('samples')[0].split('=')[-1].strip()
-					if samples.isdigit():
-						samples = int(samples)
-				
-				# In:100%  00:04:23.96 [00:00:00.09] Out:11.6M [      |      ] Hd:0.0 Clip:400
-				if 'In:' in out:
-					t = out.split('In:')[1].split('.')[0].strip()
-					if t.isdigit() and int(t) > in_value:
-						in_value = int(t)
-				
-				# In:100%  00:04:23.96 [00:00:00.09] Out:11.6M [      |      ] Hd:0.0 Clip:400	
-				if 'Out:' in out:
-					t = out.split('Out:')[1].split(' ')[0].strip()
-					try:
-						if 'k' in t:
-							out_value = t.split('k')[0]
-							out_value = float(out_value)*1000
-						elif 'M' in t:
-							out_value = t.split('M')[0]
-							out_value = float(out_value)*1000000
-					except:
-						pass
-				
-				progress = in_value*0.3+(out_value/samples*100)*0.7+1
+			proc = Wrappers.SoX(temp_audio_trimmed_path, dest_audio_path)
+			for progress in proc:
 				status = r"Trimming Silence: %s" % utils.progress_bar(progress/100.0)
 				status = status + chr(8)*(len(status)+1)
 				print status,
 				self.encProgress.emit(progress)
-				
-				time.sleep(0.1)
-				
 			self.encProgress.emit(100)
-			proc.wait()
 			
 			t2 = time.time()
 			self.encode_time += t2-t1
 			
 			if not os.path.exists(dest_audio_path):
-				log.error('SoX failed: %s' % out)
+				log.error('SoX failed.')
 			
 		log.debug("Copying Files...")
 		self.status.emit(tr("Copying Files..."))
@@ -409,8 +371,8 @@ class DownloadThread(QtCore.QThread):
 				log.debug("Moving %s to %s" % (dest_audio_path, audio_path))
 				shutil.move(dest_audio_path, audio_path) 
 			if config.downloadVideo:
-				log.debug("Moving %s to %s" % (dest_video_path, video_path))
-				shutil.move(dest_video_path, video_path)
+				log.debug("Moving %s to %s" % (dest_path, video_path))
+				shutil.move(dest_path, video_path)
 		if self.isAudio:
 			log.debug("Moving %s to %s" % (dest_path, audio_path))
 			shutil.move(dest_path, audio_path) 
@@ -506,10 +468,10 @@ class GoogleImagesGrabberThread(QtCore.QThread):
 		super(GoogleImagesGrabberThread, self).terminate()
 
 class LyricsGrabberThread(QtCore.QThread):
-	MainResult = QtCore.pyqtSignal(utils.classes.LyricsData)
-	MinorResult = QtCore.pyqtSignal(utils.classes.LyricsData)
+	MainResult = QtCore.pyqtSignal(utils.cls.LyricsData)
+	MinorResult = QtCore.pyqtSignal(utils.cls.LyricsData)
 	eof = QtCore.pyqtSignal()
-	error = QtCore.pyqtSignal(str)
+	error = QtCore.pyqtSignal(object)
 	
 	def __init__(self, parent = None):
 		QtCore.QThread.__init__(self, parent)
@@ -568,8 +530,8 @@ class LyricsGrabberThread(QtCore.QThread):
 		super(LyricsGrabberThread, self).terminate()
 
 class MusicBrainzFetchThread(QtCore.QThread):
-	output = QtCore.pyqtSignal(str, str, str, str)
-	error = QtCore.pyqtSignal(str)
+	output = QtCore.pyqtSignal(object, object, object, object)
+	error = QtCore.pyqtSignal(object)
 	
 	def __init__(self, parent = None):
 		QtCore.QThread.__init__(self, parent)
@@ -626,7 +588,7 @@ class MusicBrainzFetchThread(QtCore.QThread):
 		
 class ArtistSearchThread(QtCore.QThread):
 	output = QtCore.pyqtSignal(list)
-	error = QtCore.pyqtSignal(str)
+	error = QtCore.pyqtSignal(object)
 	
 	def __init__(self, parent=None):
 		QtCore.QThread.__init__(self, parent)
@@ -660,7 +622,7 @@ class ArtistSearchThread(QtCore.QThread):
 		
 class ArtistLookupThread(QtCore.QThread):
 	output = QtCore.pyqtSignal(list, list, list, QtGui.QTreeWidgetItem)
-	error = QtCore.pyqtSignal(str, QtGui.QTreeWidgetItem)
+	error = QtCore.pyqtSignal(object, QtGui.QTreeWidgetItem)
 	
 	def __init__(self, parent=None):
 		QtCore.QThread.__init__(self, parent)
@@ -701,7 +663,7 @@ class ArtistLookupThread(QtCore.QThread):
 		
 class AlbumLookupThread(QtCore.QThread):
 	output = QtCore.pyqtSignal(list, QtGui.QTreeWidgetItem)
-	error = QtCore.pyqtSignal(str)
+	error = QtCore.pyqtSignal(object)
 	
 	def __init__(self, parent=None):
 		QtCore.QThread.__init__(self, parent)
@@ -736,7 +698,7 @@ class AlbumLookupThread(QtCore.QThread):
 		
 class ChartsLookupThread(QtCore.QThread):
 	output = QtCore.pyqtSignal(list, QtGui.QTreeWidgetItem)
-	error = QtCore.pyqtSignal(str)
+	error = QtCore.pyqtSignal(object)
 	
 	def __init__(self, parent=None):
 		QtCore.QThread.__init__(self, parent)
@@ -765,7 +727,7 @@ class ChartsLookupThread(QtCore.QThread):
 		super(ChartsLookupThread, self).terminate()
 		
 class LyricsFulltextSearchThread(QtCore.QThread):
-	output = QtCore.pyqtSignal(basestring)
+	output = QtCore.pyqtSignal(object)
 	
 	def __init__(self, parent=None):
 		QtCore.QThread.__init__(self, parent)

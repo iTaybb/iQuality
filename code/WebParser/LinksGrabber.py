@@ -13,7 +13,9 @@ from urlparse import parse_qs, urlparse
 import time
 import itertools
 import re
+
 from bs4 import BeautifulSoup
+import youtube_dl
 
 sys.path.append('..') # for project top-level modules
 from threadpool import ThreadPool
@@ -21,6 +23,28 @@ import Config; config = Config.config
 from logger import log
 from CustomExceptions import YoutubeException
 import utils
+
+@utils.decorators.memoize(config.memoize_timeout)
+@utils.decorators.retry(urllib2.HTTPError, delay=0.3, tries=3, logger=log)
+def get_ydl_extract_info(video_id):
+	ydl = youtube_dl.YoutubeDL({'outtmpl': '%(id)s%(ext)s', 'format': "all", 'logger': log})
+	
+	'''
+	workaround for Issue #1963. 
+	
+	Once it's fixed, we can launch  ydl.add_default_info_extractors(exclude=['GenericIE'])
+	'''
+	for ie in youtube_dl.extractor.gen_extractors():
+		if not ie.__class__.__name__ in ['GenericIE']:
+			ydl.add_info_extractor(ie)
+	
+	# ydl.add_default_info_extractors()
+	
+	try:
+		x = ydl.extract_info(video_id, download=False)
+		return x
+	except youtube_dl.DownloadError:
+		return []
 
 @utils.decorators.retry(Exception, logger=log)
 def parse(title, source, n = None):
@@ -78,7 +102,7 @@ def parse_dilandau(song, maxpages=10):
 			break
 		
 		for link in links:
-			yield utils.classes.MetaUrl(link, 'dilandau')
+			yield utils.cls.MetaUrl(link, 'dilandau')
 
 def parse_Mp3skull(song, maxpages=1):
 	"Function connects to mp3skull.com and returns the .mp3 links in it"
@@ -106,7 +130,7 @@ def parse_Mp3skull(song, maxpages=1):
 			break
 		
 		for link in links:
-			yield utils.classes.MetaUrl(link, 'Mp3skull')
+			yield utils.cls.MetaUrl(link, 'Mp3skull')
 			
 def parse_soundcloud_api1(song, maxpages=1, numTries=2):
 	'''
@@ -146,7 +170,7 @@ def parse_soundcloud_api1(song, maxpages=1, numTries=2):
 			track = link.find_parent('li').find('div', class_="info-header").h3.text
 			# print track
 			
-			yield utils.classes.MetaUrl(url, 'SoundCloud', track)
+			yield utils.cls.MetaUrl(url, 'SoundCloud', track)
 			
 def parse_soundcloud_api2(title):
 	'''
@@ -198,7 +222,7 @@ def get_soundcloud_dl_link(url):
 		
 	data = json.loads(match.group())
 	dl_url = "http://media.soundcloud.com/stream/%s?stream_token=%s" % (data['uid'], data['token'])
-	return utils.classes.MetaUrl(dl_url, 'SoundCloud', data['title'], source_url=url)
+	return utils.cls.MetaUrl(dl_url, 'SoundCloud', data['title'], webpage_url=url)
 
 @utils.decorators.memoize(config.memoize_timeout)
 # @profile
@@ -256,7 +280,7 @@ def get_bandcamp_dl_link(url):
 		dl_link = song['file'].values()[0]
 		title = song['title']
 		
-		return utils.classes.MetaUrl(dl_link, 'bandcamp', title, source_url=url)
+		return utils.cls.MetaUrl(dl_link, 'bandcamp', title, webpage_url=url)
 	
 @utils.decorators.memoize(config.memoize_timeout)
 # @profile
@@ -278,7 +302,7 @@ def get_bandcamp_album_dl_links(url):
 		dl_link = song['file'].values()[0]
 		title = "%s - %s" % (artist_name, song['title'])
 		
-		link = utils.classes.MetaUrl(dl_link, 'bandcamp', title, source_url=url)
+		link = utils.cls.MetaUrl(dl_link, 'bandcamp', title, webpage_url=url)
 		links.append(link)
 	
 	return links
@@ -308,14 +332,14 @@ def parse_Youtube_playlist(playlist_id):
 	@return video_id_list.
 	'''
 	
-	url = 'http://www.youtube.com/playlist?p=%s' % playlist_id
+	url = 'http://www.youtube.com/playlist?list=%s' % playlist_id
 	obj = urllib2.urlopen(url)
 	response = obj.read()
 	
 	videoids = []
 	soup = BeautifulSoup(response)
 	
-	for tag in soup.find_all('a', class_='yt-uix-tile-link yt-uix-sessionlink', href=re.compile('^/watch')):
+	for tag in soup.find_all('a', class_='ux-thumb-wrap yt-uix-sessionlink', href=re.compile('^/watch')):
 		videoids.append(parse_qs(urlparse(tag['href']).query)['v'][0])
 	
 	return videoids
@@ -324,7 +348,7 @@ def parse_Youtube_playlist(playlist_id):
 def search_Youtube(song, amount):
 	'''
 	Function searches a song in youtube.com and returns the video watch-urls in it
-	using Youtube API.
+	using Youtube official API.
 	'''
 	
 	song = urllib2.quote(song.encode("utf8"))
@@ -346,17 +370,20 @@ def get_youtube_dl_link(video_id, q_priority=config.youtube_quality_priority,
 	@return MetaUrlObj: MetaUrl Object.
 	'''
 	
-	data = get_youtube_dl_links_api1(video_id)
-	for q_p in q_priority:
-		for fmt_p in fmt_priority:
-			for stream in data['fmt_stream_map']:
-				itagData = utils.classes.ItagData(stream['itag'])
-				if itagData.quality == q_p and itagData.format == fmt_p:
-					source_url = "http://www.youtube.com/watch?v=%s" % video_id
-					return utils.classes.MetaUrl(stream['url'], 'youtube', data['title'], int(data['length_seconds']), \
-							itagData, video_id, source_url, int(data['view_count']))
-	log.error("No youtube link has been found in get_youtube_dl_link.")
-	# return
+	ydlResult = get_ydl_extract_info(video_id)
+	
+	if not 'entries' in ydlResult:
+		ydlResult['entries'] = [ydlResult.copy()]
+	
+	if 'entries' in ydlResult:
+		for q_p in q_priority:
+			for fmt_p in fmt_priority:
+				for stream in ydlResult['entries']:
+					itagData = utils.cls.ItagData(stream['format_id'])
+					if itagData.quality == q_p and itagData.format == fmt_p:
+						return utils.cls.MetaUrl(stream['url'], 'youtube', stream['title'], int(stream['duration']), \
+								itagData, video_id, stream['webpage_url'], stream['view_count'], stream['description'])
+	return None
 
 @utils.decorators.memoize(config.memoize_timeout)
 @utils.decorators.retry(urllib2.HTTPError, delay=0.3, tries=3, logger=log)
@@ -370,7 +397,7 @@ def get_youtube_dl_links_api1(video_id):
 	
 	Usage example:
 	title: data['title']
-	length_seconds: data['length_seconds']
+	duration: data['duration']
 	videos: data['fmt_stream_map']
 	specific video: data['fmt_stream_map'][0]
 	specific video url: data['fmt_stream_map'][0]['url']
@@ -395,7 +422,7 @@ def get_youtube_dl_links_api1(video_id):
 	urlObj = urllib2.urlopen(req, timeout=8)
 	_data = urlObj.read()
 	data = parse_qs(_data)
-	for k,v in data.items():
+	for k, v in data.items():
 		data[k] = v[0]
 
 	if data['status'] == 'fail':
@@ -406,7 +433,7 @@ def get_youtube_dl_links_api1(video_id):
 	fmt_stream_map = []
 	for fmt in url_encoded_fmt_stream_map:
 		d = parse_qs(fmt)
-		for k,v in d.items():
+		for k, v in d.items():
 			d[k] = v[0]
 		
 		if 'ratebypass' not in d['url']:
@@ -421,7 +448,6 @@ def get_youtube_dl_links_api1(video_id):
 			else:
 				log.warning("Could not find 's' or 'sig' values.")
 				raise YoutubeException(0, "Could not find 's' or 'sig' values")
-				continue
 			d['url'] += "&signature=" + sig
 		try:
 			urllib2.urlopen(d['url'])
@@ -535,16 +561,3 @@ def search(song, n, processes=config.search_processes, returnGen=False):
 	if returnGen:
 		return gen
 	return list(gen)
-	
-if __name__ == '__main__':
-	import time
-	t1 = time.time()
-	
-	o = search('naruto', 15, returnGen=True)
-	for i in range(15):
-		print i+1
-		print repr(o.next())
-		print "\n\n"
-	
-	t2 = time.time()
-	print "took %ss" % (t2-t1)

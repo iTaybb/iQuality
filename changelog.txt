@@ -5,6 +5,20 @@ Below you find a list with the added features, changes and fixes for
 each version.
 
 ======================
+(Version 0.21 beta; 15/12/13)
+- NEW: Youtube parsing has been greatly enhanced. Full support for all videos and audio streams. No need to
+		download the whole video in order to get a specific audio stream.
+- NEW: Can download videos from not only YouTube, but over 150 different services (Vimeo, dailymotion,
+		facebook, Instagram, metacafe and much more, full list can be found at
+		http://rg3.github.io/youtube-dl/supportedsites.html)
+- IMPROVE: Updates CCCP (Video & Audio Codec Pack) to the latest version (2013-10-17).
+- IMPROVE: The graphical user interface was going through some changes.
+- IMPROVE: Improved relevance algorithm accuracy.
+- FIX: Youtube's parser has been fixed.
+- FIX: Glgltz's parser has been fixed.
+- FIX: Google Spellcheck's has been fixed.
+- FIX: Minor bug fixes.
+
 (Version 0.20 beta; 17/09/13)
 - NEW: Auto-updating is added.
 - NEW: If the software was closed while downloading, user will be asked whether he wants to resume the download.

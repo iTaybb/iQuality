@@ -14,8 +14,11 @@ import subprocess
 import traceback
 import time
 import math
+import pprint
 import copy
 import random
+import webbrowser
+from urlparse import urlparse
 import warnings
 
 from PyQt4 import QtCore
@@ -49,7 +52,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.resize(*config.mainWindow_resolution)
 		self.setStyleSheet(config.mainWindow_styleSheet)
 		self.setWindowTitle(config.windowTitle)
-		self.setWindowIcon(QtGui.QIcon(r'pics\pokeball.png'))
+		self.setWindowIcon(QtGui.QIcon(os.path.join('pics', 'pokeball.png')))
 		self.setAcceptDrops(True)
 		             
 		self.artistsObjs = []
@@ -59,6 +62,10 @@ class MainWindow(QtGui.QMainWindow):
 		self.init_threads()
 		self.init_menubar()
 		self.init_widgets()
+		
+		if len(sys.argv) > 1 and sys.argv[1] == '/eskybeta':
+			log.debug('Working in eskybeta mode')
+			config.esky_zipfiles_download_page = "http://iquality.itayb.net/eskybeta"
 		
 		_warnings = Main.sanity_check()
 		for w in _warnings:
@@ -118,7 +125,8 @@ class MainWindow(QtGui.QMainWindow):
 			clipboard = QtGui.QApplication.clipboard()
 			x = unicode(clipboard.text())
 
-			if 'youtube.com' in x.lower() or 'youtu.be' in x.lower() or 'soundcloud.com' in x.lower() or 'bandcamp.com' in x.lower():
+			# if 'youtube.com' in x.lower() or 'youtu.be' in x.lower() or 'soundcloud.com' in x.lower() or 'bandcamp.com' in x.lower():
+			if urlparse(x.lower()).scheme in config.allowd_web_protocols:
 				self.search_lineEdit.setText(x)
 				self.search_slot()
 				
@@ -196,7 +204,7 @@ class MainWindow(QtGui.QMainWindow):
 			self.spellcheck_thread.error.connect(self.error_slot)
 			
 		if 'usersonline_thread' in threads:
-			self.usersonline_thread = GenericThread()
+			self.usersonline_thread = GenericThread(relaunch=config.online_users_check_interval)
 			self.usersonline_thread.output.connect(self.slot_usersonline_done)
 			self.usersonline_thread.error.connect(self.error_slot)	
 			
@@ -434,23 +442,34 @@ class MainWindow(QtGui.QMainWindow):
 		self.table.verticalHeader().setVisible(False)
 		self.table.verticalHeader().setDefaultSectionSize(config.table_DefaultSectionSize)
 		self.table.resizeColumnsToContents()
-		self.table.setStyleSheet(config.table_styleSheet)
+		self.table.setStyleSheet(config.table_styleSheet_rtl if config.lang_rtl[config.lang] else config.table_styleSheet_ltr)
 		self.table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
 		self.table.customContextMenuRequested.connect(self.table_rightclick_popup)
 		self.table.doubleClicked.connect(self.table_doubleClicked_slot)
 		
-		header = [tr('Title'), tr('Artist'), tr('Bitrate'), tr('Video Size (MB)'), 
-					tr('Audio Size (MB)'), tr('Length'), tr('Relevance'), tr('Source'),
-					tr('URL')]
+		if config.hide_url_column:
+			header = [tr('Title'), tr('Artist'), tr('Bitrate'), tr('Video Size (MB)'), 
+						tr('Audio Size (MB)'), tr('Length'), tr('Relevance'), tr('Source')]
+		else:
+			header = [tr('Title'), tr('Artist'), tr('Bitrate'), tr('Video Size (MB)'), 
+						tr('Audio Size (MB)'), tr('Length'), tr('Relevance'), tr('Source'),
+						tr('URL')]
+		
 					
 		self.tableModel = MyTableModel([], header, self)
 		self.table.setModel(self.tableModel)
 		
-		self.table.setColumnWidth(0, 200) # title
-		self.table.setColumnWidth(1, 95) # artist
+		if config.hide_url_column:
+			self.table.setColumnWidth(0, 300) # title
+			self.table.setColumnWidth(1, 170) # artist
+		else:
+			self.table.setColumnWidth(0, 200) # title
+			self.table.setColumnWidth(1, 95) # artist
 		self.table.setColumnWidth(2, 58) # bitrate
 		self.table.setColumnWidth(5, 47) # length
 		self.table.setColumnWidth(7, 75) # source
+		
+		
 	
 		self.listen_button = QtGui.QCommandLinkButton(tr("Listen"))
 		self.listen_button.clicked.connect(self.listen_slot)
@@ -509,7 +528,8 @@ class MainWindow(QtGui.QMainWindow):
 			self.browser.dynamicCall('Navigate(QString&)', QtCore.QVariant(url))
 			self.browser.setFixedHeight(config.browser_height)
 		
-		self.label5 = QtGui.QLabel(tr(u"iQuality v%s beta by Itay Brandes (%s). The software has been launched %s times, and downloaded %s songs.") % (__version__, __date__, format(config.count_application_runs, ',d'), format(config.count_download, ',d')))
+		self.label5_orig_text = tr(u"iQuality v%s beta by Itay Brandes (%s). The software has been launched %s times, and downloaded %s songs.") % (__version__, __date__, format(config.count_application_runs, ',d'), format(config.count_download, ',d'))
+		self.label5 = QtGui.QLabel(self.label5_orig_text)
 		self.usersonline_thread.init(Main.WebParser.WebServices.get_currentusers)
 		
 		# QGridLayout.addWidget (self, QWidget, int row, int column, int rowSpan, int columnSpan, Qt.Alignment alignment = 0)
@@ -567,6 +587,7 @@ class MainWindow(QtGui.QMainWindow):
 		self.search_lineEdit.setCompleter(completer)
 		
 	def slot_spellcheck_done(self, fixed_s, old_s, luckyMode):
+		# from PyQt4 import QtCore; import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
 		if luckyMode:
 			self.search_lineEdit.setText(fixed_s)
 			self.search_slot(spellCheck=False, luckyMode=luckyMode)
@@ -578,8 +599,7 @@ class MainWindow(QtGui.QMainWindow):
 				
 	def slot_usersonline_done(self, users_online_count):
 		if users_online_count:
-			s = unicode(self.label5.text())
-			self.label5.setText(s + tr(" %s user(s) are currently using the software.") % format(users_online_count, ',d'))
+			self.label5.setText(self.label5_orig_text + tr(" %s user(s) are currently using the software.") % format(users_online_count, ',d'))
 		
 	def slot_opendir(self):
 		log.debug('Running explorer "%s"...' % config.dl_dir)
@@ -733,11 +753,11 @@ class MainWindow(QtGui.QMainWindow):
 				pass
 			
 		if songObj.source == "youtube":
-			ans = Main.WebParser.LinksGrabber.get_youtube_dl_link(songObj.youtube_videoid,
+			ans = Main.WebParser.LinksGrabber.get_youtube_dl_link(songObj.videoid,
 													config.youtube_listen_quality_priority,
 													config.youtube_listen_formats_priority)
 			if not ans:
-				QtGui.QMessageBox.critical(self, tr("Error"), tr('Sorry, a preview is not available for this video. You can watch it on <a href="%s">youtube</a>.') % songObj.source_url, QtGui.QMessageBox.Ok)
+				QtGui.QMessageBox.critical(self, tr("Error"), tr('Sorry, a preview is not available for this video. You can watch it on <a href="%s">youtube</a>.') % songObj.webpage_url, QtGui.QMessageBox.Ok)
 				return
 				
 			url = ans.url
@@ -797,18 +817,30 @@ class MainWindow(QtGui.QMainWindow):
 			songObj = [x for x in self.songsObjs if x.url == url][0]
 		self.songObj = copy.deepcopy(songObj)
 		
-		# if downloading audio but not video from youtube, we should always prefer the 720p version, as the audio stream bitrates are equal between 720p and 1080p.
+		# download improvments
 		if self.songObj.source == "youtube" and config.downloadAudio and not config.downloadVideo:
-			priority = config.youtube_quality_priority[:]
-			if self.songObj.video_itag.quality == 'hd1080' and 'hd1080' in priority and 'hd720' in priority:
-				priority.remove('hd1080')
-				metaUrl = Main.WebParser.LinksGrabber.get_youtube_dl_link(self.songObj.youtube_videoid, priority)
+			# if downloading audio but not video from youtube, we should always prefer the 720p version 
+			metaUrl = Main.WebParser.LinksGrabber.get_youtube_dl_link(self.songObj.videoid, config.youtube_audioStream_quality_priority, config.youtube_audioStream_formats_priority)
+			if metaUrl:
 				self.songObj.url = metaUrl.url
 				self.songObj.itag = metaUrl.itag
 				old_filesize = self.songObj.filesize
 				self.songObj.filesize = Main.HTTPQuery.get_filesize(self.songObj.url)
 				
-				log.debug("User downloads audio only from youtube. downloads 720p instead of 1080p (%.2f MB instead of %.2f MB)" % (self.songObj.filesize/1024.0**2, old_filesize/1024.0**2))
+				log.debug("User downloads audio only from youtube. downloads audio-only stream (%.2f MB instead of %.2f MB)" % (self.songObj.filesize/1024.0**2, old_filesize/1024.0**2))
+				
+			else:
+				# if downloading audio but not video from youtube, we should always prefer the 720p version, as the audio stream bitrates are equal between 720p and 1080p.
+				priority = config.youtube_quality_priority[:]
+				if self.songObj.itag.quality == 'hd1080' and 'hd1080' in priority and 'hd720' in priority:
+					priority.remove('hd1080')
+					metaUrl = Main.WebParser.LinksGrabber.get_youtube_dl_link(self.songObj.videoid, priority)
+					self.songObj.url = metaUrl.url
+					self.songObj.itag = metaUrl.itag
+					old_filesize = self.songObj.filesize
+					self.songObj.filesize = Main.HTTPQuery.get_filesize(self.songObj.url)
+					
+					log.debug("User downloads audio only from youtube. downloads 720p instead of 1080p (%.2f MB instead of %.2f MB)" % (self.songObj.filesize/1024.0**2, old_filesize/1024.0**2))
 		
 		# Deleting id3 data, if exists from last songs. IMPROVE: make sure this gets deleted on the end of each download.
 		if hasattr(self, 'ID3TagsToEdit'):
@@ -837,14 +869,14 @@ class MainWindow(QtGui.QMainWindow):
 		# making dest_paths
 		dest_paths = []
 		if not isMultimediaFile:
-			dest_paths.append(r"%s\%s" % (config.dl_dir, self.songObj.GetProperFilename()))
+			dest_paths.append(os.path.join(config.dl_dir, self.songObj.GetProperFilename()))
 		if config.downloadAudio:
-			dest_paths.append(r"%s\%s" % (config.dl_dir, self.songObj.GetProperFilename('mp3')))
-		if config.downloadVideo and self.songObj.source == "youtube":
-			dest_paths.append(r"%s\%s" % (config.dl_dir, self.songObj.GetProperFilename()))
+			dest_paths.append(os.path.join(config.dl_dir, self.songObj.GetProperFilename('mp3')))
+		if config.downloadVideo and self.songObj.itag:
+			dest_paths.append(os.path.join(config.dl_dir, self.songObj.GetProperFilename()))
 		if not dest_paths:
 			log.error("Error: I got nothing to download!")
-			if not self.songObj.source == "youtube" and not config.downloadAudio and config.downloadVideo:
+			if not self.songObj.itag and not config.downloadAudio and config.downloadVideo:
 				# if url is not youtube, however user seeks only video
 				QtGui.QMessageBox.critical(self, tr("Error"), tr("This song has no video available. Please check the audio checkbox, or choose a different song."))
 			else:
@@ -919,12 +951,20 @@ class MainWindow(QtGui.QMainWindow):
 		
 		w = SupportArtistsWindow.MainWin(self.songObj)
 		w.exec_()
+		
+	def developer_dump_slot(self, index):
+		url = str(index.data(QtCore.Qt.UserRole).toString())
+		songObj = [x for x in self.songsObjs if x.url == url][0]
+		
+		utils.open_with_notepad(pprint.pformat(songObj.__dict__))
 			
 	def table_doubleClicked_slot(self, index):
 		if config.table_doubleClick_action == 'listen':
 			self.listen_slot(index)
 		if config.table_doubleClick_action == 'download':
 			self.download_slot(index)
+		if config.table_doubleClick_action == 'developer_dump':
+			self.developer_dump_slot(index)
 		
 	def error_slot(self, e):
 		"Error slot for the error signal"
@@ -1073,15 +1113,15 @@ class MainWindow(QtGui.QMainWindow):
 			if songObj.filesize == songObj.final_filesize:
 				rowData = [songObj.title, songObj.artist, songObj.bitrate/1000, 0,
 							float("%.2f" % (songObj.filesize/1024.0**2)),
-							songObj.mediaLength, songObj.score, songObj.source, songObj.url]
+							songObj.duration, songObj.score, songObj.source, songObj.url]
 			else:
 				rowData = [songObj.title, songObj.artist, songObj.bitrate/1000,
 							float("%.2f" % (songObj.filesize/1024.0**2)),
 							float("%.2f" % (songObj.final_filesize/1024.0**2)),
-							songObj.mediaLength, songObj.score, songObj.source, songObj.url]
+							songObj.duration, songObj.score, songObj.source, songObj.url]
 			self.tableModel.addRow(rowData)
 		elif songObj and not songObj.filesize and songObj.source == 'youtube':
-			log.error("Youtube wasn't parsed correctly (filesize=0). search string: %s, videoid: %s" % (songObj.searchString, songObj.youtube_videoid))
+			log.error("Youtube wasn't parsed correctly (filesize=0). search string: %s, videoid: %s" % (songObj.searchString, songObj.videoid))
 
 	def update_dl_progress_bar(self, i, dlRate, eta, currentBytes, filesize):
 		"updates download progress bar"
@@ -1291,9 +1331,10 @@ class MainWindow(QtGui.QMainWindow):
 		act_dl = menu.addAction(tr("Download"))
 		act_copyurl = menu.addAction(tr("Copy Url"))
 		act_copyname = menu.addAction(tr("Copy Song Name"))
-		if songObj.source_url:
+		if songObj.webpage_url:
 			act_copywatchurl = menu.addAction(tr("Copy Watch Url"))
-		act_copyall = menu.addAction(tr("Copy All Data"))
+			act_openwatchurl = menu.addAction(tr("Open Watch Url"))
+		act_copyall = menu.addAction(tr("Copy Developer Data"))
 		
 		clipboard = QtGui.QApplication.clipboard()
 		action = menu.exec_(self.table.mapToGlobal(pos))
@@ -1309,24 +1350,12 @@ class MainWindow(QtGui.QMainWindow):
 			elif songObj.title:
 				clipboard.setText(songObj.title)
 		if action == act_copyall:
-			s = ""
-			s += "Title: %s\n" % songObj.title
-			s += "Artist: %s\n" % songObj.artist
-			s += "Bitrate: %s\n" % songObj.bitrate
-			if not songObj.source == "youtube":
-				s += "Filename: %s\n" % songObj.filename
-			s += "Source: %s\n" % songObj.source
-			s += "Length (seconds): %s\n" % songObj.mediaLength
-			s += "Score: %s\n" % songObj.score
-			s += "Url: %s\n" % songObj.url
-			s += "Search String: %s" % songObj.searchString
-			if songObj.source_url:
-				s += "\nWatch Url: %s" % songObj.source_url
-			if songObj.youtube_views_count:
-				s += "\nYotube View Counter: %s" % "{:,}".format(songObj.youtube_views_count)
-			clipboard.setText(s)
-		if songObj.source_url and action == act_copywatchurl:
-			clipboard.setText(songObj.source_url)
+			clipboard.setText(pprint.pformat(songObj.__dict__))
+		if songObj.webpage_url:
+			if action == act_copywatchurl:
+				clipboard.setText(songObj.webpage_url)
+			if action == act_openwatchurl:
+				webbrowser.open(songObj.webpage_url)
 	
 	def closeEvent(self, event=None):
 		"Runs when the widget is closed"
@@ -1367,17 +1396,20 @@ class MyTableModel(QtCore.QAbstractTableModel):
 		if role == QtCore.Qt.ForegroundRole:
 			return QtCore.QVariant(QtGui.QBrush(QtGui.QColor(*config.table_foreground_color)))
 			
+		if role == QtCore.Qt.TextAlignmentRole:
+			return QtCore.Qt.AlignCenter
+			
 		if index.column() == 6: # If score column
 			if role == QtCore.Qt.DecorationRole:
 				value = math.ceil(value*2)/2
 				pix_list = []
 				
 				for i in range(int(value)):
-					pix_list.append(QtGui.QPixmap(r'pics\fullstar.png'))
+					pix_list.append(QtGui.QPixmap(os.path.join('pics', 'fullstar.png')))
 				if not value.is_integer():
-					pix_list.append(QtGui.QPixmap(r'pics\halfstar.png'))
+					pix_list.append(QtGui.QPixmap(os.path.join('pics', 'halfstar.png')))
 				for i in range(5-int(math.ceil(value))):
-					pix_list.append(QtGui.QPixmap(r'pics\emptystar.png'))
+					pix_list.append(QtGui.QPixmap(os.path.join('pics', 'emptystar.png')))
 				
 				pix = utils.qt.combine_pixmaps(pix_list)
 				if app.isRightToLeft() and value != 0 and value != 5: # If the app is in RTL mode, we need to reverse the pixmap
@@ -1435,6 +1467,7 @@ if __name__ == '__main__':
 		os.chdir(utils.module_path())
 	logger.start(config)
 	sys.excepthook = Main.my_excepthook
+	sys.stderr = sys.__stderr__ # Here until youtube-dl issue #1963 will be fixed
 	warnings.simplefilter('ignore')
 	
 	# QApp Launch, wrapped in a while loop to allow restarting of the QApp.
@@ -1499,7 +1532,7 @@ if __name__ == '__main__':
 			trans = QtCore.QTranslator()
 			qt_trans = QtCore.QTranslator()
 			
-			qm_path = r'ts\%s.qm' % config.lang
+			qm_path = os.path.join('ts', '%s.qm' % config.lang)
 			if not os.path.exists(qm_path):
 				log.error('QM file was not found: %s' % qm_path)
 				

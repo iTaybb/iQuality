@@ -46,6 +46,7 @@ def test_PyEnviron():
 		import chardet
 		import esky
 		import bsdiff4
+		import youtube_dl
 
 	except ImportError, e:
 		raise Exception("Depencency not found: %s" % str(e))

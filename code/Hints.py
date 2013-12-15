@@ -20,6 +20,7 @@ def get_hint():
 				tr('Did you know? iQuality can download the top charts songs.'),
 				tr('Did you know? iQuality can handle Youtube playlists.'),
 				tr('Did you know? iQuality can trim silence from the audio edges.'),
+				tr('Did you know? iQuality can download videos from over 100 websites.'),
 				tr('Did you know? You can buy music with iQuality.')
 				]
 				
