@@ -124,9 +124,8 @@ class MainWindow(QtGui.QMainWindow):
 		elif config.parse_links_from_clipboard_at_startup:
 			clipboard = QtGui.QApplication.clipboard()
 			x = unicode(clipboard.text())
-
-			# if 'youtube.com' in x.lower() or 'youtu.be' in x.lower() or 'soundcloud.com' in x.lower() or 'bandcamp.com' in x.lower():
-			if urlparse(x.lower()).scheme in config.allowd_web_protocols:
+			
+			if urlparse(x.lower()).scheme in config.allowd_web_protocols and '.' in urlparse(x.lower()).path.split('/')[-1]:
 				self.search_lineEdit.setText(x)
 				self.search_slot()
 				
