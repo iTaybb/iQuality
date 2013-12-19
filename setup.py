@@ -65,8 +65,8 @@ bump_rev = True
 make_installer = True
 update_iss_version = True
 GUI_ONLY = True
-override_app_version = "0.21" # None for no overriding, a new version number for overriding (string)
-override_app_date = '15/12/13' # None for no overriding, a new date for overriding (string)
+override_app_version = "0.211" # None for no overriding, a new version number for overriding (string)
+override_app_date = '19/12/13' # None for no overriding, a new date for overriding (string)
 
 # Sanity checks
 if not os.path.exists(code_dir):

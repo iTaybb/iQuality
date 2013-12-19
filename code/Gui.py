@@ -21,6 +21,7 @@ import webbrowser
 from urlparse import urlparse
 import warnings
 
+import sip; sip.setapi('QString', 2)
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from PyQt4 import QAxContainer
@@ -655,7 +656,7 @@ class MainWindow(QtGui.QMainWindow):
 		if ArtistLookup is None:
 			ArtistLookup = config.artist_lookup
 		isUrl = False
-		song = unicode(self.search_lineEdit.displayText().toUtf8(), "utf-8").strip()
+		song = self.search_lineEdit.displayText().strip()
 			
 		modifiers = QtGui.QApplication.keyboardModifiers()
 		if modifiers == QtCore.Qt.ShiftModifier: # if user pressed shift

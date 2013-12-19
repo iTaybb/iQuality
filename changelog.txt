@@ -5,6 +5,10 @@ Below you find a list with the added features, changes and fixes for
 each version.
 
 ======================
+(Version 0.211 beta; 19/12/13)
+- IMPROVE: Better clipboard links parser
+- FIX: A few fixed regressions.
+
 (Version 0.21 beta; 15/12/13)
 - NEW: Youtube parsing has been greatly enhanced. Full support for all videos and audio streams. No need to
 		download the whole video in order to get a specific audio stream.
