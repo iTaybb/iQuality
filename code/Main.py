@@ -50,6 +50,8 @@ def init():
 		splitted_dirs = config.ext_bin_path.split('\\')
 		config.ext_bin_path = "\\".join(splitted_dirs[:-2]+[splitted_dirs[-1]])
 		
+	log.debug("ext_bin_path: %s" % config.ext_bin_path)
+		
 	if not os.path.exists(config.ext_bin_path):
 		os.makedirs(config.ext_bin_path)
 			

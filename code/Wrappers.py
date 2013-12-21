@@ -6,8 +6,10 @@ import utils
 from logger import log
 import Config; config = Config.config
 
-def FFMpeg(input, output, bitrate, bin_path=os.path.join(config.ext_bin_path, 'ffmpeg.exe'), fmt='mp3'):
+def FFMpeg(input, output, bitrate, bin_path=None, fmt='mp3'):
 	# Yields filesize_counter
+	if not bin_path:
+		bin_path = os.path.join(config.ext_bin_path, 'ffmpeg.exe')
 	cmd = r'%s -y -i "%s" -vn -ac 2 -b:a %s -f %s "%s"' % (bin_path, input, str(bitrate), fmt, output)
 	log.debug("Running '%s'" % cmd)
 	proc = utils.launch_without_console(cmd)
@@ -29,8 +31,11 @@ def FFMpeg(input, output, bitrate, bin_path=os.path.join(config.ext_bin_path, 'f
 		time.sleep(0.1)
 	proc.wait()
 	
-def SoX(input, output, bin_path=os.path.join(config.ext_bin_path, 'sox.exe')):
+def SoX(input, output, bin_path=None):
 	# Yields progress
+	
+	if not bin_path:
+		bin_path = os.path.join(config.ext_bin_path, 'sox.exe')
 	
 	_real_input = input
 	_real_output = output
