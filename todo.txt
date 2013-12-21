@@ -1,3 +1,4 @@
+* issue https://github.com/cloudmatrix/esky/issues/47
 * rtl qtableview fix
 * y-dl global:
 - Issue #1963

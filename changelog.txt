@@ -5,7 +5,7 @@ Below you find a list with the added features, changes and fixes for
 each version.
 
 ======================
-(Version 0.211 beta; 19/12/13)
+(Version 0.211 beta; 21/12/13)
 - IMPROVE: Better clipboard links parser
 - FIX: A few fixed regressions.
 

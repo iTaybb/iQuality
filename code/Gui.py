@@ -126,7 +126,7 @@ class MainWindow(QtGui.QMainWindow):
 			clipboard = QtGui.QApplication.clipboard()
 			x = unicode(clipboard.text())
 			
-			if urlparse(x.lower()).scheme in config.allowd_web_protocols and '.' in urlparse(x.lower()).path.split('/')[-1]:
+			if urlparse(x.lower()).scheme in config.allowd_web_protocols and ('.' in urlparse(x.lower()).path.split('/')[-1] or urlparse(x.lower()).query):
 				self.search_lineEdit.setText(x)
 				self.search_slot()
 				
