@@ -2,6 +2,7 @@ import sys
 import os
 import shutil
 from glob import glob
+import platform
 import pdb
 from zipfile import ZipFile
 
@@ -82,6 +83,13 @@ os.chdir(code_dir)
 sys.path.append(os.path.join(code_dir, "code"))
 sys.path.append(msvcp90_dll_folder)
 
+arch = platform.architecture()[0]
+if arch == '32bit':
+	__arch__ = 'win32'
+elif arch == '64bit':
+	__arch__ = 'amd64'
+else:
+	__arch__ = 'unknown'
 __version__ = str(__import__('Config').__version__)
 __date__ = str(__import__('Config').__date__)
 rev = __import__('Config').__rev__
@@ -150,7 +158,7 @@ setup(
 	version = __version__,
 	description='High Quality Songs Downloader',
 	author='Itay Brandes',
-	author_email='brandes.itay@gmail.com',
+	author_email='brandes.itay+iquality@gmail.com',
 	url='http://iquality.itayb.net/',
 	data_files = py2exe_data_files,
 	# windows = [{"script": os.path.join(code_dir, "code", "Gui.py"),
@@ -164,7 +172,7 @@ setup(
 	classifiers=[
         "Topic :: Multimedia :: Video",
         "Development Status :: 4 - Beta Development",
-        "Environment :: Win32 (MS Windows)",
+        "Environment :: %s (MS Windows)" % __arch__,
         "License :: Free for non-commercial use",
         "Programming Language :: Python :: 2.7"
     ],
@@ -175,9 +183,9 @@ if 'bdist_esky' in sys.argv:
 	do_magic_in_file(r'code\Config.py', "'show_ads':", "True", "False")
 
 	# extract zipfile
-	fn = "iQuality-%s.win32" % __version__
-	zip = ZipFile(r"dist\%s.zip" % fn)
-	zip.extractall(r"dist\%s" % fn)
+	fn = "iQuality-%s.%s" % (__version__, __arch__)
+	zip = ZipFile(os.path.join("dist", "%s.zip" % fn))
+	zip.extractall(os.path.join("dist", fn))
 
 	# fix to esky's proper structure
 	os.makedirs(r"dist\%s\appdata" % fn)
