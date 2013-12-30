@@ -83,6 +83,7 @@ code_dir = r"C:\Scripts\iQuality"
 bump_rev = True
 make_installer = True
 update_iss_version = True
+update_iss_arch_reference = True
 GUI_ONLY = True
 override_app_version = "0.212"  # None for no overriding, a new version number for overriding (string)
 override_app_date = '21/12/13'  # None for no overriding, a new date for overriding (string)
@@ -90,7 +91,7 @@ python_path = os.path.dirname(sys.executable)
 
 # Sanity checks override_app_version = "0.212"
 if not os.path.exists(code_dir):
-    sys.exit(r'Error: %s doesn\'t exist' % code_dir)
+    sys.exit("Error: %s doesn't exist" % code_dir)
 if not os.path.exists(inno_setup_iscc_path):
     sys.exit("Error: inno_setup_iscc_path was not found")
 if not os.path.exists(rar_path):
@@ -125,7 +126,12 @@ if 'bdist_esky' in sys.argv:
             sys.exit("Didn't find MyAppVersion in install.iss file'")
         iis_MyAppVersion = x[0].split()[2].strip('"')
         do_magic_in_file(r'install.iss', "#define MyAppVersion", iis_MyAppVersion, __version__)
-
+    if make_installer and update_iss_arch_reference:
+        x = [x for x in open('install.iss').readlines() if '#define BuildArch' in x]
+        if not x:
+            sys.exit("Didn't find BuildArch in install.iss file'")
+        BuildArch = x[0].split()[2].strip('"')
+        do_magic_in_file(r'install.iss', "#define BuildArch", BuildArch, __arch__)
     new_rev = rev + 1
     if bump_rev:
         do_magic_in_file(r'code\Config.py', "__rev__", str(rev), str(new_rev))

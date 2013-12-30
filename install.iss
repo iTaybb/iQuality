@@ -3,6 +3,7 @@
 #define MyAppPublisher "Itay Brandes"
 #define MyAppURL "http://iQuality.iTayb.net"
 #define MyAppExeName "iQuality.exe"
+#define BuildArch "win32" ; auto-generated
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -38,7 +39,7 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 Name: "{app}"; Permissions: users-modify;
 
 [Files]
-Source: "C:\Scripts\iQuality\dist\iQuality-{#MyAppVersion}.win32\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+Source: "C:\Scripts\iQuality\dist\iQuality-{#MyAppVersion}.{#BuildArch}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 Source: "C:\Scripts\iQuality\agreement.txt"; DestDir: "{app}";
 Source: "C:\Scripts\iQuality\ChangeLog.txt"; DestDir: "{app}";
 Source: "C:\Scripts\iQuality\README.md"; DestDir: "{app}"; DestName: README.txt;
