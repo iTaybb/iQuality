@@ -107,7 +107,7 @@ arch = platform.architecture()[0]
 if arch == '32bit':
     __arch__ = 'win32'
 elif arch == '64bit':
-    # Fix the install.iss file
+    # Fix the 64 bit problem
     __arch__ = 'win-amd64'
 else:
     __arch__ = 'unknown'
