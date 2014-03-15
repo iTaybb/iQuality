@@ -32,7 +32,7 @@ def get_ydl_extract_info(video_id):
 	'''
 	workaround for Issue #1963. 
 	
-	Once it's fixed, we can launch  ydl.add_default_info_extractors(exclude=['GenericIE'])
+	Once it's fixed, we can launch ydl.add_default_info_extractors(exclude=['GenericIE'])
 	'''
 	for ie in youtube_dl.extractor.gen_extractors():
 		if not ie.__class__.__name__ in ['GenericIE']:
@@ -369,20 +369,20 @@ def get_youtube_dl_link(video_id, q_priority=config.youtube_quality_priority,
 	
 	@return MetaUrlObj: MetaUrl Object.
 	'''
-	
+	# from PyQt4 import QtCore; import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
 	ydlResult = get_ydl_extract_info(video_id)
 	
-	if not 'entries' in ydlResult:
-		ydlResult['entries'] = [ydlResult.copy()]
+	if not 'formats' in ydlResult:
+		ydlResult['formats'] = [ydlResult.copy()]
 	
-	if 'entries' in ydlResult:
+	if 'formats' in ydlResult:
 		for q_p in q_priority:
 			for fmt_p in fmt_priority:
-				for stream in ydlResult['entries']:
+				for stream in ydlResult['formats']:
 					itagData = utils.cls.ItagData(stream['format_id'])
 					if itagData.quality == q_p and itagData.format == fmt_p:
-						return utils.cls.MetaUrl(stream['url'], 'youtube', stream['title'], int(stream['duration']), \
-								itagData, video_id, stream['webpage_url'], stream['view_count'], stream['description'])
+						return utils.cls.MetaUrl(stream['url'], 'youtube', ydlResult['title'], int(ydlResult['duration']), \
+								itagData, video_id, ydlResult['webpage_url'], ydlResult['view_count'], ydlResult['description'])
 	return None
 
 @utils.decorators.memoize(config.memoize_timeout)

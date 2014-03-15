@@ -37,9 +37,9 @@ import threading
 
 from win32com.shell import shell, shellcon
 
-__version__ = "0.212" # auto-generated
-__rev__ = 256 # auto-generated
-__date__ = '21/12/13' # auto-generated
+__version__ = "0.213" # auto-generated
+__rev__ = 258 # auto-generated
+__date__ = '15/03/14' # auto-generated
 __author__ = 'Itay Brandes (brandes.itay@gmail.com)'
 
 class ConfigInterface(object):
@@ -223,7 +223,7 @@ except NameError: # if not already initialized
 		'youtube_audioStream_quality_priority': ['high', 'medium', 'low'],
 		'youtube_audioStream_formats_priority': ['m4a'],
 		'youtube_listen_quality_priority': ['medium', 'large', 'small'],
-		'youtube_listen_formats_priority': ['flv'],
+		'youtube_listen_formats_priority': ['mp4', 'flv'],
 		'itag_audio_bitrates': {'hd1080': 192000, 'hd720': 192000, 'high': 192000, 'large': 128000, 
 								'medium': 128000, 'low': 128000, 'small': 96000, 'unknown': 128000},
 		# call keys() to get the available sources list. query each value for it's state. True means Enabled, False means Disabled.

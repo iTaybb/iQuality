@@ -185,11 +185,11 @@ class SearchThread(QtCore.QThread):
 				# from PyQt4 import QtCore; import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
 				
 				if ydlResult:
-					if not ydlResult.has_key('entries'):
-						ydlResult['entries'] = [ydlResult]
+					if not ydlResult.has_key('formats'):
+						ydlResult['formats'] = [ydlResult]
 					elif ydlResult.has_key('url'):
-						ydlResult['entries'] = [ydlResult]
-					for entry in ydlResult['entries']:
+						ydlResult['formats'] = [ydlResult]
+					for entry in ydlResult['formats']:
 						metaUrlObj = utils.cls.MetaUrl(	entry['url'],
 														entry['extractor'],
 														itag=utils.cls.ItagData(0, entry['ext'], entry.get('height', entry['format_id'])),

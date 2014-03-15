@@ -128,9 +128,15 @@ def google_autocomplete(s):
 	url = "http://suggestqueries.google.com/complete/search?client=firefox&q=%s" % urllib2.quote(s.encode("utf8"))
 	obj = urllib2.urlopen(url, timeout=config.webservices_timeout)
 	response = obj.read()
-	data = json.loads(response)
+	data = json.loads(response)[1]
 	
-	return data[1]
+	BLACKLIST_WORDS = ['twitter', 'lyrics', 'tickets', 'facebook', 'retire', 'youtube', 'wiki', 'news', 'instagram', 'tattoos',
+						u'ליריקה', u'מילים לשירים']
+	
+	data = [x for x in data if not any(map(x.endswith, BLACKLIST_WORDS))]
+	# print data
+	
+	return data
 
 @utils.decorators.retry(Exception, logger=log)
 @utils.decorators.memoize(config.memoize_timeout)
@@ -196,6 +202,7 @@ def parse_uktop40():
 def parse_glgltz():
 	"Parses the top songs from glgltz"
 	url = 'http://www.glgltz.co.il/1177-he/Galgalatz.aspx'
+	log.debug('Fetching %s...' % url)
 	obj = urllib2.urlopen(url, timeout=config.webservices_timeout)
 	response = obj.read()
 	soup = BeautifulSoup(response)
@@ -205,6 +212,7 @@ def parse_glgltz():
 	catid = [x['catid'] for x in tags if u"המצעד הישראלי" in x.text][0]
 
 	url = 'http://www.glgltz.co.il/Shared/Ajax/GetTophitsByCategory.aspx?FolderId=%s&amp;lang=he' % catid
+	log.debug('Fetching %s...' % url)
 	obj = urllib2.urlopen(url)
 	response = obj.read()
 
@@ -212,10 +220,18 @@ def parse_glgltz():
 	soup = BeautifulSoup(response)
 
 	for tag in soup.find_all('div', class_='hit'):
-		title = tag.h4.text
-		artist = tag.span.text
-		songs.append("%s - %s" % (artist, title))
-	
+		title = tag.h4.text if tag.h4 else None
+		artist = tag.span.text if tag.span else None
+		
+		if artist and title:
+			songs.append("%s - %s" % (artist, title))
+		elif artist:
+			songs.append(artist)
+		elif title:
+			songs.append(title)
+		else:
+			raise RuntimeError("Could not parse glgltz hits")
+
 	return songs
 	
 @utils.decorators.retry(Exception, logger=log)

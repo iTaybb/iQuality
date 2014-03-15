@@ -85,8 +85,8 @@ make_installer = True
 update_iss_version = True
 update_iss_arch_reference = True
 GUI_ONLY = True
-override_app_version = "0.212"  # None for no overriding, a new version number for overriding (string)
-override_app_date = '21/12/13'  # None for no overriding, a new date for overriding (string)
+override_app_version = "0.213"  # None for no overriding, a new version number for overriding (string)
+override_app_date = '15/03/14'  # None for no overriding, a new date for overriding (string)
 python_path = os.path.dirname(sys.executable)
 
 # Sanity checks override_app_version = "0.212"

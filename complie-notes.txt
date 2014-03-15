@@ -32,4 +32,4 @@ Dependencies:
 2. For now, path must be C:\Scripts\iQuality.
 3. inno setup installed in 'C:\Program Files\Inno Setup 5\iscc.exe' or 'C:\Program Files (x86)\Inno Setup 5\iscc.exe'
 4. winrar file installed in 'C:\Program Files\WinRAR\WinRar.exe' or 'C:\Program Files (x86)\WinRAR\WinRar.exe'
-5. Run setup.py (with py2exe, bdist_esky or bdist_esky_patch)
+5. Run setup.py (with bdist_esky or bdist_esky_patch)

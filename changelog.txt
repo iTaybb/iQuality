@@ -5,6 +5,12 @@ Below you find a list with the added features, changes and fixes for
 each version.
 
 ======================
+(Version 0.213 beta; 15/03/14)
+- IMPROVE: youtube-dl's library got updated to version 2014.03.12.
+- IMPROVE: Improved autocomplete feature to be more relevant.
+- FIX: Youtube's listen audio streams parser has been fixed.
+- FIX: Glgltz's parser has been fixed.
+
 (Version 0.212 beta; 21/12/13)
 - IMPROVE: Better clipboard links parser
 - FIX: A few fixed regressions.

@@ -23,7 +23,7 @@ class ItagData(object):
 	In our software, is it used to specify video metadatas, not just youtube's.
 	
 	Data members are itag, format, quality, bitrate.
-	Updates up to 17/11/13.
+	Updates up to 15/03/14.
 	'''
 	def __init__(self, itag=0, format="", res="", quality=""):
 		self.itag = int(itag) # itag 0 is a custom itag
@@ -51,21 +51,23 @@ class ItagData(object):
 			return '3gp'
 		if self.itag in [18, 22, 37, 38, 82, 83, 84, 85]:
 			return 'mp4'
-		if self.itag in [133, 134, 135, 136, 137, 160]:
+		if self.itag in [133, 134, 135, 136, 137, 160, 264]:
 			return 'm4v'
 		if self.itag in [139, 140, 141]:
 			return 'm4a'
 		if self.itag in [43, 44, 45, 46, 100, 101, 102]:
 			return 'webm'
+		if self.itag in [171, 172]:
+			return 'webm-audio'
 		return 'unknown'
 	
 	def getQuality(self):
-		if self.format == 'm4a':
-			if self.itag == 139:
+		if self.format in ['m4a', 'webm-audio']:
+			if self.itag in [139]:
 				return 'low'
-			elif self.itag == 140:
+			elif self.itag in [140]:
 				return 'medium'
-			elif self.itag == 141:
+			elif self.itag in [141, 171, 172]:
 				return 'high'
 			return 'unknown'
 			
@@ -106,6 +108,8 @@ class ItagData(object):
 			return 240
 		if self.itag in [17, 160]:
 			return 144
+		if self.itag in [264]:
+			return 1440
 		if self.itag in [37, 46, 137]:
 			return 1080
 		return 'unknown'
