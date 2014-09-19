@@ -1,5 +1,5 @@
 # coding: utf-8
-# Copyright (C) 2012-2013 Itay Brandes
+# Copyright (C) 2012-2014 Itay Brandes
 
 '''
 Project-wide classes go here
@@ -10,10 +10,40 @@ from difflib import SequenceMatcher
 import urllib
 import urlparse
 import re
+import time
 
 # sys.path.append('..') # for project top-level modules
 from logger import log2 as log
 import core
+
+class DownloadTask(object):
+	'''
+	Download task data type.
+	Possible values for dl_status:
+		- ready
+		- downloading
+		- done
+	Possible values for id3_status:
+		- ready
+		- waiting_for_user_input
+		- done
+	'''
+	def __init__(self, _id, songObj):
+		self.id = _id
+		self.songObj = songObj
+		self.dl_status = 'waiting'
+		self.dl_time = -1
+		self.dl_encode_time = -1
+		self.id3_status = 'waiting'
+		self.ID3TagsToEdit = {}
+		self.reportedToUser = False
+		
+	def isDownloadDone(self):
+		return self.dl_status == 'done'
+	def isID3Done(self):
+		return self.id3_status == 'done'
+	def isDone(self):
+		return self.isDownloadDone() and self.isID3Done()
 
 class ItagData(object):
 	'''
@@ -273,6 +303,9 @@ class Song(object):
 		fn = os.path.normpath(fn)
 		return fn
 		
+	def GetProperName(self, ext=None):
+		return ".".join(self.GetProperFilename().split('.')[:-1])
+	
 	def calcFinalFilesize(self):
 		if self.itag:
 			return self.bitrate/8.0 * self.duration
@@ -354,22 +387,26 @@ class Song(object):
 		forbidden_words_in_artist = forbidden_words + ['dj']
 		forbidden_words_in_title = forbidden_words + ['mix']
 		forbidden_words_in_description = forbidden_words
+		forbidden_words_total = list(set(forbidden_words+forbidden_words_in_artist+forbidden_words_in_title+forbidden_words_in_description))
+		
+		searchString_contains_forbidden_words = any([word.lower().strip('[]()') in forbidden_words_total for word in self.searchString.split(' ')])
+		log.debug('searchString_contains_forbidden_words: %s' % searchString_contains_forbidden_words)
 				
 		if self.artist:
 			for word in forbidden_words_in_artist:
-				if word in self.artist.lower() and not word in self.searchString:
+				if word in self.artist.lower() and not searchString_contains_forbidden_words:
 					log.debug('%s is in artist, not in search string: -1.5' % word)
 					score -= 1.5
 					break		
 		if self.title:
 			for word in forbidden_words_in_title:
-				if word in self.title.lower() and not word in self.searchString:
+				if word in self.title.lower() and not searchString_contains_forbidden_words:
 					log.debug('%s is in title, not in search string: -1.5' % word)
 					score -= 1.5
 					break
 		if self.description:
 			for word in forbidden_words_in_description:
-				if word in self.description.lower() and not word in self.searchString:
+				if word in self.description.lower() and not searchString_contains_forbidden_words:
 					log.debug('%s is in description, not in search string: -1' % word)
 					score -= 1.0
 					break

@@ -1,3 +1,4 @@
+* downloads table pass pass pass
 * issue https://github.com/cloudmatrix/esky/issues/47
 * rtl qtableview fix
 * y-dl global:
@@ -6,7 +7,6 @@
 * soundcloud broken
 
 * use configObj?
-
 * faster response when website is down
 * pySmartDL
 * move to urllib3

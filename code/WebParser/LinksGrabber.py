@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2013 Itay Brandes
+# Copyright (C) 2012-2014 Itay Brandes
 
 '''
 Module for Mp3 links grabbing.
@@ -43,7 +43,7 @@ def get_ydl_extract_info(video_id):
 	try:
 		x = ydl.extract_info(video_id, download=False)
 		return x
-	except youtube_dl.DownloadError:
+	except youtube_dl.DownloadError, e:
 		return []
 
 @utils.decorators.retry(Exception, logger=log)
@@ -51,14 +51,16 @@ def parse(title, source, n = None):
 	'''
 	Function parses the source search page and returns the .mp3 links in it.
 	@param title: Search string.
-	@param source: Search website source. Value can be dilandau, mp3skull, youtube, seekasong.
+	@param source: Search website source. Value can be mp3soup, musicaddict, mp3skull, youtube, soundcloud, bandcamp.
 	
 	@return links: .mp3 url links generator.
 	'''
 	
 	source = source.lower()
-	if source == "dilandau":
-		gen = parse_dilandau(title)
+	if source == "mp3soup":
+		gen = parse_mp3soup(title)
+	elif source == 'musicaddict':
+		gen = parse_MusicAddict(title)
 	elif source == "mp3skull":
 		gen = parse_Mp3skull(title)
 	elif source == "soundcloud":
@@ -68,42 +70,83 @@ def parse(title, source, n = None):
 	elif source == "youtube":
 		gen = parse_Youtube(title)
 	else:
-		log.error('no source "%s". (from parse function in WebParser)' % source)
+		log.error('WebParser.parse: source "%s" not found.' % source)
 		gen = (x for x in []) # empty generator
 	if n:
 		gen = itertools.islice(gen, n)
 	return gen
 
-def parse_dilandau(song, maxpages=10):
-	"Function connects to Dilandau.eu and returns the .mp3 links in it"
-	if not utils.isAscii(song): # Dilandau doesn't like unicode.
-		log.warning("[Dilandau] Song is not ASCII. Skipping...")
+def parse_mp3soup(song, maxpages=1):
+	"Function connects to mp3soup.net and returns the .mp3 links in it"
+	if not utils.isAscii(song): # mp3soup doesn't like unicode.
+		log.warning("[mp3soup] Song is not ASCII. Skipping...")
 		return
 	
+	song = song.replace(' ','-').replace('--','-').lower()
 	song = urllib2.quote(song.encode("utf8"))
 	
 	for i in range(maxpages):
-		# http://en.dilandau.eu/download-mp3/call-me-maybe-1.html
-		url = 'http://en.dilandau.eu/download-mp3/%s-%d.html' % (song.replace('-','').replace(' ','-').replace('--','-').lower(), i+1)
-		log.debug("[Dilandau] Parsing %s... " % url)
+		# http://mp3soup.net/mp3/naruto-shippuden
+		url = 'http://mp3soup.net/mp3/%s' % song
+		log.debug("[mp3soup] Parsing %s... " % url)
 		obj = urllib2.urlopen(url)
 		response = obj.read()
 		
 		links = []
 		soup = BeautifulSoup(response)
 		
-		for link in soup.find_all('a', url=re.compile(r'\.mp3$')):
-			url = link['href'] + link['url'] # dont ask me why. dilandabu decided to split their url addresses.
-			links.append(url)
+		for link in soup.find_all('a', href=re.compile(r'\.mp3$')):
+			links.append(link['href'])
 		
-		log.debug("[Dilandau] found %d links" % len(links))
+		log.debug("[mp3soup] found %d links" % len(links))
 		
 		if not links:
 			break
 		
 		for link in links:
-			yield utils.cls.MetaUrl(link, 'dilandau')
+			yield utils.cls.MetaUrl(link, 'mp3soup')
+			
+def parse_MusicAddict(song, maxpages=10):
+	"Function connects to MusicAddict.com and returns the .mp3 links in it"
+	if utils.isHebrew(song): # Dilandau doesn't have hebrew
+		log.warning("[MusicAddict] source has no hebrew songs. Skipping...")
+		return
+		
+	song = urllib2.quote(song.encode("utf8"))
+	
+	for i in range(maxpages):
+		# http://www.musicaddict.com/mp3/naruto-shippuden/page-1.html
+		url = 'http://www.musicaddict.com/mp3/%s/page-%d.html' % (song.replace('-','').replace('_','').replace(' ','-').lower(), i)
+		log.debug("[MusicAddict] Parsing %s... " % url)
+		obj = urllib2.urlopen(url)
+		response = obj.read()
 
+		DOMAIN = 'http://www.musicaddict.com/'
+		t_links = []
+		links = []
+		soup = BeautifulSoup(response)
+
+		for span in soup.find_all('span', class_='dl_link'):
+			url = DOMAIN + span.a['href']
+			t_links.append(url)
+			
+		for link in t_links:
+			obj = urllib2.urlopen(link)
+			response = obj.read()
+			soup = BeautifulSoup(response)
+			js = soup.find('script', src=re.compile(r"js3/\d+.js"))
+			jsUrl = DOMAIN + js['src']
+			
+			obj = urllib2.urlopen(jsUrl)
+			response = obj.read()
+			url = re.search('src="(.+?)"', response).group(1)
+			links.append(url)
+			
+			yield utils.cls.MetaUrl(url, 'MusicAddict')
+
+		if not links:
+			break
+		
 def parse_Mp3skull(song, maxpages=1):
 	"Function connects to mp3skull.com and returns the .mp3 links in it"
 	if utils.isHebrew(song): # Dilandau doesn't have hebrew
@@ -321,7 +364,9 @@ def parse_Youtube(song, amount=10):
 	videoids = [parse_qs(urlparse(watchurl).query)['v'][0] for watchurl in videos]
 	
 	for videoid in videoids:
-		yield get_youtube_dl_link(videoid)
+		x = get_youtube_dl_link(videoid)
+		if x:
+			yield x
 		
 def parse_Youtube_playlist(playlist_id):
 	'''
@@ -331,18 +376,20 @@ def parse_Youtube_playlist(playlist_id):
 	
 	@return video_id_list.
 	'''
-	
-	url = 'http://www.youtube.com/playlist?list=%s' % playlist_id
+	if playlist_id.upper().startswith('RD'):
+		url = 'http://www.youtube.com/watch?v=%s&list=%s' % (playlist_id[-11:], playlist_id)
+	else:
+		url = 'http://www.youtube.com/playlist?list=%s' % playlist_id
 	obj = urllib2.urlopen(url)
 	response = obj.read()
 	
 	videoids = []
 	soup = BeautifulSoup(response)
 	
-	for tag in soup.find_all('a', class_='ux-thumb-wrap yt-uix-sessionlink', href=re.compile('^/watch')):
+	for tag in soup.find_all('a', class_='yt-uix-sessionlink', href=re.compile('^/watch')):
 		videoids.append(parse_qs(urlparse(tag['href']).query)['v'][0])
 	
-	return videoids
+	return list(set(videoids))
 
 @utils.decorators.memoize(config.memoize_timeout)
 def search_Youtube(song, amount):
@@ -369,8 +416,10 @@ def get_youtube_dl_link(video_id, q_priority=config.youtube_quality_priority,
 	
 	@return MetaUrlObj: MetaUrl Object.
 	'''
-	# from PyQt4 import QtCore; import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
 	ydlResult = get_ydl_extract_info(video_id)
+	
+	if not ydlResult:
+		return []
 	
 	if not 'formats' in ydlResult:
 		ydlResult['formats'] = [ydlResult.copy()]
@@ -457,7 +506,6 @@ def get_youtube_dl_links_api1(video_id):
 				log.warning("Couldn't parse vid %s, itag %s, secret_length: %s, decryp_length: %s" % (video_id, d['itag'], len(d['s']), len(sig)))
 				# raise YoutubeException(-100, "Could not decipher video's secret signature")
 			continue
-			# import pdb; pdb.set_trace()
 			
 		fmt_stream_map.append(d)
 	data['fmt_stream_map'] = fmt_stream_map

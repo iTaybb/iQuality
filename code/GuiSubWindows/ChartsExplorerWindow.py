@@ -1,7 +1,8 @@
-# Copyright (C) 2012-2013 Itay Brandes 
+# Copyright (C) 2012-2014 Itay Brandes 
 
 ''' Charts Explorer Window '''
 
+import os.path
 from collections import OrderedDict
 
 from PyQt4 import QtCore
@@ -9,7 +10,7 @@ from PyQt4 import QtGui
 
 import Config; config = Config.config
 from logger import log
-from Gui_Threads import ChartsLookupThread
+from GuiThreads import ChartsLookupThread
 import WebParser.WebServices
 import utils
 tr = utils.qt.tr
@@ -20,7 +21,7 @@ class MainWin(QtGui.QDialog):
 
 		self.setWindowTitle(tr("Charts Explorer"))
 		self.resize(525, 350)
-		self.setWindowIcon(QtGui.QIcon(r'pics\charts.png'))
+		self.setWindowIcon(QtGui.QIcon(os.path.join('pics', 'charts.png')))
 		
 		self.charts = {
 						'English': OrderedDict({
@@ -112,8 +113,8 @@ class MainWin(QtGui.QDialog):
 		for i, track in enumerate(tracks):
 			self.addTrack(item, "%d. %s" % (i+1, track), 'track:%s' % track)
 			
-	def slot_error(self, s, item):
-		QtGui.QMessageBox.warning(self, tr("Error"), "<h2>%s</h2>" % s, QtGui.QMessageBox.Ok)
+	def slot_error(self, reason, item):
+		QtGui.QMessageBox.warning(self, tr("Error"), "<h2>%s</h2>" % reason, QtGui.QMessageBox.Ok)
 		
 		item.takeChildren()
 		blankItem = QtGui.QTreeWidgetItem(item, [tr('No tracks available.')])

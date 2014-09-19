@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2013 Itay Brandes 
+# Copyright (C) 2012-2014 Itay Brandes 
 
 ''' Support The Artists Window '''
 

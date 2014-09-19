@@ -17,18 +17,41 @@ import bs4.element
 sys.path.append(r'C:\Scripts\iQuality\code')
 import utils
 
-if True:
-	# http://soundcloud.com/tracks/search?page=1&q%5Bfulltext%5D=naruto
-	title = "Naruto"
-	domain = "soundcloud.com"
-	url = 'http://soundcloud.com/tracks/search?page=1&q%%5Bfulltext%%5D=%s' % title
-	# log.debug("[SoundCloud] Parsing %s... " % url)
-	obj = urllib2.urlopen(url)
+i = 1
+song = "naruto shippuden"
+
+# http://www.musicaddict.com/mp3/naruto-shippuden/page-2.html
+url = 'http://www.musicaddict.com/mp3/%s/page-%d.html' % (song.replace('-','').replace('_','').replace(' ','-').lower(), i)
+# log.debug("[MusicAddict] Parsing %s... " % url)
+obj = urllib2.urlopen(url)
+response = obj.read()
+
+DOMAIN = 'http://www.musicaddict.com/'
+t_links = []
+links = []
+soup = BeautifulSoup(response)
+
+for span in soup.find_all('span', class_='dl_link'):
+	url = DOMAIN + span.a['href']
+	t_links.append(url)
+	
+for link in t_links:
+	obj = urllib2.urlopen(link)
 	response = obj.read()
 	soup = BeautifulSoup(response)
+	js = soup.find('script', src=re.compile(r"js3/\d+.js"))
+	jsUrl = DOMAIN + js['src']
 	
-	pdb.set_trace()
+	obj = urllib2.urlopen(jsUrl)
+	response = obj.read()
+	url = re.search('src="(.+?)"', response).group(1)
+	print url
+	links.append(url)
 	
-	regex = re.compile("^/(?!(?:you|pages|premium|login|people|groups|tracks|tags)/)[^/]+/(?!.+(?:sets/|/share-options|/download))[^?]+$")
-	tags = soup.find_all('a', href=regex)
-	links = ["http://%s%s" % (domain, tag['href']) for tag in tags]
+# log.debug("[MusicAddict] found %d links" % len(links))
+
+# if not links:
+	# break
+
+# for link in links:
+	# yield utils.cls.MetaUrl(link, 'MusicAddict')

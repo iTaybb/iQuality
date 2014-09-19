@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2013 Itay Brandes
+# Copyright (C) 2012-2014 Itay Brandes
 
 '''The hints module of the project.'''
 
@@ -21,7 +21,8 @@ def get_hint():
 				tr('Did you know? iQuality can handle Youtube playlists.'),
 				tr('Did you know? iQuality can trim silence from the audio edges.'),
 				tr('Did you know? iQuality can download videos from over 100 websites.'),
-				tr('Did you know? You can buy music with iQuality.')
+				tr('Did you know? You can download batches of files simultaneity.'),
+				tr('Did you know? You can buy music with iQuality.'),
 				]
 				
 	i = random.randint(0, len(hints)-1)

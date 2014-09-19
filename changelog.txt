@@ -5,6 +5,27 @@ Below you find a list with the added features, changes and fixes for
 each version.
 
 ======================
+(Version 0.222 beta; 15/09/14)
+- IMPROVE: youtube-dl's library got updated to version 2014.09.19.
+- IMPROVE: PyQt's library got updated to version 4.11.2.
+- FIX: Minor bug with international languages.
+- FIX: CCCP Codec Pack installation got broken.
+
+(Version 0.22 beta; 08/08/14)
+- NEW: Multi-download support.
+- NEW: Dilandau media source got removed. mp3soup.net and musicaddict.com were added.
+- IMPROVE: The smart downloader module got rewritten.
+- IMPROVE: youtube-dl's library got updated from v2014.03.12 to v2014.08.05.
+- IMPROVE: PyQt's library got updated to version 4.11.1 (Qt 4.8.6)
+- IMPROVE: Core python was updates from 2.7.5 to 2.7.8.
+- IMPROVE: Updates CCCP (Video & Audio Codec Pack) to the latest version (2014-03-09).
+- IMPROVE: Improved relevance algorithm accuracy.
+- FIX: Youtube's playlist parser got fixed.
+- FIX: OnlyLyrics's parser got fixed.
+- FIX: Empty spell suggestions.
+- FIX: Suppressing errors regarding users online counter updater.
+- FIX: Minor bug fixes.
+
 (Version 0.213 beta; 15/03/14)
 - IMPROVE: youtube-dl's library got updated to version 2014.03.12.
 - IMPROVE: Improved autocomplete feature to be more relevant.

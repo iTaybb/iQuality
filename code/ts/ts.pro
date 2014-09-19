@@ -1,5 +1,5 @@
  SOURCES         = ..\Gui.py \
-				   ..\Gui_Threads.py \
+				   ..\GuiThreads.py \
 				   ..\config.py \
 				   ..\Hints.py \
                    ..\GuiSubWindows\ID3Window.py \

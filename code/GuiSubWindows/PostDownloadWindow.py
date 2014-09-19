@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2013 Itay Brandes 
+# Copyright (C) 2012-2014 Itay Brandes 
 
 ''' Post-Download Tasks Window '''
 
@@ -6,6 +6,7 @@ import os.path
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
+import pySmartDL
 
 import Config; config = Config.config
 from logger import log
@@ -13,18 +14,18 @@ import utils
 tr = utils.qt.tr
 
 class MainWin(QtGui.QDialog):
-	def __init__(self, songObj, dl_dir="", parent=None):
+	def __init__(self, tasks, parent=None):
 		super(MainWin, self).__init__(parent)
 		
-		self.songObj = songObj
+		self.tasks = tasks
+		self.songObj = tasks[0].songObj
 		
-		self.dl_dir = dl_dir if dl_dir else config.dl_dir
-		
+		self.dl_dir =  config.dl_dir
 		self.setWindowTitle(tr("Post Download Window"))
-		self.setWindowIcon(QtGui.QIcon(r'pics\kmix.png'))
+		self.setWindowIcon(QtGui.QIcon(os.path.join('pics', 'kmix.png')))
 		
-		self.video_path = r"%s\%s" % (self.dl_dir, self.songObj.GetProperFilename())
-		self.audio_path = r"%s\%s" % (self.dl_dir, self.songObj.GetProperFilename('mp3'))
+		self.video_path = os.path.join(self.dl_dir, self.songObj.GetProperFilename())
+		self.audio_path = os.path.join(self.dl_dir, self.songObj.GetProperFilename('mp3'))
 		
 		self.isAudio = config.downloadAudio and os.path.exists(self.audio_path)
 		self.isVideo = self.video_path != self.audio_path and config.downloadVideo \
@@ -46,11 +47,25 @@ class MainWin(QtGui.QDialog):
 		# Layouts
 		mainLayout = QtGui.QGridLayout()
 		
-		pixmap = QtGui.QPixmap(r'pics\kmix.png').scaled(130, 130, transformMode=QtCore.Qt.SmoothTransformation)
+		pixmap = QtGui.QPixmap(os.path.join('pics', 'kmix.png')).scaled(130, 130, transformMode=QtCore.Qt.SmoothTransformation)
 		self.pix = QtGui.QLabel()
 		self.pix.setPixmap(pixmap)
 		
-		self.label1 = QtGui.QLabel(tr('The file(s) has been downloaded successfully.\nWhat do you wish to do?'))
+		total_time = sum([task.dl_time+task.dl_encode_time for task in self.tasks])
+		total_dl_time = sum([task.dl_time for task in self.tasks])
+		total_size = sum([task.songObj.filesize for task in self.tasks])
+		
+		s = ""
+		s += tr('The following file(s) have been downloaded successfully:<br />')
+		for i, task in enumerate(self.tasks):
+			s += '<font color="purple"><b>%s</b></font><br />' % task.songObj.GetProperName()
+			if i >= 2:
+				s += tr("(and %d more files)<br />") % (len(self.tasks)-3)
+				break
+		
+		s += tr('Total Filesize is %s. Downloaded within %s.<br /><br />What do you wish to do?') % (pySmartDL.utils.sizeof_human(total_size), tr(pySmartDL.utils.time_human(total_time), split_tr=True))
+		
+		self.label1 = QtGui.QLabel(s)
 		self.label2 = QtGui.QLabel()
 		button_runAudio = QtGui.QPushButton(QtGui.QIcon(r'pics\play_audio.png'), tr('Play Audio'))
 		button_runAudio.clicked.connect(self.slot_audio)
@@ -82,12 +97,12 @@ class MainWin(QtGui.QDialog):
 		
 		# Decide which buttons we can show on the screen
 		buttons = []
-		if self.isAudio:
+		if len(self.tasks) == 1 and self.isAudio:
 			buttons.append(button_runAudio)
-		if self.isVideo:
+		if len(self.tasks) == 1 and self.isVideo:
 			buttons.append(button_runVideo)
 		buttons.append(button_runDirectory)
-		if self.isAudio:
+		if len(self.tasks) == 1 and self.isAudio:
 				buttons.append(button_addItunes)
 				buttons.append(button_addPlaylist)
 		buttons.append(button_close)
@@ -138,7 +153,7 @@ class MainWin(QtGui.QDialog):
 		elif self.video_path != self.audio_path and config.downloadVideo and os.path.exists(self.video_path):
 			log.debug("Running explorer with %s selected..." % self.video_path)
 			utils.launch_file_explorer(self.video_path)
-		else: # doesnt suppose to happen
+		else: # doesn't suppose to happen
 			log.debug('Running explorer "%s"...' % config.dl_dir)
 			os.startfile(config.dl_dir)
 		

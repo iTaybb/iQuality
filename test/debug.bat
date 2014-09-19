@@ -7,5 +7,5 @@ from Main import utils
 import WebParser
 
 w = WebParser.LyricsGrabber
-o = w.parse_LyricsMode('naruto', "shippuden")
+o = w.parse_onlylyrics('Overfly', 'Luna Haruna')
 o.next()

@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2013 Itay Brandes 
+# Copyright (C) 2012-2014 Itay Brandes 
 
 ''' Updater Window '''
 
@@ -10,6 +10,7 @@ import esky
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
+from pySmartDL import SmartDL
 
 import Config; config = Config.config
 from logger import log
@@ -22,7 +23,7 @@ class MainWin(QtGui.QDialog):
 		super(MainWin, self).__init__(parent)
 		self.setWindowTitle(tr("Components Updater"))
 		self.resize(400, 125)
-		self.setWindowIcon(QtGui.QIcon(r'pics\updater.png'))
+		self.setWindowIcon(QtGui.QIcon(os.path.join('pics', 'updater.png')))
 		self.setWindowFlags(QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowTitleHint | QtCore.Qt.WindowMinMaxButtonsHint)
 		
 		if isinstance(components, esky.Esky):
@@ -44,7 +45,7 @@ class MainWin(QtGui.QDialog):
 		# Layouts
 		mainLayout = QtGui.QGridLayout()
 		
-		pixmap = QtGui.QPixmap(r'pics\updater.png').scaled(100, 100, transformMode=QtCore.Qt.SmoothTransformation)
+		pixmap = QtGui.QPixmap(os.path.join('pics', 'updater.png')).scaled(100, 100, transformMode=QtCore.Qt.SmoothTransformation)
 		self.pix = QtGui.QLabel()
 		self.pix.setPixmap(pixmap)
 		self.prg_bar = QtGui.QProgressBar()
@@ -103,8 +104,8 @@ class MainWin(QtGui.QDialog):
 			self.label2.setText(tr("File: <i>%s</i> [%d/%d]") % (fn, i+1, len(self.components)))
 			
 			for j in range(self.retries):
-				obj = Main.SmartDL(urls, logger=log)
-				obj.start()
+				obj = SmartDL(urls, logger=log)
+				obj.start(blocking=False)
 				
 				b = True
 				while not obj.isFinished():
@@ -130,6 +131,7 @@ class MainWin(QtGui.QDialog):
 				log.error('Hash for %s is NOT valid (%s != %s).' % (component, file_hash, computed_hash))
 				QtGui.QMessageBox.warning(self, tr("Warning"), tr("Hash check failed for %s. Please contact with the program's developer.") % component, QtGui.QMessageBox.Ok)
 				self.close()
+				return
 				
 			path = obj.get_dest()
 			install_params = [path] + install_param
@@ -154,9 +156,9 @@ class MainWin(QtGui.QDialog):
 			self.label1.setText(tr("Downloading %s...") % component)
 			self.label2.setText(tr("File: <i>%s</i> [%d/%d]") % (fn, i+1, len(self.components)))
 			
-			obj = Main.SmartDL(urls, logger=log)
+			obj = SmartDL(urls, logger=log)
 			obj.add_hash_verification('sha256', archive_hash)
-			obj.start()
+			obj.start(blocking=False)
 			
 			b = True
 			while not obj.isFinished():

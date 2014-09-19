@@ -1,5 +1,5 @@
 # coding: utf-8
-# Copyright (C) 2012-2013 Itay Brandes
+# Copyright (C) 2012-2014 Itay Brandes
 
 '''
 A configuration class. Settings in the 'd' dict are the default settings.
@@ -25,6 +25,8 @@ Script will save the .ini file in every varaible assignment (if it's in the vars
 You can explicitly call config.loadFromIni() or config.saveToIni(), but it's not needed.
 Also you may use the 'restoreToDefault()' function in order to restore the settings (remove the .ini file).
 A restart of the application will be required.
+
+This code is kinda horrible. Should be replaced by ConfigObj ASAP.
 '''
 
 import os
@@ -36,10 +38,11 @@ import re
 import threading
 
 from win32com.shell import shell, shellcon
+import pySmartDL
 
-__version__ = "0.213" # auto-generated
-__rev__ = 258 # auto-generated
-__date__ = '15/03/14' # auto-generated
+__version__ = "0.222" # auto-generated
+__rev__ = 275 # auto-generated
+__date__ = '19/09/14' # auto-generated
 __author__ = 'Itay Brandes (brandes.itay@gmail.com)'
 
 class ConfigInterface(object):
@@ -140,7 +143,7 @@ except NameError: # if not already initialized
 		'windowTitle': "iQuality v%s beta" % __version__,
 		'bottomLabel': u"iQuality© v%s beta by Itay Brandes (r%d, released on %s)" % (__version__, __rev__, __date__), # used only on credits_text
 		'appStyle': "plastique", # "windows", "motif", "cde", "plastique", "windowsxp", or "macintosh".
-		'mainWindow_resolution': (1000, 550),
+		'mainWindow_resolution': (1000, 600),
 		'table_DefaultSectionSize': 19,
 		'table_font': ("Segoe UI", 10), # QtGui.QFont
 		'mainWindow_styleSheet': "",
@@ -170,12 +173,18 @@ except NameError: # if not already initialized
 		'browser_website': "http://iquality.itayb.net/version-{0}.php?v=%s" % __version__,
 		'online_users_counter_webpage': "http://iquality.itayb.net/visitors.php?echo=1",
 		'inform_esky_update_webpage': 'http://www.itayb.net/click-tracker/click-tracker.php?url=%s&title=%s',
-		'esky_zipfiles_download_page': "http://iquality.itayb.net/downloads",
+		'esky_zipfiles_download_page': "http://iquality.itayb.net/downloads/",
+		'esky_zipfiles_stage_download_page': "http://iquality.itayb.net/downloads-stage/",
+		'esky_zipfiles_stagelocal_download_page': "http://localhost:8070/downloads-stage/",
 		'newest_version_API_webpage': "http://iquality.itayb.net/vars.php?show=newest_version",
+		'newest_version_stage_API_webpage': "http://iquality.itayb.net/vars.php?show=newest_version_stage",
+		'newest_version_stagelocal_API_webpage': "http://localhost:8070/newest_version.txt",
 		'components_json_url': 'http://iquality.itayb.net/components.json',
+		'components_json_stage_url': 'http://iquality.itayb.net/components-stage.json',
+		'components_json_stagelocal_url': 'http://localhost:8070/components-stage.json',
 		'packages_json_url': 'http://iquality.itayb.net/packages.json',
-		'use_local_json_files': False, # for dev only
-		'local_json_files_path': r'C:\Scripts\iquality-misc\json', # for dev only
+		'packages_json_stage_url': 'http://iquality.itayb.net/packages-stage.json',
+		'packages_json_stagelocal_url': 'http://localhost:8070/packages-stage.json',
 
 		### Script ###
 		'temp_dir': os.path.join(os.environ["Temp"], "iQuality"),
@@ -214,10 +223,10 @@ except NameError: # if not already initialized
 		
 		### ETC ###
 		'lang': '',
-		'lang_rtl': {'en_US': False, 'he_IL': True}, # bool is for Is RightToLeft (Hebrew, Arabic)
-		'lang_names': {'en_US': 'English', 'he_IL': 'Hebrew'},
+		'lang_rtl': defaultdict(itertools.repeat(False).next, {'en_US': False, 'he_IL': True}), # bool is for Is RightToLeft (Hebrew, Arabic)
+		'lang_names': defaultdict(itertools.repeat('Other').next, {'en_US': 'English', 'he_IL': 'Hebrew'}),
 
-		'WebParser_ignoredSites': ['4shared.com', 'soundcloud.com', 'free.fr', 'gendou.com', 'ringtonematcher.com', 'fileden.com'],
+		'WebParser_ignoredSites': ['4shared.com', 'free.fr', 'gendou.com', 'ringtonematcher.com', 'fileden.com'],
 		'youtube_quality_priority': ['hd1080', 'hd720', 'large', 'medium', 'small'],
 		'youtube_formats_priority': ['mp4', 'webm', 'flv'],
 		'youtube_audioStream_quality_priority': ['high', 'medium', 'low'],
@@ -227,15 +236,16 @@ except NameError: # if not already initialized
 		'itag_audio_bitrates': {'hd1080': 192000, 'hd720': 192000, 'high': 192000, 'large': 128000, 
 								'medium': 128000, 'low': 128000, 'small': 96000, 'unknown': 128000},
 		# call keys() to get the available sources list. query each value for it's state. True means Enabled, False means Disabled.
-		'search_sources': defaultdict(itertools.repeat(True).next, {'Dilandau': True, 'Mp3skull': True, 'soundcloud': True,
-																		'bandcamp': True, 'youtube': True}),
-		'search_sources_const': ['Dilandau', 'Mp3skull', 'soundcloud', 'bandcamp', 'youtube'],
+		'search_sources': defaultdict(itertools.repeat(True).next, {'mp3soup': True, 'Mp3skull': True, 'soundcloud': True,
+																		'musicaddict': True, 'bandcamp': True, 'youtube': True}),
+		'search_sources_const': ['mp3soup', 'Mp3skull', 'musicaddict', 'soundcloud', 'bandcamp', 'youtube'],
 		
 		'songs_count_spinBox': 15,
 		'relevance_minimum': 2.0,
 		'listen_volumeSlider_volume': 1.0,
+		'files_dl_quantity_threshold': 5,
 		
-		'generic_http_headers': {'User-Agent' :'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0'},
+		'generic_http_headers': {'User-Agent': pySmartDL.utils.get_random_useragent()},
 		'allowd_web_protocols': ['http', 'https', 'ftp'],
 
 		### Etc ###
@@ -324,7 +334,7 @@ SongLyrics.com
 OnlyLyrics.com
 shironet.mako.co.il
 
-iQuality Copyright© 2012-2013 by Itay Brandes (iTayb). All rights reserved.
+iQuality Copyright© 2012-2014 by Itay Brandes (iTayb). All rights reserved.
 '''}
 	d['credits_text'] = d['credits_text'] % (d['bottomLabel'], "\n".join(d['search_sources'].keys()))
 	
@@ -350,7 +360,7 @@ iQuality Copyright© 2012-2013 by Itay Brandes (iTayb). All rights reserved.
 					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup',
 					'id3editor_in_context_menu', 'last_sanity_check_timestamp', 'trimSilence',
 					'show_supportArtists_notice', 'last_supportArtists_notice_timestamp', 'last_url_download',
-					'isDownloadInProgress', 'auto_update', 'hide_url_column']
+					'isDownloadInProgress', 'auto_update', 'hide_url_column', 'files_dl_quantity_threshold']
 	vars_to_eval = ['relevance_minimum', 'downloadAudio', 'downloadVideo', 'ver', 'youtube_quality_priority',
 					'youtube_formats_priority', 'enableSpellCheck', 'songs_count_spinBox', 'search_sources',
 					'editID3', 'count_application_runs', 'count_download', 'listen_volumeSlider_volume',
@@ -358,7 +368,7 @@ iQuality Copyright© 2012-2013 by Itay Brandes (iTayb). All rights reserved.
 					'artist_lookup', 'lyrics_lookup', 'search_autocomplete', 'parse_links_from_clipboard_at_startup',
 					'id3editor_in_context_menu', 'last_sanity_check_timestamp', 'trimSilence',
 					'show_supportArtists_notice', 'last_supportArtists_notice_timestamp', 'isDownloadInProgress',
-					'auto_update', 'hide_url_column']
+					'auto_update', 'hide_url_column', 'files_dl_quantity_threshold']
 	vars_to_override = ['ver']
 
 	config = ConfigInterface(d, ini_path, vars_to_save, vars_to_eval)

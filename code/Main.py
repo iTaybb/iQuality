@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2013 Itay Brandes
+# Copyright (C) 2012-2014 Itay Brandes
 
 '''Main Script Module'''
 
@@ -6,13 +6,13 @@ import os
 import sys
 import traceback
 import time
+import urllib2
 import math
 
 import esky
 from PyQt4 import QtCore
 
 import HTTPQuery
-from SmartDL import SmartDL
 import WebParser
 import Config; config = Config.config
 from logger import log
@@ -54,7 +54,7 @@ def init():
 		
 	if not os.path.exists(config.ext_bin_path):
 		os.makedirs(config.ext_bin_path)
-			
+	
 	# Checking internet connection
 	returncode = utils.launch_without_console('ping 8.8.8.8 -n 1').wait()
 	if returncode > 0:
@@ -88,7 +88,7 @@ def sanity_check():
 	# youtube-dl check
 	try:
 		import youtube_dl
-		log.debug("youtube-dl version is %s" % youtube_dl.__version__)
+		log.debug("youtube-dl version is %s" % youtube_dl.version.__version__)
 	except ImportError:
 		log.warning("Could not load the youtube-dl module")
 		
@@ -142,22 +142,10 @@ def sanity_check():
 	except:
 		log.error(traceback.format_exc())
 		
-	if config.use_local_json_files:
-		log.warning('use_local_json_files is set to True, fetching json files from local directory (%s) instead from the web.' % config.local_json_files_path)
-			
 	### ONLINE CHECKS ###
 	timestamp = math.fabs(time.time() - config.last_sanity_check_timestamp)
 	if timestamp > config.interval_between_network_sanity_checks:
 	# if the last check was before more than interval_between_network_sanity_checks
-		# Newest version check - old
-		# try:
-			# newest_version = WebParser.WebServices.get_newestversion()
-			# if newest_version > float(__version__):
-				# log.warning("A new version of iQuality is available (%s)." % newest_version)
-				# _warnings.append(NewerVersionWarning(newest_version))
-		# except IOError as e:
-			# log.error("Could not check for the newest version (%s)" % unicode(e))
-		
 		# Newest version check - esky
 		if hasattr(sys, "frozen"):
 			try:

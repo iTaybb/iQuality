@@ -68,7 +68,6 @@ def SoX(input, output, bin_path=None):
 			break
 		
 		# Duration       : 00:04:24.06 = 11644870 samples = 19804.2 CDDA sectors
-		# from PyQt4 import QtCore; import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
 		match = re.search(r"samples [=~] ([\d.]+) CDDA", out)
 		if match:
 			samples = float(match.group(1))

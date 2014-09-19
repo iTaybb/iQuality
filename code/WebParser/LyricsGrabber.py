@@ -1,11 +1,12 @@
 # coding: utf-8
-# Copyright (C) 2012-2013 Itay Brandes
+# Copyright (C) 2012-2014 Itay Brandes
 
 '''
 Module for lyrics grabbing and parsing.
 '''
 
 import sys
+import urllib
 import urllib2
 import xml.dom.minidom
 import socket
@@ -164,9 +165,12 @@ def parse_LyricsMode(title, artist):
 def parse_onlylyrics(title, artist):
 	"Uses OnlyLyrics.com for lyrics grabbing"
 	log.debug("Grabbing lyrics for %s - %s from OnlyLyrics.com..." % (artist, title))
-	url = 'http://www.onlylyrics.com/search.php?search=%s&metode=artist&x=0&y=0' % urllib2.quote(artist.encode("utf8"))
-	log.debug('Fetching %s...' % url)
-	obj = urllib2.urlopen(url)
+	url = "http://www.onlylyrics.com/search.php"
+	data = urllib.urlencode({'search': artist.encode("utf8")})
+	
+	log.debug('Fetching %s (POST: %s)...' % (url, data))
+	req = urllib2.Request(url, data)
+	obj = urllib2.urlopen(req)
 	response = obj.read()
 	
 	DOMAIN = "www.onlylyrics.com"
@@ -175,6 +179,7 @@ def parse_onlylyrics(title, artist):
 
 	for link in soup.find_all('a', href=re.compile(r'.+-lyrics-[0-9]+.php')):
 		link_artist, link_title = link.text.split(' :: ')
+		link_title = link_title.replace(link.span.text, '')
 		if title.lower() == link_title.lower():
 			song_url = "http://%s%s" % (DOMAIN, link['href'])
 			break

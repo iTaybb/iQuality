@@ -1,5 +1,5 @@
 # coding: utf-8
-# Copyright (C) 2012-2013 Itay Brandes
+# Copyright (C) 2012-2014 Itay Brandes
 
 '''
 Module for project's Web Services that are not lyrics or links grabbing.
@@ -48,18 +48,11 @@ def spell_fix(s):
 		buf = StringIO(data)
 		f = gzip.GzipFile(fileobj=buf)
 		data = f.read()
-		
-	# if response.info().get('Content-Encoding') == 'gzip':
-		# buf = StringIO(response.read())
-		# f = gzip.GzipFile(fileobj=buf)
-		# data = f.read()
-	# else:
-		# data = response.read()
-
+	
 	soup = BeautifulSoup(data)
 	ans = soup.find('a', attrs={'class' : 'spell'})
 	
-	if ans and ans.text != q:
+	if ans and ans.text and ans.text != q:
 		if log:
 			log.debug("Suggestion was accepted: %s --> %s." % (s, ans.text))
 		return ans.text
@@ -130,7 +123,7 @@ def google_autocomplete(s):
 	response = obj.read()
 	data = json.loads(response)[1]
 	
-	BLACKLIST_WORDS = ['twitter', 'lyrics', 'tickets', 'facebook', 'retire', 'youtube', 'wiki', 'news', 'instagram', 'tattoos',
+	BLACKLIST_WORDS = ['twitter', 'lyrics', 'tickets', 'facebook', 'retire', 'youtube', 'wiki', 'news', 'instagram', 'tattoos', 'tabs', 'chords',
 						u'ליריקה', u'מילים לשירים']
 	
 	data = [x for x in data if not any(map(x.endswith, BLACKLIST_WORDS))]
@@ -286,11 +279,6 @@ def inform_esky_update(fn, v):
 @utils.decorators.memoize(config.memoize_timeout)
 def get_components_data():
 	"Function queries the iQuality website for components json data"
-	if config.use_local_json_files:
-		with open(r"%s\components.json" % config.local_json_files_path, 'r') as f:
-			data = f.read()
-		return json.loads(data, object_pairs_hook=OrderedDict)
-		
 	try:
 		obj = urllib2.urlopen(config.components_json_url, timeout=config.webservices_timeout)
 		data = obj.read()
@@ -304,6 +292,7 @@ def get_components_data():
 		return json.loads(data, object_pairs_hook=OrderedDict)
 	except:
 		log.error('components_json_url signature check FAILED:')
+		log.error('config.components_json_url = %s' % config.components_json_url)
 		log.error(traceback.format_exc())
 		return {}
 	
@@ -311,11 +300,6 @@ def get_components_data():
 @utils.decorators.memoize(config.memoize_timeout)
 def get_packages_data():
 	"Function queries the iQuality website for packages json data"
-	if config.use_local_json_files:
-		with open(r"%s\packages.json" % config.local_json_files_path, 'r') as f:
-			data = f.read()
-		return json.loads(data, object_pairs_hook=OrderedDict)
-		
 	try:
 		obj = urllib2.urlopen(config.packages_json_url, timeout=config.webservices_timeout)
 		data = obj.read()

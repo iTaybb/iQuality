@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2013 Itay Brandes 
+# Copyright (C) 2012-2014 Itay Brandes 
 
 ''' Tracks Explorer Window '''
 
@@ -7,7 +7,7 @@ from PyQt4 import QtGui
 
 import Config; config = Config.config
 from logger import log
-from Gui_Threads import ArtistLookupThread, AlbumLookupThread
+from GuiThreads import ArtistLookupThread, AlbumLookupThread
 import utils
 tr = utils.qt.tr
 

@@ -1,5 +1,5 @@
 # coding: utf-8
-# Copyright (C) 2012-2013 Itay Brandes
+# Copyright (C) 2012-2014 Itay Brandes
 
 '''Core modules and functions of the project'''
 

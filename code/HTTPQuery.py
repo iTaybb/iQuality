@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2013 Itay Brandes
+# Copyright (C) 2012-2014 Itay Brandes
 
 '''
 This module contain functions that fetches data over HTTP.
@@ -138,7 +138,9 @@ def is_ServerSupportHTTPRange(url, timeout=config.is_ServerSupportHTTPRange_time
 	if not fullsize:
 		return False
 	
-	headers = {'Range': 'bytes=0-3'}
+	headers = config.generic_http_headers.copy()
+	headers['Range'] = 'bytes=0-3'
+	
 	req = urllib2.Request(url, headers=headers)
 	urlObj = urllib2.urlopen(req, timeout=timeout)
 		
@@ -162,7 +164,8 @@ def get_filesize(url, timeout=config.get_filesize_timeout):
 		
 	url = url.replace(' ', '%20')
 	try:
-		u = urllib2.urlopen(url, timeout=timeout)
+		req = urllib2.Request(url, headers=config.generic_http_headers)
+		u = urllib2.urlopen(req, timeout=timeout)
 	except (urllib2.HTTPError, urllib2.URLError) as e:
 		log.error(e)
 		return 0

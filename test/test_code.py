@@ -21,7 +21,7 @@ def test_codeLength():
 			count += len(f.readlines())
 
 	print "Project iQuality has %d code lines." % count
-	assert 500 < count < 10000
+	assert 500 < count < 15000
 
 def test_PyEnviron():
 	try:
@@ -47,6 +47,7 @@ def test_PyEnviron():
 		import esky
 		import bsdiff4
 		import youtube_dl
+		from pySmartDL import SmartDL
 
 	except ImportError, e:
 		raise Exception("Depencency not found: %s" % str(e))

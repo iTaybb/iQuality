@@ -5,8 +5,9 @@ import urllib2
 import zipfile
 from urlparse import parse_qs, urlparse, urlunparse
 
+from pySmartDL import SmartDL
 
-sys.path.append(r'C:\Scripts\iQuality\code')
+sys.path.append(r'..\code')
 import Main
 from Main import utils
 import Config; config = Config.config
@@ -134,8 +135,16 @@ def test_MetadataGrabber_musicbrainz_recording_search():
 	assert "Rolling in the Deep" in ans
 	assert "Lovesong" in ans
 
-def test_parse_dilandau():
-	ans = Main.WebParser.LinksGrabber.parse_dilandau('Flo Rida - Whistle')
+def test_parse_mp3soup():
+	ans = Main.WebParser.LinksGrabber.parse_mp3soup('Flo Rida - Whistle')
+	
+	for i in range(3):
+		x = ans.next().url
+		assert x.startswith('http://')
+		urllib2.urlopen(utils.url_fix(x))
+		
+def test_parse_MusicAddict():
+	ans = Main.WebParser.LinksGrabber.parse_mp3soup('Never Gonna Give You Up')
 	
 	for i in range(3):
 		x = ans.next().url
@@ -150,21 +159,21 @@ def test_parse_Mp3skull():
 		assert x.startswith('http://')
 		urllib2.urlopen(utils.url_fix(x))
 		
-def test_parse_soundcloud_api1():
-	ans = Main.WebParser.LinksGrabber.parse_soundcloud_api1('Johnny Concept')
+# def test_parse_soundcloud_api1():
+	# ans = Main.WebParser.LinksGrabber.parse_soundcloud_api1('Johnny Concept')
 	
-	for i in range(3):
-		x = ans.next().url
-		assert x.startswith('http://')
-		urllib2.urlopen(utils.url_fix(x))
+	# for i in range(3):
+		# x = ans.next().url
+		# assert x.startswith('http://')
+		# urllib2.urlopen(utils.url_fix(x))
 		
-def test_parse_soundcloud_api2():
-	ans = Main.WebParser.LinksGrabber.parse_soundcloud_api2(u'קרן פלס')
+# def test_parse_soundcloud_api2():
+	# ans = Main.WebParser.LinksGrabber.parse_soundcloud_api2(u'קרן פלס')
 	
-	for i in range(3):
-		x = ans.next().url
-		assert x.startswith('http://')
-		urllib2.urlopen(utils.url_fix(x))
+	# for i in range(3):
+		# x = ans.next().url
+		# assert x.startswith('http://')
+		# urllib2.urlopen(utils.url_fix(x))
 		
 def test_parse_bandcamp():
 	ans = Main.WebParser.LinksGrabber.parse_bandcamp(u'יוני בלוך')
@@ -209,11 +218,11 @@ def test_parse_youtube_downloadlinks():
 		urllib2.urlopen(url).close()
 		
 def test_parse_Youtube_playlist():
-	ans = Main.WebParser.LinksGrabber.parse_Youtube_playlist('SPv1EAqcvJFuG-CMLxveY7eNEcse3xXm1a')
+	ans = Main.WebParser.LinksGrabber.parse_Youtube_playlist('PLCAC450D824248A79')
 	
-	assert 'OFTt7NGeOBY' in ans
-	assert 'iB7qHNrRX08' in ans
-	assert '5EMos9RkVoQ' in ans
+	assert 'fyMhvkC3A84' in ans
+	assert 'd020hcWA_Wg' in ans
+	assert 'k4V3Mo61fJM' in ans
 
 def test_parse_billboard():
 	ans = Main.WebParser.WebServices.parse_billboard()
@@ -252,13 +261,13 @@ def test_get_components_data():
 		urls, archive_hash, file_to_extract, file_hash = t
 		
 		for url in urls:
-			obj = Main.SmartDL(url)
+			obj = SmartDL(url)
 			obj.add_hash_verification('sha256', archive_hash)
 			obj.start()
-			obj.wait()
 			
-			assert not obj._failed
+			assert obj.isSuccessful()
 			os.unlink(obj.get_dest())
+
 def test_get_packages_data():
 	d = Main.WebParser.WebServices.get_packages_data()
 	assert d
@@ -266,10 +275,9 @@ def test_get_packages_data():
 		urls, file_hash, install_param = t
 		
 		for url in urls:
-			obj = Main.SmartDL(url)
+			obj = SmartDL(url)
 			obj.add_hash_verification('sha256', file_hash)
 			obj.start()
-			obj.wait()
 			
-			assert not obj._failed
+			assert obj.isSuccessful()
 			os.unlink(obj.get_dest())

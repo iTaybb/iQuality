@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2013 Itay Brandes 
+# Copyright (C) 2012-2014 Itay Brandes 
 
 ''' Settings Window '''
 
@@ -22,7 +22,7 @@ class MainWin(QtGui.QDialog):
 		
 		self.setWindowTitle(tr("Preferences"))
 		self.resize(400, 60)
-		self.setWindowIcon(QtGui.QIcon(r'pics\settings.png'))
+		self.setWindowIcon(QtGui.QIcon(os.path.join('pics', 'settings.png')))
 		self.init_widgets()
 		
 	def init_widgets(self):
@@ -52,7 +52,7 @@ class MainWin(QtGui.QDialog):
 		self.auto_update = QtGui.QCheckBox(tr("Update automatically when a new version is available"))
 		self.auto_update.setCheckState(config.auto_update)
 		self.auto_update.setTristate(False)
-		self.hide_url_column = QtGui.QCheckBox(tr("* Hide URL Column"))
+		self.hide_url_column = QtGui.QCheckBox(tr("Hide URL Column"))
 		self.hide_url_column.setCheckState(config.hide_url_column)
 		self.hide_url_column.setTristate(False)
 		self.install_cccp = QtGui.QPushButton(tr("Trigger CCCP Installation"))
@@ -103,9 +103,12 @@ class MainWin(QtGui.QDialog):
 		else:
 			self.id3_autoalbumart.setCurrentIndex(1)
 		 
-		self.useDilandau = QtGui.QCheckBox(tr("Use %s") % "Dilandau")
-		self.useDilandau.setCheckState(config.search_sources['Dilandau'])
-		self.useDilandau.setTristate(False)
+		self.useMp3soup = QtGui.QCheckBox(tr("Use %s") % "Mp3soup")
+		self.useMp3soup.setCheckState(config.search_sources['mp3soup'])
+		self.useMp3soup.setTristate(False)
+		self.useMusicAddict = QtGui.QCheckBox(tr("Use %s") % "MusicAddict")
+		self.useMusicAddict.setCheckState(config.search_sources['musicaddict'])
+		self.useMusicAddict.setTristate(False)
 		self.useMp3Skull = QtGui.QCheckBox(tr("Use %s") % "Mp3Skull")
 		self.useMp3Skull.setCheckState(config.search_sources['Mp3skull'])
 		self.useMp3Skull.setTristate(False)
@@ -178,7 +181,8 @@ class MainWin(QtGui.QDialog):
 		# Media Sources Tab
 		mediaSourcesGroupBox = QtGui.QVBoxLayout()
 		layout2 = QtGui.QHBoxLayout()
-		layout2.addWidget(self.useDilandau)
+		layout2.addWidget(self.useMp3soup)
+		layout2.addWidget(self.useMusicAddict)
 		layout2.addWidget(self.useMp3Skull)
 		layout2.addWidget(self.useSoundcloud)
 		layout2.addWidget(self.useBandcamp)
@@ -440,8 +444,8 @@ class MainWin(QtGui.QDialog):
 				QtGui.QMessageBox.critical(self, tr("Error"), tr("Your Post-Download action is \"Run an application\", however the application \"%s\" could not be found.") % exe_path, QtGui.QMessageBox.Ok)
 				return
 		
-		if not any([self.useDilandau.isChecked(), self.useMp3Skull.isChecked(), self.useYoutube.isChecked(), 
-						self.useSoundcloud.isChecked(), self.useBandcamp.isChecked()]):
+		if not any([self.useMp3soup.isChecked(), self.useMp3Skull.isChecked(), self.useYoutube.isChecked(), 
+						self.useMusicAddict.isChecked(), self.useSoundcloud.isChecked(), self.useBandcamp.isChecked()]):
 			QtGui.QMessageBox.critical(self, tr("Error"), tr("All media sources are disabled. Please choose at least one."), QtGui.QMessageBox.Ok)
 			return
 			
@@ -472,7 +476,8 @@ class MainWin(QtGui.QDialog):
 		config.auto_update = self.auto_update.isChecked()
 		config.hide_url_column = self.hide_url_column.isChecked()
 		config.enableSpellCheck = self.enableSpellCheck.isChecked()
-		config.search_sources['Dilandau'] = self.useDilandau.isChecked()
+		config.search_sources['mp3soup'] = self.useMp3soup.isChecked()
+		config.search_sources['musicaddict'] = self.useMusicAddict.isChecked()
 		config.search_sources['Mp3skull'] = self.useMp3Skull.isChecked()
 		config.search_sources['soundcloud'] = self.useSoundcloud.isChecked()
 		config.search_sources['bandcamp'] = self.useBandcamp.isChecked()

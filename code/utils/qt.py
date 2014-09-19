@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2013 Itay Brandes
+# Copyright (C) 2012-2014 Itay Brandes
 
 '''
 Module for custom-made Qt objects.
@@ -9,6 +9,19 @@ import math
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
+
+def selectedRowsIndexes(selectedIndexes):
+	'''
+	Gets a selectedIndexes list. returns the selectedRowsIndexes
+	'''
+	selectedRows = []
+	selectedRowsObjs = []
+	for index in selectedIndexes:
+		if not index.row() in selectedRows:
+			selectedRowsObjs.append(index)
+			selectedRows.append(index.row())
+			
+	return selectedRowsObjs
 
 class MovieSplashScreen(QtGui.QSplashScreen):
 	'''
@@ -163,11 +176,14 @@ class BlankItemDelegate(QtGui.QStyledItemDelegate):
 	def __init__(self, parent):
 		super(BlankItemDelegate, self).__init__(parent)
 			
-def tr(sourceText, disambiguation=None, inspectContext=False):
+def tr(sourceText, disambiguation=None, inspectContext=False, split_tr=False):
 	'''
 	Wrapper for QCoreApplication.translate that acts like the QObject.tr() function.
 	returns python's unicode type instead of QString.
 	Used for enhanced readability { unicode(self.tr('s')) --> tr('s') }
+	
+	split_tr is to attempt translating any word seperately.
+	
 	Useful in Python 2.x only.
 	'''
 	if inspectContext:
@@ -175,6 +191,8 @@ def tr(sourceText, disambiguation=None, inspectContext=False):
 		context = callingframe.f_locals['self'].__class__.__name__
 	else:
 		context = "@default"
+	if split_tr:
+		return " ".join([unicode(QtCore.QCoreApplication.translate(context, part, disambiguation)) for part in sourceText.split(' ')])
 	return unicode(QtCore.QCoreApplication.translate(context, sourceText, disambiguation))
 
 def combine_pixmaps(pix_list):

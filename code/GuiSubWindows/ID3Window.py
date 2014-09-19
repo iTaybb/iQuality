@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2013 Itay Brandes
+# Copyright (C) 2012-2014 Itay Brandes
 
 ''' ID3 Window '''
 
@@ -12,7 +12,7 @@ from mutagen.easyid3 import EasyID3
 
 import Config; config = Config.config
 from logger import log
-from Gui_Threads import GoogleImagesGrabberThread, LyricsGrabberThread, MusicBrainzFetchThread
+from GuiThreads import GoogleImagesGrabberThread, LyricsGrabberThread, MusicBrainzFetchThread
 import utils
 tr = utils.qt.tr
 

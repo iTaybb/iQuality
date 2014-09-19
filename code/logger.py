@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2013 Itay Brandes
+# Copyright (C) 2012-2014 Itay Brandes
 
 '''
 Logger class for the project.
@@ -8,6 +8,7 @@ Must call logger.start() to start logging, and logger.stop() to terminate the lo
 import os
 import sys
 import logging, logging.handlers
+import ctypes
 
 log = logging.getLogger('mainLog')
 log2 = logging.getLogger('minorLog')
@@ -68,12 +69,10 @@ def create_debugging_logger():
 def add_coloring_to_emit_windows(fn):
 	# add methods we need to the class
 	def _out_handle(self):
-		import ctypes
 		return ctypes.windll.kernel32.GetStdHandle(self.STD_OUTPUT_HANDLE)
 	out_handle = property(_out_handle)
 
 	def _set_color(self, code):
-		import ctypes
 		# Constants from the Windows API
 		self.STD_OUTPUT_HANDLE = -11
 		hdl = ctypes.windll.kernel32.GetStdHandle(self.STD_OUTPUT_HANDLE)
