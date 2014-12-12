@@ -1,5 +1,5 @@
 # coding: utf-8
-# Copyright (C) 2012-2014 Itay Brandes
+# Copyright (C) 2012-2015 Itay Brandes
 
 '''
 PyQt4 GUI for the iQuality application
@@ -1673,7 +1673,10 @@ class SearchTableModel(TableModelInterface):
 			if index.column() == 3 or index.column() == 4: # if video/audio size
 				value = "{:,.2f}".format(value)
 			elif index.column() == 5: # if source length
-				value = "%.1d:%.2d" % (value/60, value%60)
+				if value > 60**2: # more than an hour
+					value = "%.1d:%.2d:%.2d" % (value/60**2, (value%60**2)/60, (value%60**2)%60)
+				else:
+					value = "%.1d:%.2d" % (value/60, value%60)
 			elif index.column() == 7: # if source column
 				value = value.capitalize()
 		else:

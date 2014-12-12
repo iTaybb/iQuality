@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2014 Itay Brandes
+# Copyright (C) 2012-2015 Itay Brandes
 # Based on lunixbochs's code: https://github.com/lunixbochs/meta/blob/master/snippets/python/threadpool.py
 
 '''

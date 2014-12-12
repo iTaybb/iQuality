@@ -37,7 +37,6 @@ except ImportError:
 
 # win32com.shell workaround END
 
-
 def do_magic_in_file(_file, regex, x, y):
     """
     Search in _file for regex (basic only). When found, replace in that line 'x' with 'y'.
@@ -85,8 +84,8 @@ make_installer = True
 update_iss_version = True
 update_iss_arch_reference = True
 GUI_ONLY = True
-override_app_version = "0.222"  # None for no overriding, a new version number for overriding (string)
-override_app_date = '19/09/14'  # None for no overriding, a new date for overriding (string)
+override_app_version = "0.223"  # None for no overriding, a new version number for overriding (string)
+override_app_date = '12/12/14'  # None for no overriding, a new date for overriding (string)
 python_path = os.path.dirname(sys.executable)
 
 # Sanity checks

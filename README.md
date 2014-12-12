@@ -3,7 +3,7 @@
 
 iQuality, a revolutionary new program, provides you a free, easy and efficient method to search and download high quality (iQuality) songs. 
 
-iQuality Copyright© 2012-2013 by Itay Brandes (iTayb). All rights reserved.  
+iQuality Copyright© 2012-2015 by Itay Brandes (iTayb). All rights reserved.  
 See also the license, agreement and changelog files.
 
 Features

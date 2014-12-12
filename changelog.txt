@@ -5,6 +5,12 @@ Below you find a list with the added features, changes and fixes for
 each version.
 
 ======================
+(Version 0.223 beta; 12/12/14)
+- IMPROVE: youtube-dl's library got updated to version 2014.12.12.7.
+- IMPROVE: PyQt's library got updated to version 4.11.3.
+- FIX: musicaddict's parser got fixed.
+- FIX: Minor bug fixes.
+
 (Version 0.222 beta; 15/09/14)
 - IMPROVE: youtube-dl's library got updated to version 2014.09.19.
 - IMPROVE: PyQt's library got updated to version 4.11.2.

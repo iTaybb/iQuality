@@ -1,5 +1,5 @@
 # coding: utf-8
-# Copyright (C) 2012-2014 Itay Brandes
+# Copyright (C) 2012-2015 Itay Brandes
 
 '''
 Module for lyrics grabbing and parsing.
@@ -241,8 +241,11 @@ def parse_shironet(s):
 	log.debug("Grabbing lyrics for %s from shironet.co.il..." % s)
 	url = "http://shironet.mako.co.il/searchSongs?q=%s&type=lyrics" % urllib2.quote(s.encode("utf8"))
 	log.debug('Fetching %s...' % url)
-	obj = urllib2.urlopen(url)
+	req = urllib2.Request(url, None, config.generic_http_headers)
+	obj = urllib2.urlopen(req, timeout=8)
 	response = obj.read()
+	
+	# from PyQt4 import QtCore; import pdb; QtCore.pyqtRemoveInputHook(); pdb.set_trace()
 	
 	domain = "shironet.mako.co.il"
 	links = []

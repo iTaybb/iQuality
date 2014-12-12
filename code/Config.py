@@ -1,5 +1,5 @@
 # coding: utf-8
-# Copyright (C) 2012-2014 Itay Brandes
+# Copyright (C) 2012-2015 Itay Brandes
 
 '''
 A configuration class. Settings in the 'd' dict are the default settings.
@@ -40,9 +40,9 @@ import threading
 from win32com.shell import shell, shellcon
 import pySmartDL
 
-__version__ = "0.222" # auto-generated
-__rev__ = 275 # auto-generated
-__date__ = '19/09/14' # auto-generated
+__version__ = "0.223" # auto-generated
+__rev__ = 277 # auto-generated
+__date__ = '12/12/14' # auto-generated
 __author__ = 'Itay Brandes (brandes.itay@gmail.com)'
 
 class ConfigInterface(object):
@@ -334,7 +334,7 @@ SongLyrics.com
 OnlyLyrics.com
 shironet.mako.co.il
 
-iQuality Copyright© 2012-2014 by Itay Brandes (iTayb). All rights reserved.
+iQuality Copyright© 2012-2015 by Itay Brandes (iTayb). All rights reserved.
 '''}
 	d['credits_text'] = d['credits_text'] % (d['bottomLabel'], "\n".join(d['search_sources'].keys()))
 	

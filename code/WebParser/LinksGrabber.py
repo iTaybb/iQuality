@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2014 Itay Brandes
+# Copyright (C) 2012-2015 Itay Brandes
 
 '''
 Module for Mp3 links grabbing.
@@ -116,7 +116,7 @@ def parse_MusicAddict(song, maxpages=10):
 	
 	for i in range(maxpages):
 		# http://www.musicaddict.com/mp3/naruto-shippuden/page-1.html
-		url = 'http://www.musicaddict.com/mp3/%s/page-%d.html' % (song.replace('-','').replace('_','').replace(' ','-').lower(), i)
+		url = 'http://www.musicaddict.com/mp3/%s/page-%d.html' % (song.replace('-','').replace('_','').replace(' ','-').lower(), i+1)
 		log.debug("[MusicAddict] Parsing %s... " % url)
 		obj = urllib2.urlopen(url)
 		response = obj.read()
@@ -127,8 +127,9 @@ def parse_MusicAddict(song, maxpages=10):
 		soup = BeautifulSoup(response)
 
 		for span in soup.find_all('span', class_='dl_link'):
-			url = DOMAIN + span.a['href']
-			t_links.append(url)
+			if not span.a['href'].startswith('http'):
+				url = DOMAIN + span.a['href']
+				t_links.append(url)
 			
 		for link in t_links:
 			obj = urllib2.urlopen(link)

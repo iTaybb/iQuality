@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2014 Itay Brandes 
+# Copyright (C) 2012-2015 Itay Brandes 
 
 ''' Tracks Explorer Window '''
 

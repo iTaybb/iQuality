@@ -1,5 +1,5 @@
 # coding: utf-8
-# Copyright (C) 2012-2014 Itay Brandes
+# Copyright (C) 2012-2015 Itay Brandes
 
 '''
 Module for project's Web Services that are not lyrics or links grabbing.

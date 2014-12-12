@@ -1,5 +1,5 @@
 #define MyAppName "iQuality"
-#define MyAppVersion "0.222"  ; auto-generated
+#define MyAppVersion "0.223"  ; auto-generated
 #define MyAppPublisher "Itay Brandes"
 #define MyAppURL "http://iQuality.iTayb.net"
 #define MyAppExeName "iQuality.exe"
